@@ -11,11 +11,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\bam.framework\submodules\bam.base\bam.base\bam.base.csproj" />
-    <ProjectReference Include="..\..\..\bam.framework\submodules\bam.commandline\bam.commandline\bam.commandline.csproj" />
-    <ProjectReference Include="..\..\..\bam.framework\submodules\bam.data.repositories\bam.data.repositories\bam.data.repositories.csproj" />
-    <ProjectReference Include="..\..\..\bam.framework\submodules\bam.data.schema\bam.data.schema\bam.data.schema.csproj" />
-    <ProjectReference Include="..\..\..\bam.framework\submodules\bam.data\bam.data\bam.data.csproj" />
+    <ProjectReference Include="..\..\bam.base\bam.base\bam.base.csproj" />
+    <ProjectReference Include="..\..\bam.commandline\bam.commandline\bam.commandline.csproj" />
+    <ProjectReference Include="..\..\bam.data.repositories\bam.data.repositories\bam.data.repositories.csproj" />
+    <ProjectReference Include="..\..\bam.data.schema\bam.data.schema\bam.data.schema.csproj" />
+    <ProjectReference Include="..\..\bam.data\bam.data\bam.data.csproj" />
   </ItemGroup>
 
 </Project>
