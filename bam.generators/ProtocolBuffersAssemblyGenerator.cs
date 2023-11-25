@@ -10,6 +10,7 @@ using Bam.Net.CommandLine;
 using Bam.Net.Data.Repositories;
 using System.CodeDom.Compiler;
 using Google.Protobuf;
+using Bam.CommandLine;
 
 namespace Bam.Net.CoreServices.ProtoBuf
 {

@@ -9,7 +9,7 @@ using Bam.Net.Logging;
 
 namespace Bam.Net.Presentation.Handlebars
 {
-    public class HandlebarsDirectory
+    public class HandlebarsDirectory : IHandlebarsDirectory
     {
         public static implicit operator DirectoryInfo(HandlebarsDirectory dir)
         {
@@ -28,32 +28,32 @@ namespace Bam.Net.Presentation.Handlebars
             }
         }
 
-        public HandlebarsDirectory(string directoryPath, ILogger logger = null): this(new DirectoryInfo(directoryPath), logger)
+        public HandlebarsDirectory(string directoryPath, ILogger logger = null) : this(new DirectoryInfo(directoryPath), logger)
         {
         }
 
         public ILogger Logger { get; }
-        
+
         public Dictionary<string, Func<object, string>> Templates { get; private set; }
 
         public bool HasTemplate(string templateName)
         {
             return Templates.ContainsKey(templateName);
         }
-        
+
         public HandlebarsDirectory CombineWith(params HandlebarsDirectory[] dirs)
         {
             Reload();
             HandlebarsDirectory combined = new HandlebarsDirectory(Directory);
             combined.CopyProperties(this);
-            foreach(HandlebarsDirectory dir in dirs)
-            { 
+            foreach (HandlebarsDirectory dir in dirs)
+            {
                 dir.Reload();
                 foreach (DirectoryInfo partialDir in dir.PartialsDirectories)
                 {
                     combined.PartialsDirectories.Add(partialDir);
                 }
-                foreach(string key in dir.Templates.Keys)
+                foreach (string key in dir.Templates.Keys)
                 {
                     combined.Templates.AddMissing(key, dir.Templates[key]);
                 }
@@ -72,7 +72,7 @@ namespace Bam.Net.Presentation.Handlebars
             }
             else
             {
-                Templates.AddMissing(templateName, (obj) => 
+                Templates.AddMissing(templateName, (obj) =>
                 {
                     HandlebarsTemplate<object, object> template = HandlebarsDotNet.Handlebars.Compile(source);
                     return template.DynamicInvoke(obj, obj) as string;
@@ -82,7 +82,7 @@ namespace Bam.Net.Presentation.Handlebars
 
         public void AddPartial(string templateName, string source, bool reload = false)
         {
-            if(PartialsDirectories == null)
+            if (PartialsDirectories == null)
             {
                 AddPartialsDirectory(Path.Combine(Directory.FullName, "Partials"));
             }
@@ -110,17 +110,17 @@ namespace Bam.Net.Presentation.Handlebars
             }
             return string.Empty;
         }
-        
+
         DirectoryInfo _directory;
         public DirectoryInfo Directory
         {
             get => _directory;
             set => SetDirectory(value);
         }
-        
+
         public void AddPartialsDirectory(string partialsDirectory)
         {
-            if(PartialsDirectories == null)
+            if (PartialsDirectories == null)
             {
                 PartialsDirectories = new HashSet<DirectoryInfo>
                 {
@@ -133,7 +133,7 @@ namespace Bam.Net.Presentation.Handlebars
             }
             Reload();
         }
-        
+
         public string FileExtension { get; set; }
         public HashSet<DirectoryInfo> PartialsDirectories { get; set; }
         readonly object _reloadLock = new object();
@@ -148,7 +148,7 @@ namespace Bam.Net.Presentation.Handlebars
 
         public void Load(bool reload)
         {
-            if(!_loaded || reload)
+            if (!_loaded || reload)
             {
                 lock (_reloadLock)
                 {

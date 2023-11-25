@@ -1,0 +1,16 @@
+        {{PrimaryKeyType.Namespace}}.{{{PrimaryKeyType.Name}}} _{{{PrimaryKeyTypeCamelCaseName}}};
+		public override {{PrimaryKeyType.Namespace}}.{{{PrimaryKeyType.Name}}} {{ChildParentProperty.Name}}
+		{
+			get
+			{
+				if (_{{{PrimaryKeyTypeCamelCaseName}}} == null)
+				{
+					_{{{PrimaryKeyTypeCamelCaseName}}} = ({{PrimaryKeyType.Namespace}}.{{{PrimaryKeyType.Name}}})DaoRepository.GetParentPropertyOfChild(this, typeof({{{PrimaryKeyType.Namespace}}}.{{{PrimaryKeyType.Name}}}));
+				}
+				return _{{{PrimaryKeyTypeCamelCaseName}}};
+			}
+			set
+			{
+				_{{{PrimaryKeyTypeCamelCaseName}}} = value;
+			}
+		}

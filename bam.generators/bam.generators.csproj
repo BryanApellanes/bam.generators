@@ -7,6 +7,48 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Dao\Templates\ChildDaoCollectionAdd.hbs" />
+    <None Remove="Dao\Templates\ChildXrefCollectionAdd.hbs" />
+    <None Remove="Dao\Templates\Class.hbs" />
+    <None Remove="Dao\Templates\Collection.hbs" />
+    <None Remove="Dao\Templates\ColumnsClass.hbs" />
+    <None Remove="Dao\Templates\ColumnsProperty.hbs" />
+    <None Remove="Dao\Templates\Context.hbs" />
+    <None Remove="Dao\Templates\ContextMethods.hbs" />
+    <None Remove="Dao\Templates\DaoCollectionProperty.hbs" />
+    <None Remove="Dao\Templates\ForeignKeyColumnsProperty.hbs" />
+    <None Remove="Dao\Templates\ForeignKeyProperty.hbs" />
+    <None Remove="Dao\Templates\KeyProperty.hbs" />
+    <None Remove="Dao\Templates\PagedQueryClass.hbs" />
+    <None Remove="Dao\Templates\Partial.hbs" />
+    <None Remove="Dao\Templates\Property.hbs" />
+    <None Remove="Dao\Templates\QiClass.hbs" />
+    <None Remove="Dao\Templates\QueryClass.hbs" />
+    <None Remove="Dao\Templates\XrefProperty.hbs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Dao\Templates\ChildDaoCollectionAdd.hbs" />
+    <EmbeddedResource Include="Dao\Templates\ChildXrefCollectionAdd.hbs" />
+    <EmbeddedResource Include="Dao\Templates\Class.hbs" />
+    <EmbeddedResource Include="Dao\Templates\Collection.hbs" />
+    <EmbeddedResource Include="Dao\Templates\ColumnsClass.hbs" />
+    <EmbeddedResource Include="Dao\Templates\ColumnsProperty.hbs" />
+    <EmbeddedResource Include="Dao\Templates\Context.hbs" />
+    <EmbeddedResource Include="Dao\Templates\ContextMethods.hbs" />
+    <EmbeddedResource Include="Dao\Templates\DaoCollectionProperty.hbs" />
+    <EmbeddedResource Include="Dao\Templates\ForeignKeyColumnsProperty.hbs" />
+    <EmbeddedResource Include="Dao\Templates\ForeignKeyProperty.hbs" />
+    <EmbeddedResource Include="Dao\Templates\KeyProperty.hbs" />
+    <EmbeddedResource Include="Dao\Templates\PagedQueryClass.hbs" />
+    <EmbeddedResource Include="Dao\Templates\Partial.hbs" />
+    <EmbeddedResource Include="Dao\Templates\Property.hbs" />
+    <EmbeddedResource Include="Dao\Templates\QiClass.hbs" />
+    <EmbeddedResource Include="Dao\Templates\QueryClass.hbs" />
+    <EmbeddedResource Include="Dao\Templates\XrefProperty.hbs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Handlebars.Net" Version="2.1.4" />
   </ItemGroup>
 

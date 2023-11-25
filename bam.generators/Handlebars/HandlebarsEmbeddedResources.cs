@@ -7,7 +7,7 @@ using HandlebarsDotNet;
 
 namespace Bam.Net.Presentation.Handlebars
 {
-    public class HandlebarsEmbeddedResources
+    public class HandlebarsEmbeddedResources : IHandlebarsEmbeddedResources
     {
         public HandlebarsEmbeddedResources(Assembly assembly)
         {
@@ -64,9 +64,9 @@ namespace Bam.Net.Presentation.Handlebars
                         string longName = Path.GetFileNameWithoutExtension(resourceName);
                         string shortName = longName.Substring(longName.LastIndexOf(".") + 1);
                         string templateText = sr.ReadToEnd();
-                        
+
                         HandlebarsTemplate<object, object> compiled = HandlebarsDotNet.Handlebars.Compile(templateText);
-                        
+
                         Templates.AddMissing(longName, compiled);
                         Templates.AddMissing(shortName, compiled);
                     }
