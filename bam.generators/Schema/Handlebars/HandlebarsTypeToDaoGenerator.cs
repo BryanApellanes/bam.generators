@@ -13,12 +13,12 @@ using Newtonsoft.Json;
 
 namespace Bam.Net.Data.Repositories.Handlebars
 {
-    public class HandlebarsTypeDaoGenerator: TypeToDaoGenerator
+    public class HandlebarsTypeToDaoGenerator: TypeToDaoGenerator
     {
-        public HandlebarsTypeDaoGenerator(SchemaGenerator typeSchemaGenerator, ILogger logger = null) : base(new HandlebarsCSharpDaoCodeWriter(), new FsDaoTargetStreamResolver())
+        public HandlebarsTypeToDaoGenerator(ISchemaProvider schemaProvider, IDaoGenerator daoGenerator, ILogger? logger = null) : base(schemaProvider, daoGenerator, null, logger)
         {
-            TypeSchemaGenerator = typeSchemaGenerator;
-            WrapperGenerator = new HandlebarsWrapperGenerator(WrapperNamespace, DaoNamespace);
+            SchemaProvider = schemaProvider;
+            SetWrapperGenerator(new HandlebarsWrapperGenerator(schemaProvider));
         }
 
         [Inject]

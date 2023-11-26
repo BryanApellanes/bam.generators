@@ -46,8 +46,18 @@ namespace Bam.Net
             HandlebarsDirectories.Add(new HandlebarsDirectory(directoryInfo, Logger));
         }
 
-        public string Render(string templateName, object data)
+        public string Render(object? toRender)
         {
+            if(toRender == null)
+            {
+                throw new ArgumentNullException(nameof(toRender));
+            }
+
+            return Render(toRender.GetType().Name, toRender);
+        }
+
+        public string Render(string templateName, object? data)
+        {            
             MemoryStream ms = new MemoryStream();
             try
             {
@@ -61,19 +71,27 @@ namespace Bam.Net
             }
         }
         
-        public void Render(object toRender, Stream output)
+        public void Render(object? toRender, Stream output)
         {
             Args.ThrowIfNull(toRender, "toRender");
+
+#pragma warning disable CS8602 // Dereference of a possibly null reference.  Previous line will throw if toRender is null
             Render(toRender.GetType().Name, toRender, output);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
 
-        public void Render(string templateName, object renderModel, Stream output)
+        public void Render(string templateName, object? renderModel, Stream output)
         {
             Render(templateName, renderModel, output, false);
         }
         
-        public void Render(string templateName, object renderModel, Stream output, bool dispose = false)
+        public void Render(string templateName, object? renderModel, Stream output, bool dispose = false)
         {
+            if(renderModel == null)
+            {
+                return;
+            }
+
             HandlebarsDirectory handlebarsDirectory = GetHandlebarsDirectory(templateName);
             if (handlebarsDirectory != null)
             { 
@@ -87,7 +105,7 @@ namespace Bam.Net
             }
             else
             {
-                Args.Throw<InvalidOperationException>("Specified template {0} not found", templateName);
+                Args.Throw<InvalidOperationException>("Specified template '{0}' not found", templateName);
             }
         }
 

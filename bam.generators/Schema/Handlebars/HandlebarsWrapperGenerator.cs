@@ -1,4 +1,6 @@
-﻿using Bam.Net.Presentation.Handlebars;
+﻿using Bam.Data.Repositories;
+using Bam.Generators;
+using Bam.Net.Presentation.Handlebars;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,13 +9,9 @@ using System.Text;
 
 namespace Bam.Net.Data.Repositories.Handlebars
 {
-    public class HandlebarsWrapperGenerator : WrapperGenerator
+    public class HandlebarsWrapperGenerator : TemplatedWrapperGenerator
     {
-        public HandlebarsWrapperGenerator()
-        {
-        }
-
-        public HandlebarsWrapperGenerator(string wrapperNamespace, string daoNamespace) : base(wrapperNamespace, daoNamespace)
+        public HandlebarsWrapperGenerator(ISchemaProvider schemaProvider) : base(schemaProvider, new HandlebarsTemplateRenderer<WrapperModel>())
         {
             HandlebarsDirectory = new HandlebarsDirectory("./Templates");
             HandlebarsEmbeddedResources = new HandlebarsEmbeddedResources(this.GetType().Assembly);
@@ -28,7 +26,7 @@ namespace Bam.Net.Data.Repositories.Handlebars
             lock (_generateLock)
             {
                 RoslynCompiler compiler = new RoslynCompiler();
-                Assembly assembly = compiler.CompileAssembly($"{WrapperNamespace}.Wrapper.dll", new System.IO.DirectoryInfo(WriteSourceTo));
+                Assembly assembly = compiler.CompileDirectoriesToAssembly($"{WrapperNamespace}.Wrapper.dll", new System.IO.DirectoryInfo(WriteSourceTo));
                 GeneratedAssemblyInfo result = new GeneratedAssemblyInfo($"{WrapperNamespace}.Wrapper.dll", assembly);
                 result.Save();
                 return result;
@@ -41,8 +39,8 @@ namespace Bam.Net.Data.Repositories.Handlebars
             foreach (Type type in TypeSchema.Tables)
             {
                 HandlebarsWrapperModel model = new HandlebarsWrapperModel(type, TypeSchema, WrapperNamespace, DaoNamespace);
-                model.Renderer = new HandlebarsTemplateRenderer(HandlebarsEmbeddedResources, HandlebarsDirectory);
-                string fileName = "{0}Wrapper.cs"._Format(type.Name.TrimNonLetters());
+                model.TemplateRenderer = new HandlebarsTemplateRenderer(HandlebarsEmbeddedResources, HandlebarsDirectory);
+                string fileName = $"{type.Name.TrimNonLetters()}Wrapper.cs";
                 using (StreamWriter sw = new StreamWriter(Path.Combine(writeSourceDir, fileName)))
                 {
                     sw.Write(model.Render());

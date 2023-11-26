@@ -24,9 +24,9 @@ namespace Bam.Generators.Tests
         public void ShouldGenerateTypeSchema()
         {
             string testName = 32.RandomLetters();
-            SchemaGenerator schemaGenerator = Get<SchemaGenerator>();
+            SchemaProvider schemaGenerator = Get<SchemaProvider>();
             TypeSchema typeSchema = schemaGenerator.CreateTypeSchema(testName, typeof(TestPerson));
-            typeSchema.Name.ShouldEqual(testName);
+            typeSchema.Name.ShouldBe(testName);
             typeSchema.Tables.Count.ShouldBeEqualTo(3);
 
             Message.PrintLine(typeSchema.ToString(), ConsoleColor.DarkYellow);
@@ -37,11 +37,11 @@ namespace Bam.Generators.Tests
             serviceRegistry = serviceRegistry
                 .For<ITypeSchemaTempPathProvider>().Use<TypeSchemaTempPathProvider>()
                 .For<ITypeTableNameProvider>().Use<DaoSuffixTypeTableNameProvider>()
-                .For<SchemaGenerator>().Use<SchemaGenerator>();
+                .For<SchemaProvider>().Use<SchemaProvider>();
 
             return serviceRegistry
-                .For<SchemaGenerator>().Use(
-                    new SchemaGenerator(serviceRegistry.Get<ITypeTableNameProvider>(), serviceRegistry.Get<ITypeSchemaTempPathProvider>())
+                .For<SchemaProvider>().Use(
+                    new SchemaProvider(serviceRegistry.Get<ITypeTableNameProvider>(), serviceRegistry.Get<ITypeSchemaTempPathProvider>())
                 );
         }
     }

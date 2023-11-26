@@ -25,6 +25,15 @@
     <None Remove="Dao\Templates\QiClass.hbs" />
     <None Remove="Dao\Templates\QueryClass.hbs" />
     <None Remove="Dao\Templates\XrefProperty.hbs" />
+    <None Remove="Schema\Handlebars\Templates\ChildPrimaryKeyProperty.hbs" />
+    <None Remove="Schema\Handlebars\Templates\Dto.hbs" />
+    <None Remove="Schema\Handlebars\Templates\SchemaRepository.hbs" />
+    <None Remove="Schema\Handlebars\Templates\SchemaRepositoryAddType.hbs" />
+    <None Remove="Schema\Handlebars\Templates\SchemaRepositoryMethods.hbs" />
+    <None Remove="Schema\Handlebars\Templates\Wrapper.hbs" />
+    <None Remove="Schema\Handlebars\Templates\WrapperForeignKeyProperty.hbs" />
+    <None Remove="Schema\Handlebars\Templates\XrefLeftProperty.hbs" />
+    <None Remove="Schema\Handlebars\Templates\XrefRightProperty.hbs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -46,6 +55,15 @@
     <EmbeddedResource Include="Dao\Templates\QiClass.hbs" />
     <EmbeddedResource Include="Dao\Templates\QueryClass.hbs" />
     <EmbeddedResource Include="Dao\Templates\XrefProperty.hbs" />
+    <EmbeddedResource Include="Schema\Handlebars\Templates\ChildPrimaryKeyProperty.hbs" />
+    <EmbeddedResource Include="Schema\Handlebars\Templates\Dto.hbs" />
+    <EmbeddedResource Include="Schema\Handlebars\Templates\SchemaRepository.hbs" />
+    <EmbeddedResource Include="Schema\Handlebars\Templates\SchemaRepositoryAddType.hbs" />
+    <EmbeddedResource Include="Schema\Handlebars\Templates\SchemaRepositoryMethods.hbs" />
+    <EmbeddedResource Include="Schema\Handlebars\Templates\Wrapper.hbs" />
+    <EmbeddedResource Include="Schema\Handlebars\Templates\WrapperForeignKeyProperty.hbs" />
+    <EmbeddedResource Include="Schema\Handlebars\Templates\XrefLeftProperty.hbs" />
+    <EmbeddedResource Include="Schema\Handlebars\Templates\XrefRightProperty.hbs" />
   </ItemGroup>
 
   <ItemGroup>

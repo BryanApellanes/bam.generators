@@ -12,6 +12,7 @@ using Bam.Net;
 using Bam.Generators.Tests.TestClasses;
 using Bam.Net.Data.Schema;
 using Bam.Net.Data.Schema.Handlebars;
+using Bam.Net.Data.Repositories.Handlebars;
 
 namespace Bam.Generators.Tests
 {
@@ -26,9 +27,9 @@ namespace Bam.Generators.Tests
         {
             return serviceRegistry
                 .For<IDaoCodeWriter>().Use<HandlebarsCSharpDaoCodeWriter>()
-                .For<ISchemaGenerator>().Use<SchemaGenerator>()
+                .For<ISchemaProvider>().Use<SchemaProvider>()
                 .For<IDaoGenerator>().Use<DaoGenerator>()
-                .For<IWrapperGenerator>().Use<TemplatedWrapperGenerator>()
+                .For<IWrapperGenerator>().Use<HandlebarsWrapperGenerator>()
                 .For<IDaoRepository>().Use<DaoRepository>();
         }
 
