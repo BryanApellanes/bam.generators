@@ -33,14 +33,14 @@ namespace {{Namespace}}
 			this.SetChildren();
 		}
 
-		public {{Model.ClassName}}(Database db)
+		public {{Model.ClassName}}(IDatabase db)
 			: base(db)
 		{
 			this.SetKeyColumnName();
 			this.SetChildren();
 		}
 
-		public {{Model.ClassName}}(Database db, DataRow data)
+		public {{Model.ClassName}}(IDatabase db, DataRow data)
 			: base(db, data)
 		{
 			this.SetKeyColumnName();
@@ -110,7 +110,7 @@ namespace {{Namespace}}
 			else
 			{
 				var colFilter = new {{Model.ClassName}}Columns();
-				return (colFilter.KeyColumn == GetId());
+				return (colFilter.KeyColumn == GetDbId());
 			}
 		}
 
@@ -120,12 +120,12 @@ namespace {{Namespace}}
 		/// <param name="database">
 		/// The database to load from or null
 		/// </param>
-		public static {{Model.ClassName}}Collection LoadAll(Database database = null)
+		public static {{Model.ClassName}}Collection LoadAll(IDatabase database = null)
 		{
-			Database db = database ?? Db.For<{{Model.ClassName}}>();
-            SqlStringBuilder sql = db.GetSqlStringBuilder();
+			IDatabase db = database ?? Db.For<{{Model.ClassName}}>();
+            ISqlStringBuilder sql = db.GetSqlStringBuilder();
             sql.Select<{{Model.ClassName}}>();
-            var results = new {{Model.ClassName}}Collection(db, sql.GetDataTable(db))
+            var results = new {{Model.ClassName}}Collection(db, sql.ExecuteGetDataTable(db))
             {
                 Database = db
             };
@@ -136,7 +136,7 @@ namespace {{Namespace}}
         /// Process all records in batches of the specified size
         /// </summary>
         [Bam.Net.Exclude]
-        public static async Task BatchAll(int batchSize, Action<IEnumerable<{{Model.ClassName}}>> batchProcessor, Database database = null)
+        public static async Task BatchAll(int batchSize, Action<IEnumerable<{{Model.ClassName}}>> batchProcessor, IDatabase database = null)
 		{
 			await Task.Run(async ()=>
 			{
@@ -159,7 +159,7 @@ namespace {{Namespace}}
 		/// Process results of a query in batches of the specified size
 		/// </summary>
 		[Bam.Net.Exclude]
-		public static async Task BatchQuery(int batchSize, QueryFilter filter, Action<IEnumerable<{{Model.ClassName}}>> batchProcessor, Database database = null)
+		public static async Task BatchQuery(int batchSize, QueryFilter filter, Action<IEnumerable<{{Model.ClassName}}>> batchProcessor, IDatabase database = null)
 		{
 			await BatchQuery(batchSize, (c) => filter, batchProcessor, database);
 		}
@@ -168,7 +168,7 @@ namespace {{Namespace}}
 		/// Process results of a query in batches of the specified size
 		/// </summary>
 		[Bam.Net.Exclude]
-		public static async Task BatchQuery(int batchSize, WhereDelegate<{{Model.ClassName}}Columns> where, Action<IEnumerable<{{Model.ClassName}}>> batchProcessor, Database database = null)
+		public static async Task BatchQuery(int batchSize, WhereDelegate<{{Model.ClassName}}Columns> where, Action<IEnumerable<{{Model.ClassName}}>> batchProcessor, IDatabase database = null)
 		{
 			await Task.Run(async ()=>
 			{
@@ -191,7 +191,7 @@ namespace {{Namespace}}
 		/// Process results of a query in batches of the specified size
 		/// </summary>
 		[Bam.Net.Exclude]
-		public static async Task BatchQuery<ColType>(int batchSize, QueryFilter filter, Action<IEnumerable<{{Model.ClassName}}>> batchProcessor, Bam.Net.Data.OrderBy<{{Model.ClassName}}Columns> orderBy, Database database = null)
+		public static async Task BatchQuery<ColType>(int batchSize, QueryFilter filter, Action<IEnumerable<{{Model.ClassName}}>> batchProcessor, Bam.Net.Data.OrderBy<{{Model.ClassName}}Columns> orderBy, IDatabase database = null)
 		{
 			await BatchQuery<ColType>(batchSize, (c) => filter, batchProcessor, orderBy, database);
 		}
@@ -200,7 +200,7 @@ namespace {{Namespace}}
 		/// Process results of a query in batches of the specified size
 		/// </summary>
 		[Bam.Net.Exclude]
-		public static async Task BatchQuery<ColType>(int batchSize, WhereDelegate<{{Model.ClassName}}Columns> where, Action<IEnumerable<{{Model.ClassName}}>> batchProcessor, Bam.Net.Data.OrderBy<{{Model.ClassName}}Columns> orderBy, Database database = null)
+		public static async Task BatchQuery<ColType>(int batchSize, WhereDelegate<{{Model.ClassName}}Columns> where, Action<IEnumerable<{{Model.ClassName}}>> batchProcessor, Bam.Net.Data.OrderBy<{{Model.ClassName}}Columns> orderBy, IDatabase database = null)
 		{
 			await Task.Run(async ()=>
 			{
@@ -218,72 +218,72 @@ namespace {{Namespace}}
 			});
 		}
 
-		public static {{Model.ClassName}} GetById(uint? id, Database database = null)
+		public static {{Model.ClassName}} GetById(uint? id, IDatabase database = null)
 		{
 			Args.ThrowIfNull(id, "id");
 			Args.ThrowIf(!id.HasValue, "specified {{Model.ClassName}}.Id was null");
 			return GetById(id.Value, database);
 		}
 
-		public static {{Model.ClassName}} GetById(uint id, Database database = null)
+		public static {{Model.ClassName}} GetById(uint id, IDatabase database = null)
 		{
 			return GetById((ulong)id, database);
 		}
 
-		public static {{Model.ClassName}} GetById(int? id, Database database = null)
+		public static {{Model.ClassName}} GetById(int? id, IDatabase database = null)
 		{
 			Args.ThrowIfNull(id, "id");
 			Args.ThrowIf(!id.HasValue, "specified {{Model.ClassName}}.Id was null");
 			return GetById(id.Value, database);
 		}                                    
                                     
-		public static {{Model.ClassName}} GetById(int id, Database database = null)
+		public static {{Model.ClassName}} GetById(int id, IDatabase database = null)
 		{
 			return GetById((long)id, database);
 		}
 
-		public static {{Model.ClassName}} GetById(long? id, Database database = null)
+		public static {{Model.ClassName}} GetById(long? id, IDatabase database = null)
 		{
 			Args.ThrowIfNull(id, "id");
 			Args.ThrowIf(!id.HasValue, "specified {{Model.ClassName}}.Id was null");
 			return GetById(id.Value, database);
 		}
                                     
-		public static {{Model.ClassName}} GetById(long id, Database database = null)
+		public static {{Model.ClassName}} GetById(long id, IDatabase database = null)
 		{
 			return OneWhere(c => c.KeyColumn == id, database);
 		}
 
-		public static {{Model.ClassName}} GetById(ulong? id, Database database = null)
+		public static {{Model.ClassName}} GetById(ulong? id, IDatabase database = null)
 		{
 			Args.ThrowIfNull(id, "id");
 			Args.ThrowIf(!id.HasValue, "specified {{Model.ClassName}}.Id was null");
 			return GetById(id.Value, database);
 		}
                                     
-		public static {{Model.ClassName}} GetById(ulong id, Database database = null)
+		public static {{Model.ClassName}} GetById(ulong id, IDatabase database = null)
 		{
 			return OneWhere(c => c.KeyColumn == id, database);
 		}
 
-		public static {{Model.ClassName}} GetByUuid(string uuid, Database database = null)
+		public static {{Model.ClassName}} GetByUuid(string uuid, IDatabase database = null)
 		{
 			return OneWhere(c => Bam.Net.Data.Query.Where("Uuid") == uuid, database);
 		}
 
-		public static {{Model.ClassName}} GetByCuid(string cuid, Database database = null)
+		public static {{Model.ClassName}} GetByCuid(string cuid, IDatabase database = null)
 		{
 			return OneWhere(c => Bam.Net.Data.Query.Where("Cuid") == cuid, database);
 		}
 
 		[Bam.Net.Exclude]
-		public static {{Model.ClassName}}Collection Query(QueryFilter filter, Database database = null)
+		public static {{Model.ClassName}}Collection Query(QueryFilter filter, IDatabase database = null)
 		{
 			return Where(filter, database);
 		}
 
 		[Bam.Net.Exclude]
-		public static {{Model.ClassName}}Collection Where(QueryFilter filter, Database database = null)
+		public static {{Model.ClassName}}Collection Where(QueryFilter filter, IDatabase database = null)
 		{
 			WhereDelegate<{{Model.ClassName}}Columns> whereDelegate = (c) => filter;
 			return Where(whereDelegate, database);
@@ -298,7 +298,7 @@ namespace {{Namespace}}
 		/// </param>
 		/// <param name="db"></param>
 		[Bam.Net.Exclude]
-		public static {{Model.ClassName}}Collection Where(Func<{{Model.ClassName}}Columns, QueryFilter<{{Model.ClassName}}Columns>> where, OrderBy<{{Model.ClassName}}Columns> orderBy = null, Database database = null)
+		public static {{Model.ClassName}}Collection Where(Func<{{Model.ClassName}}Columns, QueryFilter<{{Model.ClassName}}Columns>> where, OrderBy<{{Model.ClassName}}Columns> orderBy = null, IDatabase database = null)
 		{
 			database = database ?? Db.For<{{Model.ClassName}}>();
 			return new {{Model.ClassName}}Collection(database.GetQuery<{{Model.ClassName}}Columns, {{Model.ClassName}}>(where, orderBy), true);
@@ -313,7 +313,7 @@ namespace {{Namespace}}
 		/// </param>
 		/// <param name="db"></param>
 		[Bam.Net.Exclude]
-		public static {{Model.ClassName}}Collection Where(WhereDelegate<{{Model.ClassName}}Columns> where, Database database = null)
+		public static {{Model.ClassName}}Collection Where(WhereDelegate<{{Model.ClassName}}Columns> where, IDatabase database = null)
 		{
 			database = database ?? Db.For<{{Model.ClassName}}>();
 			var results = new {{Model.ClassName}}Collection(database, database.GetQuery<{{Model.ClassName}}Columns, {{Model.ClassName}}>(where), true);
@@ -332,7 +332,7 @@ namespace {{Namespace}}
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Net.Exclude]
-		public static {{Model.ClassName}}Collection Where(WhereDelegate<{{Model.ClassName}}Columns> where, OrderBy<{{Model.ClassName}}Columns> orderBy = null, Database database = null)
+		public static {{Model.ClassName}}Collection Where(WhereDelegate<{{Model.ClassName}}Columns> where, OrderBy<{{Model.ClassName}}Columns> orderBy = null, IDatabase database = null)
 		{
 			database = database ?? Db.For<{{Model.ClassName}}>();
 			var results = new {{Model.ClassName}}Collection(database, database.GetQuery<{{Model.ClassName}}Columns, {{Model.ClassName}}>(where, orderBy), true);
@@ -347,7 +347,7 @@ namespace {{Namespace}}
 		/// </summary>
 		/// <param name="where"></param>
 		/// <param name="database"></param>
-		public static {{Model.ClassName}}Collection Where(QiQuery where, Database database = null)
+		public static {{Model.ClassName}}Collection Where(QiQuery where, IDatabase database = null)
 		{
 			var results = new {{Model.ClassName}}Collection(database, Select<{{Model.ClassName}}Columns>.From<{{Model.ClassName}}>().Where(where, database));
 			return results;
@@ -359,7 +359,7 @@ namespace {{Namespace}}
 		/// of the specified columns.
 		/// </summary>
 		[Bam.Net.Exclude]
-		public static {{Model.ClassName}} GetOneWhere(QueryFilter where, Database database = null)
+		public static {{Model.ClassName}} GetOneWhere(QueryFilter where, IDatabase database = null)
 		{
 			var result = OneWhere(where, database);
 			if(result == null)
@@ -378,7 +378,7 @@ namespace {{Namespace}}
 		/// <param name="where"></param>
 		/// <param name="database"></param>
 		[Bam.Net.Exclude]
-		public static {{Model.ClassName}} OneWhere(QueryFilter where, Database database = null)
+		public static {{Model.ClassName}} OneWhere(QueryFilter where, IDatabase database = null)
 		{
 			WhereDelegate<{{Model.ClassName}}Columns> whereDelegate = (c) => where;
 			var result = Top(1, whereDelegate, database);
@@ -391,7 +391,7 @@ namespace {{Namespace}}
 		/// of the specified columns.
 		/// </summary>
 		[Bam.Net.Exclude]
-		public static void SetOneWhere(WhereDelegate<{{Model.ClassName}}Columns> where, Database database = null)
+		public static void SetOneWhere(WhereDelegate<{{Model.ClassName}}Columns> where, IDatabase database = null)
 		{
 			SetOneWhere(where, out {{Model.ClassName}} ignore, database);
 		}
@@ -402,7 +402,7 @@ namespace {{Namespace}}
 		/// of the specified columns.
 		/// </summary>
 		[Bam.Net.Exclude]
-		public static void SetOneWhere(WhereDelegate<{{Model.ClassName}}Columns> where, out {{Model.ClassName}} result, Database database = null)
+		public static void SetOneWhere(WhereDelegate<{{Model.ClassName}}Columns> where, out {{Model.ClassName}} result, IDatabase database = null)
 		{
 			result = GetOneWhere(where, database);
 		}
@@ -415,7 +415,7 @@ namespace {{Namespace}}
 		/// <param name="where"></param>
 		/// <param name="database"></param>
 		[Bam.Net.Exclude]
-		public static {{Model.ClassName}} GetOneWhere(WhereDelegate<{{Model.ClassName}}Columns> where, Database database = null)
+		public static {{Model.ClassName}} GetOneWhere(WhereDelegate<{{Model.ClassName}}Columns> where, IDatabase database = null)
 		{
 			var result = OneWhere(where, database);
 			if(result == null)
@@ -440,7 +440,7 @@ namespace {{Namespace}}
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Net.Exclude]
-		public static {{Model.ClassName}} OneWhere(WhereDelegate<{{Model.ClassName}}Columns> where, Database database = null)
+		public static {{Model.ClassName}} OneWhere(WhereDelegate<{{Model.ClassName}}Columns> where, IDatabase database = null)
 		{
 			var result = Top(1, where, database);
 			return OneOrThrow(result);
@@ -454,7 +454,7 @@ namespace {{Namespace}}
 		/// </summary>
 		/// <param name="where"></param>
 		/// <param name="database"></param>
-		public static {{Model.ClassName}} OneWhere(QiQuery where, Database database = null)
+		public static {{Model.ClassName}} OneWhere(QiQuery where, IDatabase database = null)
 		{
 			var results = Top(1, where, database);
 			return OneOrThrow(results);
@@ -470,7 +470,7 @@ namespace {{Namespace}}
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Net.Exclude]
-		public static {{Model.ClassName}} FirstOneWhere(WhereDelegate<{{Model.ClassName}}Columns> where, Database database = null)
+		public static {{Model.ClassName}} FirstOneWhere(WhereDelegate<{{Model.ClassName}}Columns> where, IDatabase database = null)
 		{
 			var results = Top(1, where, database);
 			if(results.Count > 0)
@@ -493,7 +493,7 @@ namespace {{Namespace}}
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Net.Exclude]
-		public static {{Model.ClassName}} FirstOneWhere(WhereDelegate<{{Model.ClassName}}Columns> where, OrderBy<{{Model.ClassName}}Columns> orderBy, Database database = null)
+		public static {{Model.ClassName}} FirstOneWhere(WhereDelegate<{{Model.ClassName}}Columns> where, OrderBy<{{Model.ClassName}}Columns> orderBy, IDatabase database = null)
 		{
 			var results = Top(1, where, orderBy, database);
 			if(results.Count > 0)
@@ -515,7 +515,7 @@ namespace {{Namespace}}
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Net.Exclude]
-		public static {{Model.ClassName}} FirstOneWhere(QueryFilter where, OrderBy<{{Model.ClassName}}Columns> orderBy = null, Database database = null)
+		public static {{Model.ClassName}} FirstOneWhere(QueryFilter where, OrderBy<{{Model.ClassName}}Columns> orderBy = null, IDatabase database = null)
 		{
 			WhereDelegate<{{Model.ClassName}}Columns> whereDelegate = (c) => where;
 			var results = Top(1, whereDelegate, orderBy, database);
@@ -544,7 +544,7 @@ namespace {{Namespace}}
 		/// </param>
 		/// <param name="database"></param>
 		[Bam.Net.Exclude]
-		public static {{Model.ClassName}}Collection Top(int count, WhereDelegate<{{Model.ClassName}}Columns> where, Database database = null)
+		public static {{Model.ClassName}}Collection Top(int count, WhereDelegate<{{Model.ClassName}}Columns> where, IDatabase database = null)
 		{
 			return Top(count, where, null, database);
 		}
@@ -569,13 +569,13 @@ namespace {{Namespace}}
 		/// Which database to query or null to use the default
 		/// </param>
 		[Bam.Net.Exclude]
-		public static {{Model.ClassName}}Collection Top(int count, WhereDelegate<{{Model.ClassName}}Columns> where, OrderBy<{{Model.ClassName}}Columns> orderBy, Database database = null)
+		public static {{Model.ClassName}}Collection Top(int count, WhereDelegate<{{Model.ClassName}}Columns> where, OrderBy<{{Model.ClassName}}Columns> orderBy, IDatabase database = null)
 		{
 			{{Model.ClassName}}Columns c = new {{Model.ClassName}}Columns();
 			IQueryFilter filter = where(c);
 
-			Database db = database ?? Db.For<{{Model.ClassName}}>();
-			QuerySet query = GetQuerySet(db);
+			IDatabase db = database ?? Db.For<{{Model.ClassName}}>();
+			IQuerySet query = GetQuerySet(db);
 			query.Top<{{Model.ClassName}}>(count);
 			query.Where(filter);
 
@@ -591,7 +591,7 @@ namespace {{Namespace}}
 		}
 
 		[Bam.Net.Exclude]
-		public static {{Model.ClassName}}Collection Top(int count, QueryFilter where, Database database)
+		public static {{Model.ClassName}}Collection Top(int count, QueryFilter where, IDatabase database)
 		{
 			return Top(count, where, null, database);
 		}
@@ -615,10 +615,10 @@ namespace {{Namespace}}
 		/// Which database to query or null to use the default
 		/// </param>
 		[Bam.Net.Exclude]
-		public static {{Model.ClassName}}Collection Top(int count, QueryFilter where, OrderBy<{{Model.ClassName}}Columns> orderBy = null, Database database = null)
+		public static {{Model.ClassName}}Collection Top(int count, QueryFilter where, OrderBy<{{Model.ClassName}}Columns> orderBy = null, IDatabase database = null)
 		{
-			Database db = database ?? Db.For<{{Model.ClassName}}>();
-			QuerySet query = GetQuerySet(db);
+			IDatabase db = database ?? Db.For<{{Model.ClassName}}>();
+			IQuerySet query = GetQuerySet(db);
 			query.Top<{{Model.ClassName}}>(count);
 			query.Where(where);
 
@@ -634,10 +634,10 @@ namespace {{Namespace}}
 		}
 
 		[Bam.Net.Exclude]
-		public static {{Model.ClassName}}Collection Top(int count, QueryFilter where, string orderBy = null, SortOrder sortOrder = SortOrder.Ascending, Database database = null)
+		public static {{Model.ClassName}}Collection Top(int count, QueryFilter where, string orderBy = null, SortOrder sortOrder = SortOrder.Ascending, IDatabase database = null)
 		{
-			Database db = database ?? Db.For<{{Model.ClassName}}>();
-			QuerySet query = GetQuerySet(db);
+			IDatabase db = database ?? Db.For<{{Model.ClassName}}>();
+			IQuerySet query = GetQuerySet(db);
 			query.Top<{{Model.ClassName}}>(count);
 			query.Where(where);
 
@@ -668,10 +668,10 @@ namespace {{Namespace}}
 		/// <param name="database">
 		/// Which database to query or null to use the default
 		/// </param>
-		public static {{Model.ClassName}}Collection Top(int count, QiQuery where, Database database = null)
+		public static {{Model.ClassName}}Collection Top(int count, QiQuery where, IDatabase database = null)
 		{
-			Database db = database ?? Db.For<{{Model.ClassName}}>();
-			QuerySet query = GetQuerySet(db);
+			IDatabase db = database ?? Db.For<{{Model.ClassName}}>();
+			IQuerySet query = GetQuerySet(db);
 			query.Top<{{Model.ClassName}}>(count);
 			query.Where(where);
 			query.Execute(db);
@@ -686,10 +686,10 @@ namespace {{Namespace}}
 		/// <param name="database">
 		/// Which database to query or null to use the default
 		/// </param>
-		public static long Count(Database database = null)
+		public static long Count(IDatabase database = null)
         {
-			Database db = database ?? Db.For<{{Model.ClassName}}>();
-            QuerySet query = GetQuerySet(db);
+			IDatabase db = database ?? Db.For<{{Model.ClassName}}>();
+            IQuerySet query = GetQuerySet(db);
             query.Count<{{Model.ClassName}}>();
             query.Execute(db);
             return (long)query.Results[0].DataRow[0];
@@ -706,32 +706,32 @@ namespace {{Namespace}}
 		/// Which database to query or null to use the default
 		/// </param>
 		[Bam.Net.Exclude]
-		public static long Count(WhereDelegate<{{Model.ClassName}}Columns> where, Database database = null)
+		public static long Count(WhereDelegate<{{Model.ClassName}}Columns> where, IDatabase database = null)
 		{
 			{{Model.ClassName}}Columns c = new {{Model.ClassName}}Columns();
 			IQueryFilter filter = where(c) ;
 
-			Database db = database ?? Db.For<{{Model.ClassName}}>();
-			QuerySet query = GetQuerySet(db);
+			IDatabase db = database ?? Db.For<{{Model.ClassName}}>();
+			IQuerySet query = GetQuerySet(db);
 			query.Count<{{Model.ClassName}}>();
 			query.Where(filter);
 			query.Execute(db);
 			return query.Results.As<CountResult>(0).Value;
 		}
 
-		public static long Count(QiQuery where, Database database = null)
+		public static long Count(QiQuery where, IDatabase database = null)
 		{
-		    Database db = database ?? Db.For<{{Model.ClassName}}>();
-			QuerySet query = GetQuerySet(db);
+		    IDatabase db = database ?? Db.For<{{Model.ClassName}}>();
+			IQuerySet query = GetQuerySet(db);
 			query.Count<{{Model.ClassName}}>();
 			query.Where(where);
 			query.Execute(db);
 			return query.Results.As<CountResult>(0).Value;
 		}
 
-		private static {{Model.ClassName}} CreateFromFilter(IQueryFilter filter, Database database = null)
+		private static {{Model.ClassName}} CreateFromFilter(IQueryFilter filter, IDatabase database = null)
 		{
-			Database db = database ?? Db.For<{{Model.ClassName}}>();
+			IDatabase db = database ?? Db.For<{{Model.ClassName}}>();
 			var dao = new {{Model.ClassName}}();
 			filter.Parameters.Each(p=>
 			{

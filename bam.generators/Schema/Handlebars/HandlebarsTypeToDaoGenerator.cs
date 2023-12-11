@@ -13,6 +13,7 @@ using Newtonsoft.Json;
 
 namespace Bam.Net.Data.Repositories.Handlebars
 {
+    // TODO: review if this can be deleted as redundant
     public class HandlebarsTypeToDaoGenerator: TypeToDaoGenerator
     {
         public HandlebarsTypeToDaoGenerator(ISchemaProvider schemaProvider, IDaoGenerator daoGenerator, ILogger? logger = null) : base(schemaProvider, daoGenerator, null, logger)
@@ -21,10 +22,7 @@ namespace Bam.Net.Data.Repositories.Handlebars
             SetWrapperGenerator(new HandlebarsWrapperGenerator(schemaProvider));
         }
 
-        [Inject]
-        public IReferenceAssemblyResolver ReferenceAssemblyResolver { get; set; }
-
-        protected override bool GenerateDaoAssembly(ITypeSchema typeSchema, out CompilationException compilationEx)
+        protected override bool GenerateDaoAssembly(ITypeSchema typeSchema, out Exception compilationEx)
         {
             compilationEx = null;
             try
@@ -35,9 +33,10 @@ namespace Bam.Net.Data.Repositories.Handlebars
                 string writeSourceTo = TypeSchemaTempPathProvider(schema, typeSchema);
                 TryDeleteDaoTemp(writeSourceTo);
                 GenerateSource(writeSourceTo);
-                byte[] assembly = Compile(assemblyName, writeSourceTo);
+                byte[] assemblyBytes = Compile(assemblyName, writeSourceTo);
+                Assembly assembly = Assembly.Load(assemblyBytes);
                 GeneratedDaoAssemblyInfo info =
-                    new GeneratedDaoAssemblyInfo(schema.Name, Assembly.Load(assembly), assembly)
+                    new GeneratedDaoAssemblyInfo(schema.Name, assembly, assemblyBytes)
                     {
                         TypeSchema = typeSchema,
                         SchemaDefinition = schema
@@ -69,7 +68,7 @@ namespace Bam.Net.Data.Repositories.Handlebars
 
         protected override HashSet<string> GetDefaultReferenceAssemblies()
         {
-            IReferenceAssemblyResolver referenceAssemblyResolver = ReferenceAssemblyResolver ?? CoreServices.AssemblyManagement.ReferenceAssemblyResolver.Current;
+            /*IReferenceAssemblyResolver referenceAssemblyResolver = ReferenceAssemblyResolver ?? CoreServices.AssemblyManagement.ReferenceAssemblyResolver.Current;*/
             
             HashSet<string> result = new HashSet<string>()
             {
@@ -77,20 +76,20 @@ namespace Bam.Net.Data.Repositories.Handlebars
                 typeof(MarshalByValueComponent).Assembly.GetFilePath(),
                 typeof(Enumerable).Assembly.GetFilePath(),
                 typeof(Object).Assembly.GetFilePath(),
-                referenceAssemblyResolver.ResolveReferenceAssemblyPath("System.Collections.dll"),
-                referenceAssemblyResolver.ResolveReferenceAssemblyPath("netstandard.dll"),
+                //referenceAssemblyResolver.ResolveReferenceAssemblyPath("System.Collections.dll"),
+                //referenceAssemblyResolver.ResolveReferenceAssemblyPath("netstandard.dll"),
                 typeof(Attribute).Assembly.GetFilePath(),
-                referenceAssemblyResolver.ResolveSystemRuntimePath()
+                //referenceAssemblyResolver.ResolveSystemRuntimePath()
             };
             return result;
         }
-
+/*
         private byte[] Compile(string assemblyNameToCreate, string sourcePath)
         {
             HashSet<string> references = GetReferenceAssemblies();
             RoslynCompiler compiler = new RoslynCompiler();
             references.Each(path => compiler.AddAssemblyReference(path));
             return compiler.Compile(assemblyNameToCreate, new DirectoryInfo(sourcePath));
-        }
+        }*/
     }
 }

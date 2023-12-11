@@ -14,6 +14,6 @@ namespace Bam.Generators.Tests.TestClasses
 
         public ulong TestPersonId { get; set; }
 
-        public TestPerson TestPerson { get; set; }
+        public virtual TestPerson TestPerson { get; set; }
     }
 }

@@ -6,13 +6,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Bam.Net.CoreServices;
-using Bam.Net.CommandLine;
 using Bam.Net.Data.Repositories;
 using Bam.Net;
 using Bam.Generators.Tests.TestClasses;
 using Bam.Net.Data.Schema;
 using Bam.Net.Data.Schema.Handlebars;
 using Bam.Net.Data.Repositories.Handlebars;
+using Bam.Net.Data.SQLite;
+using Bam.Console;
+using Bam.Data.Schema;
 
 namespace Bam.Generators.Tests
 {
@@ -34,6 +36,12 @@ namespace Bam.Generators.Tests
         }
 
         [UnitTest]
+        public void RuntimeSettingsTempTest()
+        {
+            Message.PrintLine(RuntimeSettings.GetReferenceAssembliesDirectory());
+        }
+
+        [UnitTest]
         public void BeOfTypeDaoRepsitory()
         {
             IDaoRepository repo = this.Get<IDaoRepository>();
@@ -46,8 +54,10 @@ namespace Bam.Generators.Tests
             string testName = 32.RandomLetters();
             IDaoRepository repo = this.Get<IDaoRepository>();
             repo.AddType(typeof(TestPerson));
+            repo.LastException.ShouldBeNull(repo.LastException?.Message);
 
             TestPerson testPerson = repo.Create(new TestPerson { Name = testName });
+            repo.LastException.ShouldBeNull(repo.LastException?.Message);
             testPerson.Name.ShouldBeEqualTo(testName);
             Expect.IsGreaterThan(testPerson.Id, 0, $"Id should have been greater than 0 but was {testPerson.Id}");
         }
@@ -55,25 +65,110 @@ namespace Bam.Generators.Tests
         [UnitTest]
         public void RetrieveEntry()
         {
-            throw new NotImplementedException("This test is not complete");
+            string testName = 32.RandomLetters();
+            IDaoRepository repo = this.Get<IDaoRepository>();
+            repo.AddType(typeof(TestPerson));
+            repo.LastException.ShouldBeNull(repo.LastException?.Message);
+
+            TestPerson testPerson = repo.Create(new TestPerson { Name= testName });
+            repo.LastException.ShouldBeNull(repo.LastException?.Message);
+
+            TestPerson retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id);
+            retrievedPerson.ShouldNotBeNull($"Unable to retrieve, result was null");
+            retrievedPerson.Name.ShouldEqual(testName);
         }
 
         [UnitTest]
         public void UpdateEntry()
         {
-            throw new NotImplementedException("This test is not complete");
+            string testName = 32.RandomLetters();
+            string updatedName = 16.RandomLetters();
+
+            IDaoRepository repo = this.Get<IDaoRepository>();
+            repo.AddType(typeof(TestPerson));
+            repo.LastException.ShouldBeNull(repo.LastException?.Message);
+
+            TestPerson testPerson = repo.Create(new TestPerson { Name = testName });
+            repo.LastException.ShouldBeNull(repo.LastException?.Message);
+            testPerson.Id.ShouldBeGreaterThan(0);
+            testPerson.Name.ShouldEqual(testName);
+
+            TestPerson retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id);
+            retrievedPerson.Id.ShouldEqual(testPerson.Id);
+            retrievedPerson.Name = updatedName;
+            
+            TestPerson updatedPerson = repo.Update(retrievedPerson);
+            updatedPerson.Id.ShouldEqual(testPerson.Id);
+            updatedPerson.Name.ShouldEqual(updatedName);            
         }
 
         [UnitTest]
         public void DeleteEntry()
         {
-            throw new NotImplementedException("This test is not complete");
+            string testName = 32.RandomLetters();
+
+            IDaoRepository repo = this.Get<IDaoRepository>();
+            repo.AddType(typeof(TestPerson));
+            repo.LastException.ShouldBeNull(repo.LastException?.Message);
+
+            TestPerson testPerson = repo.Create(new TestPerson { Name = testName });
+            repo.LastException.ShouldBeNull(repo.LastException?.Message);
+            testPerson.Id.ShouldBeGreaterThan(0);
+            testPerson.Name.ShouldEqual(testName);
+
+            TestPerson retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id);
+            retrievedPerson.Id.ShouldEqual(testPerson.Id);
+
+            Expect.IsTrue(repo.Delete(retrievedPerson), "failed to delete test data");
+
+            TestPerson shouldBeNull = repo.Retrieve<TestPerson>(testPerson.Id);
+            shouldBeNull.ShouldBeNull($"Expected to retrieve null but got data: {shouldBeNull?.ToJson()}");
         }
 
         [UnitTest]
-        public void DeleteMe()
+        public void SaveChildren()
         {
-            Message.PrintLine("This should be green", ConsoleColor.Green);
+            string testName = 32.RandomLetters();
+
+            IDaoRepository repo = this.Get<IDaoRepository>();
+            repo.AddType(typeof(TestPerson));
+            repo.LastException.ShouldBeNull(repo.LastException?.Message);
+
+            TestPerson testPerson = new TestPerson { Name = testName };
+            TestCar testCar = new TestCar
+            {
+                Make = 8.RandomLetters(),
+                Model = 8.RandomLetters()
+            };
+            testPerson.TestCars.Add(testCar);
+
+            testPerson = repo.Create(testPerson);
+            testPerson.Id.ShouldBeGreaterThan(0);
+
+            TestPerson retrieved = repo.Retrieve<TestPerson>(testPerson.Id);
+            retrieved.Id.ShouldEqual(testPerson.Id);
+            retrieved.TestCars.Count.ShouldEqual(1);
+        }
+
+        [UnitTest]
+        public void SaveXrefs()
+        {
+            string testPersonName = 32.RandomLetters();
+            string testAnimalName = 16.RandomLetters();
+
+            IDaoRepository repo = this.Get<IDaoRepository>();
+            repo.AddType(typeof(TestPerson));
+            repo.LastException.ShouldBeNull(repo.LastException?.Message);
+
+            TestPerson testPerson = new TestPerson { Name = testPersonName };
+            testPerson.Pets.Add(new TestAnimal { Name = testAnimalName });
+
+            testPerson = repo.Create(testPerson);
+            testPerson.Id.ShouldBeGreaterThan(0);
+
+            TestPerson retrieved = repo.Retrieve<TestPerson>(testPerson.Id);
+            retrieved.Pets.Count.ShouldEqual(1);
+            retrieved.Pets[0].Id.ShouldBeGreaterThan(0);
         }
     }
 }

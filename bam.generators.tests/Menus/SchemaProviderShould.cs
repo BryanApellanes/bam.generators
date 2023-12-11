@@ -1,7 +1,7 @@
-﻿using Bam.Data.Schema;
+﻿using Bam.Console;
+using Bam.Data.Schema;
 using Bam.Generators.Tests.TestClasses;
 using Bam.Net;
-using Bam.Net.CommandLine;
 using Bam.Net.CoreServices;
 using Bam.Net.Data.Repositories;
 using Bam.Testing;
@@ -14,9 +14,9 @@ using System.Threading.Tasks;
 namespace Bam.Generators.Tests
 {
     [UnitTestMenu("SchemaGenerator Should", Selector = "sgs")]
-    public class SchemaGeneratorShould : UnitTestMenuContainer
+    public class SchemaProviderShould : UnitTestMenuContainer
     {
-        public SchemaGeneratorShould(ServiceRegistry serviceRegistry) : base(serviceRegistry)
+        public SchemaProviderShould(ServiceRegistry serviceRegistry) : base(serviceRegistry)
         {
         }
 

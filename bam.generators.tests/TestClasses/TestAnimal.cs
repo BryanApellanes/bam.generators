@@ -10,8 +10,9 @@ namespace Bam.Generators.Tests.TestClasses
     {
         public TestAnimal() { }
 
+        public ulong Id { get; set; }
         public string Name { get; set; }
 
-        public List<TestPerson> Owners { get; set; }
+        public virtual List<TestPerson> Owners { get; set; }
     }
 }

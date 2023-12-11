@@ -8,7 +8,11 @@ namespace Bam.Generators.Tests.TestClasses
 {
     public class TestPerson
     {
-        public TestPerson() { }
+        public TestPerson() 
+        {
+            this.TestCars = new List<TestCar>();
+            this.Pets = new List<TestAnimal>();
+        }
 
         public string Name { get; set; }
 
@@ -23,8 +27,8 @@ namespace Bam.Generators.Tests.TestClasses
         public byte[] ByteArrayProperty { get; set; }
         public DateTime? DateTimeProperty { get; set; }
 
-        public List<TestAnimal> Pets { get; set; }
+        public virtual List<TestAnimal> Pets { get; set; }
 
-        public List<TestCar> TestCars { get; set; }
+        public virtual List<TestCar> TestCars { get; set; }
     }
 }

@@ -1,12 +1,12 @@
 {{!-- context is ReferencingForeignKeyModel --}}
-	[Bam.Net.Exclude]	
+	[Bam.Net.Exclude]
 	public {{Model.ReferencingClass}}Collection {{PropertyName}}
 	{
 		get
 		{
 			if (this.IsNew)
 			{
-				throw new InvalidOperationException("The current instance of type({0}) hasn't been saved and will have no child collections, call Save() or Save(Database) first."._Format(this.GetType().Name));
+				throw new InvalidOperationException($"The current instance of type({this.GetType().Name}) hasn't been saved and will have no child collections, call Save() or Save(Database) first.");
 			}
 
 			if(!this.ChildCollections.ContainsKey("{{Model.TableName}}_{{Model.Name}}"))
@@ -22,4 +22,3 @@
 			return c;
 		}
 	}
-	

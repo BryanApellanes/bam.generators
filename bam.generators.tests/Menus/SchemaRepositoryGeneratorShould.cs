@@ -1,6 +1,6 @@
 ﻿using Amazon.Runtime.Internal.Util;
+using Bam.Console;
 using Bam.Data.Schema;
-using Bam.Net.CommandLine;
 using Bam.Net.CoreServices;
 using Bam.Net.Data.Repositories;
 using Bam.Services;
@@ -20,16 +20,18 @@ namespace Bam.Generators.Tests
         {
         }
 
-        [UnitTest]
+/*        [UnitTest]
         public void ShouldGenerateSchemaRepository()
         {
-
-        }
+            throw new NotImplementedException("this test is incomplete");
+        }*/
 
         public override ServiceRegistry Configure(ServiceRegistry serviceRegistry)
         {
             return serviceRegistry
-                .For<ILogger>().Use<ConsoleLogger>();
+                .For<ILogger>().Use<ConsoleLogger>()
+                
+                .For<ISchemaRepositoryGeneratorSettings>().Use<SchemaRepositoryGeneratorSettings>();
         }
     }
 }
