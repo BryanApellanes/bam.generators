@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using Bam.Net;
 using HandlebarsDotNet;
 
-namespace Bam.Net.Presentation.Handlebars
+namespace Bam.Generators
 {
     public class HandlebarsEmbeddedResources : IHandlebarsEmbeddedResources
     {

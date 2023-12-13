@@ -3,9 +3,10 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using Bam.Net;
 using Newtonsoft.Json.Schema;
 
-namespace Bam.Net.Presentation.Handlebars
+namespace Bam.Generators
 {
     public class HandlebarsTemplateSet
     {
@@ -32,7 +33,7 @@ namespace Bam.Net.Presentation.Handlebars
             HandlebarsEmbeddedResources = new HandlebarsEmbeddedResources(embeddedResourceContainer);
             _renderer = new HandlebarsTemplateRenderer(HandlebarsEmbeddedResources, HandlebarsDirectories.ToArray());
         }
-        
+
         public HashSet<HandlebarsDirectory> HandlebarsDirectories { get; set; }
         public HandlebarsEmbeddedResources HandlebarsEmbeddedResources { get; set; }
 

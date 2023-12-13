@@ -1,11 +1,12 @@
-﻿using System;
+﻿using Bam.Net.CoreServices.ProtoBuf;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Bam.Net.CoreServices.ProtoBuf
+namespace Bam.Generators
 {
     /// <summary>
     /// A ProtocoloBufferAssemblyGenerator that will
@@ -14,11 +15,11 @@ namespace Bam.Net.CoreServices.ProtoBuf
     /// </summary>
     public class DaoProtocolBuffersAssemblyGenerator : ProtocolBuffersAssemblyGenerator
     {
-        public DaoProtocolBuffersAssemblyGenerator() 
+        public DaoProtocolBuffersAssemblyGenerator()
             : base(new DaoProtoFileGenerator(new InMemoryPropertyNumberer()))
         { }
 
-        public DaoProtocolBuffersAssemblyGenerator(IPropertyNumberer propertyNumberer) 
+        public DaoProtocolBuffersAssemblyGenerator(IPropertyNumberer propertyNumberer)
             : base(new DaoProtoFileGenerator(propertyNumberer))
         { }
     }

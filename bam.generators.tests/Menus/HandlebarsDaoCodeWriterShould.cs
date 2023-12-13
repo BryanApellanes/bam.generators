@@ -1,6 +1,4 @@
-﻿using Bam.Net.Data.Schema.Handlebars;
-using Bam.Net.Presentation.Handlebars;
-using Bam.Testing;
+﻿using Bam.Testing;
 using System;
 using System.Collections.Generic;
 using System.Linq;

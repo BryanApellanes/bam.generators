@@ -13,11 +13,21 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\bam.application\bam.application\bam.application.csproj" />
     <ProjectReference Include="..\..\bam.base\bam.base\bam.base.csproj" />
     <ProjectReference Include="..\..\bam.console\bam.console\bam.console.csproj" />
     <ProjectReference Include="..\..\bam.shell\bam.shell\bam.shell.csproj" />
     <ProjectReference Include="..\..\bam.testing\bam.testing\bam.testing.csproj" />
     <ProjectReference Include="..\bam.generators\bam.generators.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="dao-repo-gen.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="dao-repo-gen.yaml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

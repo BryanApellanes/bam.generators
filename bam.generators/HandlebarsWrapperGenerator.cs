@@ -1,20 +1,20 @@
 ﻿using Bam.Data.Repositories;
-using Bam.Generators;
-using Bam.Net.Presentation.Handlebars;
+using Bam.Net;
+using Bam.Net.Data.Repositories;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text;
 
-namespace Bam.Net.Data.Repositories.Handlebars
+namespace Bam.Generators
 {
     public class HandlebarsWrapperGenerator : TemplatedWrapperGenerator
     {
         public HandlebarsWrapperGenerator(ISchemaProvider schemaProvider) : base(schemaProvider, new HandlebarsTemplateRenderer<WrapperModel>())
         {
             HandlebarsDirectory = new HandlebarsDirectory("./Templates");
-            HandlebarsEmbeddedResources = new HandlebarsEmbeddedResources(this.GetType().Assembly);
+            HandlebarsEmbeddedResources = new HandlebarsEmbeddedResources(GetType().Assembly);
         }
 
         public HandlebarsDirectory HandlebarsDirectory { get; set; }
@@ -26,7 +26,7 @@ namespace Bam.Net.Data.Repositories.Handlebars
             lock (_generateLock)
             {
                 RoslynCompiler compiler = new RoslynCompiler();
-                Assembly assembly = compiler.CompileDirectoriesToAssembly($"{WrapperNamespace}.Wrapper.dll", new System.IO.DirectoryInfo(WriteSourceTo));
+                Assembly assembly = compiler.CompileDirectoriesToAssembly($"{WrapperNamespace}.Wrapper.dll", new DirectoryInfo(WriteSourceTo));
                 GeneratedAssemblyInfo result = new GeneratedAssemblyInfo($"{WrapperNamespace}.Wrapper.dll", assembly);
                 result.Save();
                 return result;

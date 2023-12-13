@@ -1,0 +1,8 @@
+{
+  "SchemaName": "TestSchemaName",
+  "FromNamespace": "Bam.Generators.Tests.TestClasses",
+  "ToNamespace": "Bam.Generators.Tests.TestClasses.Dao",
+  "WriteSourceTo": "Generated_Dao",
+  "CheckForIds": true,
+  "UseInheritanceSchema": false
+}

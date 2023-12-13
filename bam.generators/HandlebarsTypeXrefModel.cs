@@ -1,10 +1,12 @@
-﻿using System;
+﻿using Bam.Net;
+using Bam.Net.Data.Repositories;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Bam.Net.Data.Repositories.Handlebars
+namespace Bam.Generators
 {
-    public class HandlebarsTypeXrefModel: TypeXrefModel
+    public class HandlebarsTypeXrefModel : TypeXrefModel
     {
         public string XrefTableName
         {

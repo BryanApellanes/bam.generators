@@ -1,56 +1,28 @@
-﻿using Bam.Services;
+﻿using Bam.Generators.Tests.TestClasses;
+using Bam.Net;
+using Bam.Net.CoreServices;
+using Bam.Net.Data.Repositories;
 using Bam.Testing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Bam.Net.CoreServices;
-using Bam.Net.Data.Repositories;
-using Bam.Net;
-using Bam.Generators.Tests.TestClasses;
-using Bam.Net.Data.Schema;
-using Bam.Net.Data.SQLite;
-using Bam.Console;
-using Bam.Data.Schema;
 
 namespace Bam.Generators.Tests
 {
-    [UnitTestMenu("DaoRepository Should", Selector = "drt")]
-    public class DaoRepositoryShould : UnitTestMenuContainer
+    [UnitTestMenu("DefaultDaoRepository Should", Selector = "ddrt")]
+    public class DefaultDaoRepositoryShould : UnitTestMenuContainer
     {
-        public DaoRepositoryShould(ServiceRegistry serviceRegistry) : base(serviceRegistry)
+        public DefaultDaoRepositoryShould(ServiceRegistry serviceRegistry) : base(serviceRegistry)
         {
-        }
-
-        public override ServiceRegistry Configure(ServiceRegistry serviceRegistry)
-        {
-            return serviceRegistry
-                .For<IDaoCodeWriter>().Use<HandlebarsCSharpDaoCodeWriter>()
-                .For<ISchemaProvider>().Use<SchemaProvider>()
-                .For<IDaoGenerator>().Use<DaoGenerator>()
-                .For<IWrapperGenerator>().Use<HandlebarsWrapperGenerator>()
-                .For<IDaoRepository>().Use<DaoRepository>();
-        }
-
-        [UnitTest]
-        public void RuntimeSettingsTempTest()
-        {
-            Message.PrintLine(RuntimeSettings.GetReferenceAssembliesDirectory());
-        }
-
-        [UnitTest]
-        public void BeOfTypeDaoRepsitory()
-        {
-            IDaoRepository repo = this.Get<IDaoRepository>();
-            repo.ShouldBeOfType<DaoRepository>();
         }
 
         [UnitTest]
         public void CreateEntry()
         {
             string testName = 32.RandomLetters();
-            IDaoRepository repo = this.Get<IDaoRepository>();
+            IDaoRepository repo = new DefaultDaoRepository();
             repo.AddType(typeof(TestPerson));
             repo.LastException.ShouldBeNull(repo.LastException?.Message);
 
@@ -64,11 +36,11 @@ namespace Bam.Generators.Tests
         public void RetrieveEntry()
         {
             string testName = 32.RandomLetters();
-            IDaoRepository repo = this.Get<IDaoRepository>();
+            IDaoRepository repo = new DefaultDaoRepository();
             repo.AddType(typeof(TestPerson));
             repo.LastException.ShouldBeNull(repo.LastException?.Message);
 
-            TestPerson testPerson = repo.Create(new TestPerson { Name= testName });
+            TestPerson testPerson = repo.Create(new TestPerson { Name = testName });
             repo.LastException.ShouldBeNull(repo.LastException?.Message);
 
             TestPerson retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id);
@@ -82,7 +54,7 @@ namespace Bam.Generators.Tests
             string testName = 32.RandomLetters();
             string updatedName = 16.RandomLetters();
 
-            IDaoRepository repo = this.Get<IDaoRepository>();
+            IDaoRepository repo = new DefaultDaoRepository();
             repo.AddType(typeof(TestPerson));
             repo.LastException.ShouldBeNull(repo.LastException?.Message);
 
@@ -94,10 +66,10 @@ namespace Bam.Generators.Tests
             TestPerson retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id);
             retrievedPerson.Id.ShouldEqual(testPerson.Id);
             retrievedPerson.Name = updatedName;
-            
+
             TestPerson updatedPerson = repo.Update(retrievedPerson);
             updatedPerson.Id.ShouldEqual(testPerson.Id);
-            updatedPerson.Name.ShouldEqual(updatedName);            
+            updatedPerson.Name.ShouldEqual(updatedName);
         }
 
         [UnitTest]
@@ -105,7 +77,7 @@ namespace Bam.Generators.Tests
         {
             string testName = 32.RandomLetters();
 
-            IDaoRepository repo = this.Get<IDaoRepository>();
+            IDaoRepository repo = new DefaultDaoRepository();
             repo.AddType(typeof(TestPerson));
             repo.LastException.ShouldBeNull(repo.LastException?.Message);
 
@@ -128,7 +100,7 @@ namespace Bam.Generators.Tests
         {
             string testName = 32.RandomLetters();
 
-            IDaoRepository repo = this.Get<IDaoRepository>();
+            IDaoRepository repo = new DefaultDaoRepository();
             repo.AddType(typeof(TestPerson));
             repo.LastException.ShouldBeNull(repo.LastException?.Message);
 
@@ -154,7 +126,7 @@ namespace Bam.Generators.Tests
             string testPersonName = 32.RandomLetters();
             string testAnimalName = 16.RandomLetters();
 
-            IDaoRepository repo = this.Get<IDaoRepository>();
+            IDaoRepository repo = new DefaultDaoRepository();
             repo.AddType(typeof(TestPerson));
             repo.LastException.ShouldBeNull(repo.LastException?.Message);
 

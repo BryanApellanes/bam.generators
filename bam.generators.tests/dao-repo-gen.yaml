@@ -1,0 +1,8 @@
+#TypeAssembly is only necessary if not the executing assembly
+#TypeAssembly: D:\src\repos\bamtk\submodules\bam.generators\bam.generators.tests\bin\Debug\net7.0\bam.application.dll
+SchemaName: TestSchemaName
+FromNamespace: Bam.Generators.Tests.TestClasses
+ToNamespace: Bam.Generators.Tests.TestClasses.Dao
+WriteSourceTo: ./Generated_Dao
+CheckForIds: true
+UseInheritanceSchema: false

@@ -1,7 +1,7 @@
 ﻿using HandlebarsDotNet;
 using System.Reflection;
 
-namespace Bam.Net.Presentation.Handlebars
+namespace Bam.Generators
 {
     public interface IHandlebarsEmbeddedResources
     {

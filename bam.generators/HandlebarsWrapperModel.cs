@@ -1,9 +1,11 @@
 using System;
 using System.Linq;
 using Bam.Data.Repositories;
-using Bam.Net.Presentation.Handlebars;
+using Bam.Net;
+using Bam.Net.Data.Repositories;
+using Bam.Net.Data.Repositories.Handlebars;
 
-namespace Bam.Net.Data.Repositories.Handlebars
+namespace Bam.Generators
 {
     public class HandlebarsWrapperModel : WrapperModel
     {
@@ -14,7 +16,7 @@ namespace Bam.Net.Data.Repositories.Handlebars
             LeftXrefs = LeftXrefs.Select(lxref => lxref.CopyAs<HandlebarsTypeXrefModel>()).ToArray();
             RightXrefs = RightXrefs.Select(rx => rx.CopyAs<HandlebarsTypeXrefModel>()).ToArray();
 
-            this.TemplateRenderer = new HandlebarsTemplateRenderer();
+            TemplateRenderer = new HandlebarsTemplateRenderer();
         }
 
         public override string Render()

@@ -1,23 +1,24 @@
-﻿using Bam.Net.Logging;
-using Bam.Net.Presentation.Handlebars;
+﻿using Bam.Net;
+using Bam.Net.Data.Schema;
+using Bam.Net.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text;
 
-namespace Bam.Net.Data.Schema.Handlebars
+namespace Bam.Generators
 {
     public class HandlebarsCSharpDaoCodeWriter : Loggable, IDaoCodeWriter
     {
-        public HandlebarsCSharpDaoCodeWriter() 
+        public HandlebarsCSharpDaoCodeWriter()
             : this(new FsDaoTargetStreamResolver())
         {
         }
 
         public HandlebarsCSharpDaoCodeWriter(IDaoTargetStreamResolver? daoTargetStreamResolver)
-            :this(new HandlebarsDirectory("./Templates"), new HandlebarsEmbeddedResources(Assembly.GetExecutingAssembly()), daoTargetStreamResolver)
-        { 
+            : this(new HandlebarsDirectory("./Templates"), new HandlebarsEmbeddedResources(Assembly.GetExecutingAssembly()), daoTargetStreamResolver)
+        {
         }
 
         public HandlebarsCSharpDaoCodeWriter(IHandlebarsDirectory handlebarsDirectory, IHandlebarsEmbeddedResources handlebarsEmbeddedResources, IDaoTargetStreamResolver? daoTargetStreamResolver = null)
@@ -58,7 +59,7 @@ namespace Bam.Net.Data.Schema.Handlebars
 
         public void WriteCollectionClass(IDaoSchemaDefinition schema, Func<string, Stream> targetResolver, string rootDirectory, Table table)
         {
-            Load();            
+            Load();
             DaoTableSchemaModel renderModel = GetModel(schema, table);
             Render("Collection", renderModel, DaoTargetStreamResolver.GetTargetCollectionStream(targetResolver, rootDirectory, table));
         }
@@ -97,7 +98,7 @@ namespace Bam.Net.Data.Schema.Handlebars
             DaoTableSchemaModel renderModel = GetModel(schema, table);
             Render("QueryClass", renderModel, DaoTargetStreamResolver.GetTargetQueryClassStream(targetResolver, rootDirectory, table));
         }
-        
+
         public void WritePartial(IDaoSchemaDefinition schema, Func<string, Stream> targetResolver, string root, Table table)
         {
             Load();

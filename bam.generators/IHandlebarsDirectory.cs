@@ -1,6 +1,6 @@
 ﻿using Bam.Net.Logging;
 
-namespace Bam.Net.Presentation.Handlebars
+namespace Bam.Generators
 {
     public interface IHandlebarsDirectory
     {

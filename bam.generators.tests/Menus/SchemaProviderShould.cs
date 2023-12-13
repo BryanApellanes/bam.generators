@@ -35,13 +35,13 @@ namespace Bam.Generators.Tests
         public override ServiceRegistry Configure(ServiceRegistry serviceRegistry)
         {
             serviceRegistry = serviceRegistry
-                .For<ITypeSchemaTempPathProvider>().Use<TypeSchemaTempPathProvider>()
+                .For<ISchemaTempPathProvider>().Use<SchemaTempPathProvider>()
                 .For<ITypeTableNameProvider>().Use<DaoSuffixTypeTableNameProvider>()
                 .For<SchemaProvider>().Use<SchemaProvider>();
 
             return serviceRegistry
                 .For<SchemaProvider>().Use(
-                    new SchemaProvider(serviceRegistry.Get<ITypeTableNameProvider>(), serviceRegistry.Get<ITypeSchemaTempPathProvider>())
+                    new SchemaProvider(serviceRegistry.Get<ITypeTableNameProvider>(), serviceRegistry.Get<ISchemaTempPathProvider>())
                 );
         }
     }
