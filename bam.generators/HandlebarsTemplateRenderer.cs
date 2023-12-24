@@ -92,6 +92,11 @@ namespace Bam.Net
                 return;
             }
 
+            if(HandlebarsEmbeddedResources != null && HandlebarsEmbeddedResources.Templates.Count == 0)
+            {
+                HandlebarsEmbeddedResources.Reload();
+            }
+
             HandlebarsDirectory handlebarsDirectory = GetHandlebarsDirectory(templateName);
             if (handlebarsDirectory != null)
             { 

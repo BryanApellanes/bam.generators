@@ -57,7 +57,7 @@ namespace Bam.Generators.Tests
             TestPerson testPerson = repo.Create(new TestPerson { Name = testName });
             repo.LastException.ShouldBeNull(repo.LastException?.Message);
             testPerson.Name.ShouldBeEqualTo(testName);
-            Expect.IsGreaterThan(testPerson.Id, 0, $"Id should have been greater than 0 but was {testPerson.Id}");
+            testPerson.Id.ShouldBeGreaterThan(0, $"Id should have been greater than 0 but was {testPerson.Id}");
         }
 
         [UnitTest]

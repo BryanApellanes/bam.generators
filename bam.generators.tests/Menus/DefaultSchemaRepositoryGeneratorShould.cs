@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace Bam.Generators.Tests
 {
-    [UnitTestMenu("SchemaRepositoryGenerator Unit Tests", Selector = "srgut")]
+    [UnitTestMenu("DefaultSchemaRepositoryGenerator Should", Selector = "srgut")]
     public class DefaultSchemaRepositoryGeneratorShould : UnitTestMenuContainer
     {
         public DefaultSchemaRepositoryGeneratorShould(ServiceRegistry serviceRegistry) : base(serviceRegistry)

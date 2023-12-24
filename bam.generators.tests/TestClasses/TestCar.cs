@@ -9,6 +9,7 @@ namespace Bam.Generators.Tests.TestClasses
     public class TestCar
     {
         public TestCar() { }
+        public ulong Id { get; set; }
         public string Make { get; set; }
         public string Model { get; set; }
 
