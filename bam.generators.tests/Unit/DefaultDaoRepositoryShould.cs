@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Bam.Generators.Tests
+namespace Bam.Generators.Tests.Unit
 {
     [UnitTestMenu("DefaultDaoRepository Should", Selector = "ddrt")]
     public class DefaultDaoRepositoryShould : UnitTestMenuContainer
@@ -29,7 +29,7 @@ namespace Bam.Generators.Tests
             TestPerson testPerson = repo.Create(new TestPerson { Name = testName });
             repo.LastException.ShouldBeNull(repo.LastException?.Message);
             testPerson.Name.ShouldBeEqualTo(testName);
-            Expect.IsGreaterThan(testPerson.Id, 0, $"Id should have been greater than 0 but was {testPerson.Id}");
+            testPerson.Id.ShouldBeGreaterThan(0, $"Id should have been greater than 0 but was {testPerson.Id}");
         }
 
         [UnitTest]
@@ -89,7 +89,7 @@ namespace Bam.Generators.Tests
             TestPerson retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id);
             retrievedPerson.Id.ShouldEqual(testPerson.Id);
 
-            Expect.IsTrue(repo.Delete(retrievedPerson), "failed to delete test data");
+            repo.Delete(retrievedPerson).IsTrue("failed to delete test data");
 
             TestPerson shouldBeNull = repo.Retrieve<TestPerson>(testPerson.Id);
             shouldBeNull.ShouldBeNull($"Expected to retrieve null but got data: {shouldBeNull?.ToJson()}");

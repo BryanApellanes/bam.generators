@@ -11,7 +11,7 @@ using Bam.Net.CommandLine;
 using Bam.Services;
 using Bam.Net.CoreServices;
 
-namespace Bam.Generators.Tests
+namespace Bam.Generators.Tests.Unit
 {
     [UnitTestMenu("HandlebarsDaoCodeWriter should")]
     public class HandlebarsDaoCodeWriterShould : UnitTestMenuContainer

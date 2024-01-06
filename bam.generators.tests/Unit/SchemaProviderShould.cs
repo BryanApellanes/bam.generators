@@ -11,7 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Bam.Generators.Tests
+namespace Bam.Generators.Tests.Unit
 {
     [UnitTestMenu("SchemaGenerator Should", Selector = "sgs")]
     public class SchemaProviderShould : UnitTestMenuContainer

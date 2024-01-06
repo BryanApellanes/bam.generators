@@ -14,7 +14,7 @@ using Bam.Net.Data.SQLite;
 using Bam.Console;
 using Bam.Data.Schema;
 
-namespace Bam.Generators.Tests
+namespace Bam.Generators.Tests.Unit
 {
     [UnitTestMenu("DaoRepository Should", Selector = "drt")]
     public class DaoRepositoryShould : UnitTestMenuContainer
@@ -42,7 +42,7 @@ namespace Bam.Generators.Tests
         [UnitTest]
         public void BeOfTypeDaoRepsitory()
         {
-            IDaoRepository repo = this.Get<IDaoRepository>();
+            IDaoRepository repo = Get<IDaoRepository>();
             repo.ShouldBeOfType<DaoRepository>();
         }
 
@@ -50,7 +50,7 @@ namespace Bam.Generators.Tests
         public void CreateEntry()
         {
             string testName = 32.RandomLetters();
-            IDaoRepository repo = this.Get<IDaoRepository>();
+            IDaoRepository repo = Get<IDaoRepository>();
             repo.AddType(typeof(TestPerson));
             repo.LastException.ShouldBeNull(repo.LastException?.Message);
 
@@ -64,11 +64,11 @@ namespace Bam.Generators.Tests
         public void RetrieveEntry()
         {
             string testName = 32.RandomLetters();
-            IDaoRepository repo = this.Get<IDaoRepository>();
+            IDaoRepository repo = Get<IDaoRepository>();
             repo.AddType(typeof(TestPerson));
             repo.LastException.ShouldBeNull(repo.LastException?.Message);
 
-            TestPerson testPerson = repo.Create(new TestPerson { Name= testName });
+            TestPerson testPerson = repo.Create(new TestPerson { Name = testName });
             repo.LastException.ShouldBeNull(repo.LastException?.Message);
 
             TestPerson retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id);
@@ -82,7 +82,7 @@ namespace Bam.Generators.Tests
             string testName = 32.RandomLetters();
             string updatedName = 16.RandomLetters();
 
-            IDaoRepository repo = this.Get<IDaoRepository>();
+            IDaoRepository repo = Get<IDaoRepository>();
             repo.AddType(typeof(TestPerson));
             repo.LastException.ShouldBeNull(repo.LastException?.Message);
 
@@ -94,10 +94,10 @@ namespace Bam.Generators.Tests
             TestPerson retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id);
             retrievedPerson.Id.ShouldEqual(testPerson.Id);
             retrievedPerson.Name = updatedName;
-            
+
             TestPerson updatedPerson = repo.Update(retrievedPerson);
             updatedPerson.Id.ShouldEqual(testPerson.Id);
-            updatedPerson.Name.ShouldEqual(updatedName);            
+            updatedPerson.Name.ShouldEqual(updatedName);
         }
 
         [UnitTest]
@@ -105,7 +105,7 @@ namespace Bam.Generators.Tests
         {
             string testName = 32.RandomLetters();
 
-            IDaoRepository repo = this.Get<IDaoRepository>();
+            IDaoRepository repo = Get<IDaoRepository>();
             repo.AddType(typeof(TestPerson));
             repo.LastException.ShouldBeNull(repo.LastException?.Message);
 
@@ -117,7 +117,7 @@ namespace Bam.Generators.Tests
             TestPerson retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id);
             retrievedPerson.Id.ShouldEqual(testPerson.Id);
 
-            Expect.IsTrue(repo.Delete(retrievedPerson), "failed to delete test data");
+            repo.Delete(retrievedPerson).IsTrue("failed to delete test data");
 
             TestPerson shouldBeNull = repo.Retrieve<TestPerson>(testPerson.Id);
             shouldBeNull.ShouldBeNull($"Expected to retrieve null but got data: {shouldBeNull?.ToJson()}");
@@ -128,7 +128,7 @@ namespace Bam.Generators.Tests
         {
             string testName = 32.RandomLetters();
 
-            IDaoRepository repo = this.Get<IDaoRepository>();
+            IDaoRepository repo = Get<IDaoRepository>();
             repo.AddType(typeof(TestPerson));
             repo.LastException.ShouldBeNull(repo.LastException?.Message);
 
@@ -154,7 +154,7 @@ namespace Bam.Generators.Tests
             string testPersonName = 32.RandomLetters();
             string testAnimalName = 16.RandomLetters();
 
-            IDaoRepository repo = this.Get<IDaoRepository>();
+            IDaoRepository repo = Get<IDaoRepository>();
             repo.AddType(typeof(TestPerson));
             repo.LastException.ShouldBeNull(repo.LastException?.Message);
 
