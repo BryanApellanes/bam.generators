@@ -3,7 +3,6 @@ using Bam.Data;
 using Bam.Net;
 using Bam.Net.Application;
 using Bam.Net.Data.Repositories;
-using Bam.Net.Data.Repositories.Handlebars;
 using Bam.Net.Data.Schema;
 using Bam.Net.Logging;
 using System;

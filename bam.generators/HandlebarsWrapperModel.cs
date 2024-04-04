@@ -3,7 +3,6 @@ using System.Linq;
 using Bam.Data.Repositories;
 using Bam.Net;
 using Bam.Net.Data.Repositories;
-using Bam.Net.Data.Repositories.Handlebars;
 
 namespace Bam.Generators
 {

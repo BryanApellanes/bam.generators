@@ -5,9 +5,9 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using Bam.Net.Logging;
-using Bam.Generators;
+using Bam.Net;
 
-namespace Bam.Net
+namespace Bam.Generators
 {
     public class HandlebarsTemplateRenderer : ITemplateRenderer
     {

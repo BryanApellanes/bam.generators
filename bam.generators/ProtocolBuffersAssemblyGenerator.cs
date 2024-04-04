@@ -11,8 +11,10 @@ using Bam.Net.Data.Repositories;
 using System.CodeDom.Compiler;
 using Google.Protobuf;
 using Bam.CommandLine;
+using Bam.Net;
+using Bam.Net.CoreServices.ProtoBuf;
 
-namespace Bam.Net.CoreServices.ProtoBuf
+namespace Bam.Generators
 {
     /// <summary>
     /// A class used to generate source and/or an assembly
@@ -21,7 +23,7 @@ namespace Bam.Net.CoreServices.ProtoBuf
     public class ProtocolBuffersAssemblyGenerator: IAssemblyGenerator
     {
         public ProtocolBuffersAssemblyGenerator()
-            : this("Bam.Net.Generated.ProtocolBuffers")
+            : this("Bam.Generated.ProtocolBuffers")
         { }
 
         public ProtocolBuffersAssemblyGenerator(string assemblyName, params Type[] types)

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Bam.Net;
+using Bam.Net.Data.Repositories;
 
-namespace Bam.Net.Data.Repositories.Handlebars
+namespace Bam.Generators
 {
     public class HandlebarsTypeFkModel: TypeFk
     {

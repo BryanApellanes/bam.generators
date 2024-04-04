@@ -28,19 +28,16 @@ namespace Bam.Generators
         }
 
         static ServiceRegistry? _serviceRegistry;
-        static object _serviceRegistryLock = new object();
+        static readonly object _serviceRegistryLock = new object();
         private static ServiceRegistry? ServiceRegistry
         {
             get
             {
-                return _serviceRegistryLock.DoubleCheckLock(ref _serviceRegistry, () =>
-                {
-                    return new ServiceRegistry()
-                        .For<IDaoCodeWriter>().Use<HandlebarsCSharpDaoCodeWriter>()
-                        .For<ISchemaProvider>().Use<SchemaProvider>()
-                        .For<IDaoGenerator>().Use<DaoGenerator>()
-                        .For<IWrapperGenerator>().Use<HandlebarsWrapperGenerator>();
-                });
+                return _serviceRegistryLock.DoubleCheckLock(ref _serviceRegistry, () => new ServiceRegistry()
+                    .For<IDaoCodeWriter>().Use<HandlebarsCSharpDaoCodeWriter>()
+                    .For<ISchemaProvider>().Use<SchemaProvider>()
+                    .For<IDaoGenerator>().Use<DaoGenerator>()
+                    .For<IWrapperGenerator>().Use<HandlebarsWrapperGenerator>());
             }
         }
     }
