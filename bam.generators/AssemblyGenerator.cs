@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
-using Bam.Net;
-using Bam.Net.Logging;
-using Bam.Net.ServiceProxy;
+using Bam;
+using Bam.Logging;
+using Bam.ServiceProxy;
 
 namespace Bam.Generators
 {

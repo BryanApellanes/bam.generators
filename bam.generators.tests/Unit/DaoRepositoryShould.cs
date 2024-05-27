@@ -5,12 +5,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Bam.Net.CoreServices;
-using Bam.Net.Data.Repositories;
-using Bam.Net;
+using Bam.CoreServices;
+using Bam.Data.Repositories;
+using Bam;
 using Bam.Generators.Tests.TestClasses;
-using Bam.Net.Data.Schema;
-using Bam.Net.Data.SQLite;
+using Bam.Data.Schema;
+using Bam.Data.SQLite;
 using Bam.Console;
 using Bam.Data.Schema;
 

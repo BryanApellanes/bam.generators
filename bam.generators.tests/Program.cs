@@ -1,6 +1,6 @@
 ﻿using Bam.Console;
 
-namespace Bam.Net.Application
+namespace Bam.Application
 {
     [Serializable]
     class Program 

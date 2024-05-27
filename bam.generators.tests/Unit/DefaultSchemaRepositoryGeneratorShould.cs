@@ -2,8 +2,8 @@
 using Bam.Application;
 using Bam.Console;
 using Bam.Data.Schema;
-using Bam.Net.CoreServices;
-using Bam.Net.Data.Repositories;
+using Bam.CoreServices;
+using Bam.Data.Repositories;
 using Bam.Services;
 using Bam.Testing;
 using System;

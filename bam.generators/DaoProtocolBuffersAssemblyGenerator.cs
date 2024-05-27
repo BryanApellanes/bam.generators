@@ -1,4 +1,4 @@
-﻿using Bam.Net.CoreServices.ProtoBuf;
+﻿using Bam.CoreServices.ProtoBuf;
 using System;
 using System.Collections.Generic;
 using System.Linq;

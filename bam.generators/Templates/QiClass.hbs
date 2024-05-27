@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Bam.Net;
+using Bam;
 using System.Web.Mvc;
-using Bam.Net.Data;
-using Bam.Net.Data.Qi;
+using Bam.Data;
+using Bam.Data.Qi;
 using {{Namespace}};
 
 namespace {{Namespace}}.Qi
@@ -86,7 +86,7 @@ namespace {{Namespace}}.Qi
 		{
 			try
 			{
-				query.table = Bam.Net.Data.Dao.TableName(typeof({{Namespace}}.{{Model.ClassName}}));
+				query.table = Bam.Data.Dao.TableName(typeof({{Namespace}}.{{Model.ClassName}}));
 				object value = {{Namespace}}.{{Model.ClassName}}.OneWhere(query).ToJsonSafe();
 				return Json(new { Success = true, Message = "", Dao = value });
 			}
@@ -100,7 +100,7 @@ namespace {{Namespace}}.Qi
 		{
 			try
 			{
-				query.table = Bam.Net.Data.Dao.TableName(typeof({{Namespace}}.{{Model.ClassName}}));
+				query.table = Bam.Data.Dao.TableName(typeof({{Namespace}}.{{Model.ClassName}}));
 				object[] value = {{Namespace}}.{{Model.ClassName}}.Where(query).ToJsonSafe();
 				return Json(new { Success = true, Message = "", Dao = value });
 			}

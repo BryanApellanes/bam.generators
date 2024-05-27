@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 using NSubstitute;
 using Bam.Shell;
 using Bam.Console;
-using Bam.Net.CommandLine;
+using Bam.CommandLine;
 using Bam.Services;
-using Bam.Net.CoreServices;
+using Bam.CoreServices;
 
 namespace Bam.Generators.Tests.Unit
 {

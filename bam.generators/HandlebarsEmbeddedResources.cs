@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text;
-using Bam.Net;
+using Bam;
 using HandlebarsDotNet;
 
 namespace Bam.Generators

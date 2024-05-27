@@ -1,4 +1,4 @@
-﻿using Bam.Net.Logging;
+﻿using Bam.Logging;
 
 namespace Bam.Generators
 {

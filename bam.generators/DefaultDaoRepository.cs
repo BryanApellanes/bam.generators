@@ -1,9 +1,9 @@
 ﻿using Bam.Data.Schema;
-using Bam.Net.CoreServices;
-using Bam.Net.Data;
-using Bam.Net.Data.Repositories;
-using Bam.Net.Data.Schema;
-using Bam.Net.Logging;
+using Bam.CoreServices;
+using Bam.Data;
+using Bam.Data.Repositories;
+using Bam.Data.Schema;
+using Bam.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;

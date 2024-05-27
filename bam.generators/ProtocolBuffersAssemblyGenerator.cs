@@ -6,13 +6,13 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Bam.Net.CommandLine;
-using Bam.Net.Data.Repositories;
+using Bam.CommandLine;
+using Bam.Data.Repositories;
 using System.CodeDom.Compiler;
 using Google.Protobuf;
 using Bam.CommandLine;
-using Bam.Net;
-using Bam.Net.CoreServices.ProtoBuf;
+using Bam;
+using Bam.CoreServices.ProtoBuf;
 
 namespace Bam.Generators
 {

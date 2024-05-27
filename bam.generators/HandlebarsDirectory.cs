@@ -5,8 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Bam.Net.Logging;
-using Bam.Net;
+using Bam.Logging;
+using Bam;
 
 namespace Bam.Generators
 {

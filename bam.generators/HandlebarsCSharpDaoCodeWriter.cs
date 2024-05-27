@@ -1,6 +1,6 @@
-﻿using Bam.Net;
-using Bam.Net.Data.Schema;
-using Bam.Net.Logging;
+﻿using Bam;
+using Bam.Data.Schema;
+using Bam.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
