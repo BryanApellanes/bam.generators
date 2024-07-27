@@ -18,6 +18,7 @@
     <ProjectReference Include="..\..\bam.console\bam.console\bam.console.csproj" />
     <ProjectReference Include="..\..\bam.shell\bam.shell\bam.shell.csproj" />
     <ProjectReference Include="..\..\bam.testing\bam.testing\bam.testing.csproj" />
+    <ProjectReference Include="..\..\bam.test\bam.test\bam.test.csproj" />
     <ProjectReference Include="..\bam.generators\bam.generators.csproj" />
   </ItemGroup>
 

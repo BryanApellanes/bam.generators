@@ -2,7 +2,7 @@
 using Bam;
 using Bam.CoreServices;
 using Bam.Data.Repositories;
-using Bam.Testing;
+using Bam.Test;
 using System;
 using System.Collections.Generic;
 using System.Linq;
