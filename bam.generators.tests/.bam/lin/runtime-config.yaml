@@ -1,0 +1,4 @@
+ReferenceAssemblies: ''
+BamProfileDir: /home/bryan/.bam
+ProcessProfileDir: /home/bryan
+NugetPackageRoot: /home/bryan/.bam/nupkg

@@ -86,12 +86,13 @@ namespace Bam.Generators.Tests.Unit
             testPerson.Id.ShouldBeGreaterThan(0);
             testPerson.Name.ShouldEqual(testName);
 
-            TestPerson retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id);
-            retrievedPerson.Id.ShouldEqual(testPerson.Id);
+            TestPerson? retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id);
+            retrievedPerson?.ShouldNotBeNull();
+            retrievedPerson?.Id.ShouldEqual(testPerson.Id);
 
             repo.Delete(retrievedPerson).IsTrue("failed to delete test data");
 
-            TestPerson shouldBeNull = repo.Retrieve<TestPerson>(testPerson.Id);
+            TestPerson? shouldBeNull = repo.Retrieve<TestPerson>(testPerson.Id);
             shouldBeNull.ShouldBeNull($"Expected to retrieve null but got data: {shouldBeNull?.ToJson()}");
         }
 
@@ -136,9 +137,17 @@ namespace Bam.Generators.Tests.Unit
             testPerson = repo.Create(testPerson);
             testPerson.Id.ShouldBeGreaterThan(0);
 
-            TestPerson retrieved = repo.Retrieve<TestPerson>(testPerson.Id);
-            retrieved.Pets.Count.ShouldEqual(1);
-            retrieved.Pets[0].Id.ShouldBeGreaterThan(0);
+            TestPerson? retrieved = repo.Retrieve<TestPerson>(testPerson.Id);
+            retrieved?.ShouldNotBeNull();
+            retrieved?.Name.ShouldEqual(testPersonName);
+            retrieved?.Pets.Count.ShouldEqual(1);
+            retrieved?.Pets[0].Id.ShouldBeGreaterThan(0);
+
+            TestAnimal? pet = repo.Retrieve<TestAnimal>(retrieved.Pets[0].Id);
+            pet?.ShouldNotBeNull();
+            pet?.Name.ShouldEqual(testAnimalName);
+            pet?.Owners.Count.ShouldEqual(1);
+            pet?.Owners[0].Id.ShouldEqual(retrieved.Id);
         }
     }
 }

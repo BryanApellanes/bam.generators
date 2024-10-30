@@ -30,4 +30,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include=".bam\lin\runtime-config.yaml" />
+  </ItemGroup>
+
 </Project>
