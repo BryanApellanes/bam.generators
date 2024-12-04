@@ -18,6 +18,18 @@ namespace Bam.Generators.Tests.Unit
     {
         public SchemaProviderShould(ServiceRegistry serviceRegistry) : base(serviceRegistry)
         {
+            Configure(svcRegistry =>
+            {
+                svcRegistry
+                    .For<ISchemaTempPathProvider>().Use<SchemaTempPathProvider>()
+                    .For<ITypeTableNameProvider>().Use<DaoSuffixTypeTableNameProvider>()
+                    .For<SchemaProvider>().Use<SchemaProvider>();
+
+                svcRegistry
+                    .For<SchemaProvider>().Use(
+                        new SchemaProvider(svcRegistry.Get<ITypeTableNameProvider>(), serviceRegistry.Get<ISchemaTempPathProvider>())
+                    );
+            });
         }
 
         [Test]
@@ -30,19 +42,6 @@ namespace Bam.Generators.Tests.Unit
             typeSchema.Tables.Count.ShouldBeEqualTo(3);
 
             Message.PrintLine(typeSchema.ToString(), ConsoleColor.DarkYellow);
-        }
-
-        public override ServiceRegistry Configure(ServiceRegistry serviceRegistry)
-        {
-            serviceRegistry = serviceRegistry
-                .For<ISchemaTempPathProvider>().Use<SchemaTempPathProvider>()
-                .For<ITypeTableNameProvider>().Use<DaoSuffixTypeTableNameProvider>()
-                .For<SchemaProvider>().Use<SchemaProvider>();
-
-            return serviceRegistry
-                .For<SchemaProvider>().Use(
-                    new SchemaProvider(serviceRegistry.Get<ITypeTableNameProvider>(), serviceRegistry.Get<ISchemaTempPathProvider>())
-                );
         }
     }
 }

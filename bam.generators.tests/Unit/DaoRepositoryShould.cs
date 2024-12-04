@@ -21,16 +21,15 @@ namespace Bam.Generators.Tests.Unit
     {
         public DaoRepositoryShould(ServiceRegistry serviceRegistry) : base(serviceRegistry)
         {
-        }
-
-        public override ServiceRegistry Configure(ServiceRegistry serviceRegistry)
-        {
-            return serviceRegistry
-                .For<IDaoCodeWriter>().Use<HandlebarsCSharpDaoCodeWriter>()
-                .For<ISchemaProvider>().Use<SchemaProvider>()
-                .For<IDaoGenerator>().Use<DaoGenerator>()
-                .For<IWrapperGenerator>().Use<HandlebarsWrapperGenerator>()
-                .For<IDaoRepository>().Use<DaoRepository>();
+            Configure(svcRegistry =>
+            {
+                svcRegistry
+                    .For<IDaoCodeWriter>().Use<HandlebarsCSharpDaoCodeWriter>()
+                    .For<ISchemaProvider>().Use<SchemaProvider>()
+                    .For<IDaoGenerator>().Use<DaoGenerator>()
+                    .For<IWrapperGenerator>().Use<HandlebarsWrapperGenerator>()
+                    .For<IDaoRepository>().Use<DaoRepository>();
+            });
         }
 
         [UnitTest]

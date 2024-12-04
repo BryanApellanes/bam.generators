@@ -134,16 +134,18 @@ namespace Bam.Generators
             return dir;
         }
 
-        public GeneratedAssemblyInfo GenerateAssembly()
+        public GeneratedAssemblyInfo? GenerateAssembly()
         {
             Args.ThrowIfNullOrEmpty(AssemblyName, nameof(AssemblyName));
 
-            GeneratedAssemblyInfo result = null;
+            GeneratedAssemblyInfo? result = null;
             AutoResetEvent wait = new AutoResetEvent(false);
             GenerateCsFiles(Types, (o, a) =>
             {
-                CompilerResults compilerResults = AdHocCSharpCompiler.CompileDirectory(new DirectoryInfo(CsFileDirectory), AssemblyName, new Assembly[] { typeof(IMessage).Assembly });
-                result = new GeneratedAssemblyInfo(AssemblyName, compilerResults);
+                RoslynCompiler compiler = new RoslynCompiler();
+                compiler.AddMetadataReferenceResolver(new StaticAssemblyListReferencePackMetadataReferenceResolver(typeof(IMessage).Assembly.GetFileInfo().FullName));
+                byte[] assemblyBytes = compiler.CompileDirectories(AssemblyName, new DirectoryInfo(CsFileDirectory));
+                result = new GeneratedAssemblyInfo(AssemblyName, Assembly.Load(assemblyBytes), assemblyBytes);
                 wait.Set();
             });
             wait.WaitOne();

@@ -50,21 +50,21 @@ namespace Bam.Generators
         public IHandlebarsDirectory HandlebarsDirectory { get; set; }
         public IHandlebarsEmbeddedResources HandlebarsEmbeddedResources { get; set; }
 
-        public void WriteDaoClass(IDaoSchemaDefinition schema, Func<string, Stream> targetResolver, string rootDirectory, Table table)
+        public void WriteDaoClass(IDaoSchemaDefinition schema, Func<string, Stream> targetResolver, string rootDirectory, ITable table)
         {
             Load();
             DaoTableSchemaModel renderModel = GetModel(schema, table);
             Render("Class", renderModel, DaoTargetStreamResolver.GetTargetClassStream(targetResolver, rootDirectory, table));
         }
 
-        public void WriteCollectionClass(IDaoSchemaDefinition schema, Func<string, Stream> targetResolver, string rootDirectory, Table table)
+        public void WriteCollectionClass(IDaoSchemaDefinition schema, Func<string, Stream> targetResolver, string rootDirectory, ITable table)
         {
             Load();
             DaoTableSchemaModel renderModel = GetModel(schema, table);
             Render("Collection", renderModel, DaoTargetStreamResolver.GetTargetCollectionStream(targetResolver, rootDirectory, table));
         }
 
-        public void WriteColumnsClass(IDaoSchemaDefinition schema, Func<string, Stream> targetResolver, string rootDirectory, Table table)
+        public void WriteColumnsClass(IDaoSchemaDefinition schema, Func<string, Stream> targetResolver, string rootDirectory, ITable table)
         {
             Load();
             DaoTableSchemaModel renderModel = GetModel(schema, table);
@@ -78,28 +78,28 @@ namespace Bam.Generators
             Render("Context", renderModel, DaoTargetStreamResolver.GetTargetContextStream(targetResolver, rootDirectory, schema));
         }
 
-        public void WritePagedQueryClass(IDaoSchemaDefinition schema, Func<string, Stream> targetResolver, string rootDirectory, Table table)
+        public void WritePagedQueryClass(IDaoSchemaDefinition schema, Func<string, Stream> targetResolver, string rootDirectory, ITable table)
         {
             Load();
             DaoTableSchemaModel renderModel = GetModel(schema, table);
             Render("PagedQueryClass", renderModel, DaoTargetStreamResolver.GetTargetPagedQueryClassStream(targetResolver, rootDirectory, table));
         }
 
-        public void WriteQiClass(IDaoSchemaDefinition schema, Func<string, Stream> targetResolver, string rootDirectory, Table table)
+        public void WriteQiClass(IDaoSchemaDefinition schema, Func<string, Stream> targetResolver, string rootDirectory, ITable table)
         {
             Load();
             DaoTableSchemaModel renderModel = GetModel(schema, table);
             Render("QiClass", renderModel, DaoTargetStreamResolver.GetTargetQiClassStream(targetResolver, rootDirectory, table));
         }
 
-        public void WriteQueryClass(IDaoSchemaDefinition schema, Func<string, Stream> targetResolver, string rootDirectory, Table table)
+        public void WriteQueryClass(IDaoSchemaDefinition schema, Func<string, Stream> targetResolver, string rootDirectory, ITable table)
         {
             Load();
             DaoTableSchemaModel renderModel = GetModel(schema, table);
             Render("QueryClass", renderModel, DaoTargetStreamResolver.GetTargetQueryClassStream(targetResolver, rootDirectory, table));
         }
 
-        public void WritePartial(IDaoSchemaDefinition schema, Func<string, Stream> targetResolver, string root, Table table)
+        public void WritePartial(IDaoSchemaDefinition schema, Func<string, Stream> targetResolver, string root, ITable table)
         {
             Load();
             DaoTableSchemaModel renderModel = GetModel(schema, table);
@@ -111,7 +111,7 @@ namespace Bam.Generators
             return new DaoContextModel { Model = schema, Namespace = Namespace };
         }
 
-        private DaoTableSchemaModel GetModel(IDaoSchemaDefinition schema, Table table)
+        private DaoTableSchemaModel GetModel(IDaoSchemaDefinition schema, ITable table)
         {
             return new DaoTableSchemaModel { Model = table, Schema = schema, Namespace = Namespace };
         }
