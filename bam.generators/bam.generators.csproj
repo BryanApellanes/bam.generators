@@ -53,12 +53,24 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="ProtocolBuffersAssemblyGenerator.cs" />
+    <Compile Remove="DaoProtocolBuffersAssemblyGenerator.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\bam.application\bam.application\bam.application.csproj" />
     <ProjectReference Include="..\..\bam.base\bam.base\bam.base.csproj" />
-    <ProjectReference Include="..\..\bam.commandline\bam.commandline\bam.commandline.csproj" />
+    <ProjectReference Include="..\..\bam.configuration\bam.configuration\bam.configuration.csproj" />
     <ProjectReference Include="..\..\bam.data.repositories\bam.data.repositories\bam.data.repositories.csproj" />
     <ProjectReference Include="..\..\bam.data.schema\bam.data.schema\bam.data.schema.csproj" />
+    <ProjectReference Include="..\..\bam.data\bam.data.config\bam.data.config.csproj" />
+    <ProjectReference Include="..\..\bam.data\bam.data.firebird\bam.data.firebird.csproj" />
+    <ProjectReference Include="..\..\bam.data\bam.data.mssql\bam.data.mssql.csproj" />
+    <ProjectReference Include="..\..\bam.data\bam.data.mysql\bam.data.mysql.csproj" />
+    <ProjectReference Include="..\..\bam.data\bam.data.oracle\bam.data.oracle.csproj" />
+    <ProjectReference Include="..\..\bam.data\bam.data.postgres\bam.data.postgres.csproj" />
     <ProjectReference Include="..\..\bam.data\bam.data\bam.data.csproj" />
+    <ProjectReference Include="..\..\bam.logging\bam.logging\bam.logging.csproj" />
   </ItemGroup>
 
 </Project>
