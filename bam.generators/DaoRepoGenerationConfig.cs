@@ -8,7 +8,7 @@ using Bam;
 using Bam.Configuration;
 using Bam.Data.Repositories;
 
-namespace Bam.Application
+namespace Bam.Generators
 {
     /// <summary>
     /// Configuration for generating a dao repository.
@@ -27,6 +27,8 @@ namespace Bam.Application
             }
         }
 
+        public static string DefaultFilePath = "./dao-repo-gen.yaml";
+        
         /// <summary>
         /// Gets or sets the path to the templates.
         /// </summary>
@@ -80,7 +82,7 @@ namespace Bam.Application
         /// <returns></returns>
         public static DaoRepoGenerationConfig LoadDefault()
         {
-            return LoadFrom("./dao-repo-gen.yaml");
+            return LoadFrom(DefaultFilePath);
         }
 
         /// <summary>
