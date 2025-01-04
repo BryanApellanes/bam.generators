@@ -24,7 +24,7 @@ namespace Bam.Generators.Tests.Unit
         [UnitTest]
         public void ShouldGenerateSchemaRepository()
         {
-            DefaultSchemaRepositoryGenerator generator = new DefaultSchemaRepositoryGenerator(new ConsoleLogger());
+            HandlebarsSchemaRepositoryGenerator generator = new HandlebarsSchemaRepositoryGenerator(new ConsoleLogger());
             generator.GenerateSource();
         }
     }
