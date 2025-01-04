@@ -12,14 +12,14 @@ using System.Text;
 
 namespace Bam.Generators
 {
-    public class DefaultSchemaRepositoryGenerator : SchemaRepositoryGenerator
+    public class HandlebarsSchemaRepositoryGenerator : SchemaRepositoryGenerator
     {
-        public DefaultSchemaRepositoryGenerator(ILogger? logger = null) : this(DaoRepoGenerationConfig.LoadDefault(), logger)
+        public HandlebarsSchemaRepositoryGenerator(ILogger? logger = null) : this(DaoRepoGenerationConfig.LoadDefault(), logger)
         { }
 
-        public DefaultSchemaRepositoryGenerator(IDaoRepoGenerationConfig config, ILogger? logger = null) : base(new DefaultSchemaRepositoryGeneratorSettings(config), logger)
+        public HandlebarsSchemaRepositoryGenerator(IDaoRepoGenerationConfig config, ILogger? logger = null) : base(new DefaultSchemaRepositoryGeneratorSettings(config), logger)
         {
-            TemplateRenderer = new HandlebarsTemplateRenderer(new HandlebarsEmbeddedResources(typeof(DefaultSchemaRepositoryGenerator).Assembly), new HandlebarsDirectory(config.TemplatePath));
+            TemplateRenderer = new HandlebarsTemplateRenderer(new HandlebarsEmbeddedResources(typeof(HandlebarsSchemaRepositoryGenerator).Assembly), new HandlebarsDirectory(config.TemplatePath));
 
             Configure(config);
             Handlebars.HandlebarsDirectory = new HandlebarsDirectory(config.TemplatePath);

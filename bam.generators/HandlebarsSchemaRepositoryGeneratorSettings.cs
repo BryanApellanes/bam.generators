@@ -11,9 +11,9 @@ using System.Threading.Tasks;
 
 namespace Bam.Generators
 {
-    public class DefaultSchemaRepositoryGeneratorSettings : SchemaRepositoryGeneratorSettings
+    public class HandlebarsSchemaRepositoryGeneratorSettings : SchemaRepositoryGeneratorSettings
     {
-        public DefaultSchemaRepositoryGeneratorSettings(IDaoRepoGenerationConfig daoConfig) : base(ServiceRegistry.Get<IDaoCodeWriter>(), ServiceRegistry.Get<IDaoTargetStreamResolver>(),ServiceRegistry.Get<IWrapperGenerator>())
+        public HandlebarsSchemaRepositoryGeneratorSettings(IDaoRepoGenerationConfig daoConfig) : base(ServiceRegistry.Get<IDaoCodeWriter>(), ServiceRegistry.Get<IDaoTargetStreamResolver>(),ServiceRegistry.Get<IWrapperGenerator>())
         {
             this.DaoRepoGenerationConfig = daoConfig;
         }
