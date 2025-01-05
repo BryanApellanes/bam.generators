@@ -14,7 +14,7 @@ namespace Bam.Generators
 {
     public class HandlebarsSchemaRepositoryGenerator : SchemaRepositoryGenerator
     {
-        public HandlebarsSchemaRepositoryGenerator(ILogger? logger = null) : this(DaoRepoGenerationConfig.LoadDefault(), logger)
+        public HandlebarsSchemaRepositoryGenerator(ILogger? logger = null) : this(DaoRepoGenerationConfig.ReadFile(), logger)
         { }
 
         public HandlebarsSchemaRepositoryGenerator(IDaoRepoGenerationConfig config, ILogger? logger = null) : base(new HandlebarsSchemaRepositoryGeneratorSettings(config), logger)

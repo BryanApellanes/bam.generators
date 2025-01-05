@@ -27,7 +27,7 @@ namespace Bam.Generators
             }
         }
 
-        public static string DefaultFilePath = "./dao-repo-gen.yaml";
+        public static string DefaultFilePath = $"./{nameof(DaoRepoGenerationConfig)}.yaml";
         
         /// <summary>
         /// Gets or sets the path to the templates.
@@ -71,12 +71,12 @@ namespace Bam.Generators
         public bool UseInheritanceSchema { get; set; }
 
         /// <summary>
-        /// Load the config from the file ./dao-repo-gen.yaml.
+        /// Load the config from the file ./DaoRepoGenerationConfig.yaml.
         /// </summary>
         /// <returns></returns>
-        public static DaoRepoGenerationConfig LoadDefault()
+        public static DaoRepoGenerationConfig ReadFile()
         {
-            return LoadFrom(DefaultFilePath);
+            return ReadFrom(DefaultFilePath);
         }
 
         /// <summary>
@@ -84,9 +84,9 @@ namespace Bam.Generators
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public static DaoRepoGenerationConfig LoadFrom(string path)
+        public static DaoRepoGenerationConfig ReadFrom(string path)
         {
-            return LoadFrom(new FileInfo(path));
+            return ReadFrom(new FileInfo(path));
         }
 
         /// <summary>
@@ -94,25 +94,9 @@ namespace Bam.Generators
         /// </summary>
         /// <param name="file">The file.</param>
         /// <returns>DaoRepoGenerationConfig</returns>
-        public static DaoRepoGenerationConfig LoadFrom(FileInfo file)
+        public static DaoRepoGenerationConfig ReadFrom(FileInfo file)
         {
-            if(!file.Exists)
-            {
-                throw new ArgumentException($"The specified dao repo generation config file was not found: {file.FullName}");
-            }
-
-            string ext = file.Extension;
-            if (ext.ToLowerInvariant().Equals(".json"))
-            {
-                return file.FullName.SafeReadFile().FromJson<DaoRepoGenerationConfig>();
-            }
-            if(ext.ToLowerInvariant().Equals(".yml") || ext.ToLowerInvariant().Equals(".yaml"))
-            {
-
-                return file.FullName.SafeReadFile().FromYaml<DaoRepoGenerationConfig>();
-            }
-
-            throw new ArgumentException($"Unsupported file extension, must be one of (.json, .yml or .yaml) but was: {ext}");
+            return file.FromFile<DaoRepoGenerationConfig>();
         }
 
     }
