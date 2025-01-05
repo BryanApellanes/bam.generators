@@ -56,12 +56,6 @@ namespace Bam.Generators
         public string FromNamespace { get; set; }
 
         /// <summary>
-        /// Gets or sets the namespace to generate dao types to.
-        /// </summary>
-        [CompositeKey]
-        public string ToNamespace { get; set; }
-
-        /// <summary>
         /// Gets or sets the file system path to write source code to.
         /// </summary>
         public string WriteSourceTo { get; set; }
