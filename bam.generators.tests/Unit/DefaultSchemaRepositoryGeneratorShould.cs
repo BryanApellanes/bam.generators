@@ -1,16 +1,7 @@
-﻿using Amazon.Runtime.Internal.Util;
-using Bam.Application;
-using Bam.Console;
-using Bam.Data.Schema;
-using Bam.CoreServices;
-using Bam.Data.Repositories;
+﻿using Bam.Console;
+using Bam.DependencyInjection;
 using Bam.Services;
 using Bam.Test;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Bam.Generators.Tests.Unit
 {

@@ -1,14 +1,6 @@
-﻿using Bam.Application;
-using Bam.Data;
-using Bam;
-using Bam.Application;
+﻿using Bam.Data;
 using Bam.Data.Repositories;
-using Bam.Data.Schema;
 using Bam.Logging;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
 
 namespace Bam.Generators
 {

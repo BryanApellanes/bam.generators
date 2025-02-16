@@ -1,12 +1,4 @@
-﻿using Bam.CoreServices.AssemblyManagement;
-using Bam.Data.Repositories;
-using Bam;
-using Microsoft.CodeAnalysis;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Bam.Data.Repositories;
 
 namespace Bam.Generators
 {

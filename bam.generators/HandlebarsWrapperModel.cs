@@ -1,7 +1,3 @@
-using System;
-using System.Linq;
-using Bam.Data.Repositories;
-using Bam;
 using Bam.Data.Repositories;
 
 namespace Bam.Generators

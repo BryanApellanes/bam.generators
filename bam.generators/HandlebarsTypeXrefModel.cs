@@ -1,8 +1,4 @@
-﻿using Bam;
-using Bam.Data.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Bam.Data.Repositories;
 
 namespace Bam.Generators
 {

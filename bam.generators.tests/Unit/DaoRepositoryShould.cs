@@ -1,18 +1,10 @@
 ﻿using Bam.Services;
 using Bam.Test;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Bam.CoreServices;
 using Bam.Data.Repositories;
-using Bam;
 using Bam.Generators.Tests.TestClasses;
 using Bam.Data.Schema;
-using Bam.Data.SQLite;
 using Bam.Console;
-using Bam.Data.Schema;
+using Bam.DependencyInjection;
 
 namespace Bam.Generators.Tests.Unit
 {

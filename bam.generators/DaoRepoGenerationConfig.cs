@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
-using System.Text;
+﻿using System.Reflection;
 using Bam.Data;
-using Bam;
-using Bam.Configuration;
 using Bam.Data.Repositories;
 
 namespace Bam.Generators

@@ -1,10 +1,4 @@
-﻿using Bam;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-
-namespace Bam.Generators
+﻿namespace Bam.Generators
 {
     public static class Handlebars
     {

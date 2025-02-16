@@ -1,15 +1,7 @@
-﻿using Bam.Test;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Bam.DependencyInjection;
+using Bam.Test;
 using NSubstitute;
-using Bam.Shell;
-using Bam.Console;
-using Bam.CommandLine;
 using Bam.Services;
-using Bam.CoreServices;
 
 namespace Bam.Generators.Tests.Unit
 {

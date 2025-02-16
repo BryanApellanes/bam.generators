@@ -1,11 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Reflection;
-using System.Threading.Tasks;
-using Bam;
 using Bam.Logging;
-using Bam.ServiceProxy;
 
 namespace Bam.Generators
 {
