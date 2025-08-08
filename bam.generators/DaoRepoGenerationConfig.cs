@@ -64,6 +64,8 @@ namespace Bam.Generators
         /// </summary>
         public bool UseInheritanceSchema { get; set; }
 
+        public bool WarningsAsErrors { get; set; }
+        
         /// <summary>
         /// Load the config from the file ./DaoRepoGenerationConfig.yaml.
         /// </summary>

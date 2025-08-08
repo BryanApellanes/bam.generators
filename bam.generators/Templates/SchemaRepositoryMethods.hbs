@@ -17,7 +17,8 @@
 		public void SetOne{{Type.Name}}Where(WhereDelegate<{{Type.Name}}Columns> where, out {{{Type.FullName}}} result)
 		{
 			{{DaoNamespace}}.{{Type.Name}}.SetOneWhere(where, out {{DaoNamespace}}.{{Type.Name}} daoResult, Database);
-			result = daoResult.CopyAs<{{{Type.FullName}}}>();
+			var data = daoResult.CopyAs<{{{Type.FullName}}}>();
+            result = new DaoRepoData<{{{Type.FullName}}}>(data, this);
 		}
 
 		/// <summary>
@@ -29,8 +30,9 @@
 		public {{{Type.FullName}}} GetOne{{Type.Name}}Where(WhereDelegate<{{Type.Name}}Columns> where)
 		{
 			Type wrapperType = GetWrapperType<{{{Type.FullName}}}>();
-			return ({{{Type.FullName}}}){{DaoNamespace}}.{{Type.Name}}.GetOneWhere(where, Database)?.CopyAs(wrapperType, this);
-		}
+			var data = ({{{Type.FullName}}}){{DaoNamespace}}.{{Type.Name}}.GetOneWhere(where, Database)?.CopyAs(wrapperType, this); 
+            return new DaoRepoData<{{{Type.FullName}}}>(data, this); 
+        }
 
 		/// <summary>
 		/// Execute a query that should return only one result.  If no result is found null is returned.  If more
@@ -44,7 +46,8 @@
 		public {{{Type.FullName}}} One{{Type.Name}}Where(WhereDelegate<{{Type.Name}}Columns> where)
         {
             Type wrapperType = GetWrapperType<{{{Type.FullName}}}>();
-            return ({{{Type.FullName}}}){{DaoNamespace}}.{{Type.Name}}.OneWhere(where, Database)?.CopyAs(wrapperType, this);
+            var data = ({{{Type.FullName}}}){{DaoNamespace}}.{{Type.Name}}.OneWhere(where, Database)?.CopyAs(wrapperType, this);
+            return new DaoRepoData<{{{Type.FullName}}}>(data, this);           
         }
 
 		/// <summary>

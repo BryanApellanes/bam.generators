@@ -82,8 +82,8 @@ namespace Bam.Generators.Tests.Unit
             testPerson.Id.ShouldBeGreaterThan(0);
             testPerson.Name.ShouldEqual(testName);
 
-            TestPerson retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id);
-            retrievedPerson.Id.ShouldEqual(testPerson.Id);
+            TestPerson? retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id);
+            retrievedPerson?.Id.ShouldEqual(testPerson.Id);
             retrievedPerson.Name = updatedName;
 
             TestPerson updatedPerson = repo.Update(retrievedPerson);

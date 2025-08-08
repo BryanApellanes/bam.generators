@@ -22,13 +22,13 @@ namespace Bam.Generators.Tests.Unit
 
                 svcRegistry
                     .For<SchemaProvider>().Use(
-                        new SchemaProvider(svcRegistry.Get<ITypeTableNameProvider>(), serviceRegistry.Get<ISchemaTempPathProvider>())
+                        new SchemaProvider(svcRegistry.Get<ITypeTableNameProvider>(), svcRegistry.Get<ISchemaTempPathProvider>())
                     );
             });
         }
 
         [Test]
-        public void ShouldGenerateTypeSchema()
+        public void GenerateTypeSchema()
         {
             string testName = 32.RandomLetters();
             SchemaProvider schemaGenerator = Get<SchemaProvider>();

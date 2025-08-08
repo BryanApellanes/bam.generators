@@ -28,7 +28,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\bam.application\bam.application\bam.application.csproj" />
     <ProjectReference Include="..\..\bam.base\bam.base\bam.base.csproj" />
-    <ProjectReference Include="..\..\bam.commandline\bam.commandline\bam.commandline.csproj" />
     <ProjectReference Include="..\..\bam.configuration\bam.configuration\bam.configuration.csproj" />
     <ProjectReference Include="..\..\bam.console\bam.console\bam.console.csproj" />
     <ProjectReference Include="..\..\bam.data.repositories\bam.data.repositories\bam.data.repositories.csproj" />
