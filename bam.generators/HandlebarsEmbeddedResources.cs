@@ -5,13 +5,19 @@ namespace Bam.Generators
 {
     public class HandlebarsEmbeddedResources : IHandlebarsEmbeddedResources
     {
-        public HandlebarsEmbeddedResources(Assembly assembly)
+        public HandlebarsEmbeddedResources(params Assembly[] assemblies)
         {
-            Assembly = assembly;
+            Assemblies = assemblies;
             Templates = new Dictionary<string, HandlebarsTemplate<object, object>>();
         }
 
-        public Assembly Assembly { get; set; }
+        public HandlebarsEmbeddedResources(IEnumerable<Assembly> assemblies)
+        {
+            Assemblies = assemblies;
+            Templates = new Dictionary<string, HandlebarsTemplate<object, object>>();   
+        }
+        
+        public IEnumerable<Assembly> Assemblies { get; set; }
 
         public Dictionary<string, HandlebarsTemplate<object, object>> Templates
         {
@@ -43,28 +49,34 @@ namespace Bam.Generators
                 // register each before compiling individually so each is available as a partial
                 ForEachEmbeddedTemplate(resourceName =>
                 {
-                    using (TextReader sr = new StreamReader(Assembly.GetManifestResourceStream(resourceName)))
+                    foreach (Assembly assembly in Assemblies)
                     {
-                        string longName = Path.GetFileNameWithoutExtension(resourceName);
-                        string shortName = longName.Substring(longName.LastIndexOf(".") + 1);
-                        string templateText = sr.ReadToEnd();
-                        HandlebarsDotNet.Handlebars.RegisterTemplate(longName, templateText);
-                        HandlebarsDotNet.Handlebars.RegisterTemplate(shortName, templateText);
+                        using (TextReader sr = new StreamReader(assembly.GetManifestResourceStream(resourceName)))
+                        {
+                            string longName = Path.GetFileNameWithoutExtension(resourceName);
+                            string shortName = longName.Substring(longName.LastIndexOf(".") + 1);
+                            string templateText = sr.ReadToEnd();
+                            HandlebarsDotNet.Handlebars.RegisterTemplate(longName, templateText);
+                            HandlebarsDotNet.Handlebars.RegisterTemplate(shortName, templateText);
+                        }
                     }
                 });
 
                 ForEachEmbeddedTemplate(resourceName =>
                 {
-                    using (TextReader sr = new StreamReader(Assembly.GetManifestResourceStream(resourceName)))
+                    foreach (Assembly assembly in Assemblies)
                     {
-                        string longName = Path.GetFileNameWithoutExtension(resourceName);
-                        string shortName = longName.Substring(longName.LastIndexOf(".") + 1);
-                        string templateText = sr.ReadToEnd();
+                        using (TextReader sr = new StreamReader(assembly.GetManifestResourceStream(resourceName)))
+                        {
+                            string longName = Path.GetFileNameWithoutExtension(resourceName);
+                            string shortName = longName.Substring(longName.LastIndexOf(".") + 1);
+                            string templateText = sr.ReadToEnd();
 
-                        HandlebarsTemplate<object, object> compiled = HandlebarsDotNet.Handlebars.Compile(templateText);
+                            HandlebarsTemplate<object, object> compiled = HandlebarsDotNet.Handlebars.Compile(templateText);
 
-                        Templates.AddMissing(longName, compiled);
-                        Templates.AddMissing(shortName, compiled);
+                            Templates.AddMissing(longName, compiled);
+                            Templates.AddMissing(shortName, compiled);
+                        }
                     }
                 });
 
@@ -74,14 +86,18 @@ namespace Bam.Generators
 
         private void ForEachEmbeddedTemplate(Action<string> action)
         {
-            string[] resourceNames = Assembly.GetManifestResourceNames();
-            foreach (string resourceName in resourceNames)
+            foreach (Assembly assembly in Assemblies)
             {
-                if (resourceName.EndsWith(".hbs", StringComparison.InvariantCultureIgnoreCase))
+                string[] resourceNames = assembly.GetManifestResourceNames();
+                foreach (string resourceName in resourceNames)
                 {
-                    action(resourceName);
+                    if (resourceName.EndsWith(".hbs", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        action(resourceName);
+                    }
                 }
             }
+            
         }
     }
 }

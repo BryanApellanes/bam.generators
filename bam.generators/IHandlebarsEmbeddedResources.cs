@@ -5,7 +5,7 @@ namespace Bam.Generators
 {
     public interface IHandlebarsEmbeddedResources
     {
-        Assembly Assembly { get; set; }
+        IEnumerable<Assembly> Assemblies { get; set; }
         bool IsLoaded { get; }
         Dictionary<string, HandlebarsTemplate<object, object>> Templates { get; set; }
 
