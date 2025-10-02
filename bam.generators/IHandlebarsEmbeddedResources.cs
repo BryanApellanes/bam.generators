@@ -3,13 +3,13 @@ using System.Reflection;
 
 namespace Bam.Generators
 {
-    public interface IHandlebarsEmbeddedResources
+    public interface IHandlebarsEmbeddedResources : ITemplateRenderer
     {
         IEnumerable<Assembly> Assemblies { get; set; }
         bool IsLoaded { get; }
         Dictionary<string, HandlebarsTemplate<object, object>> Templates { get; set; }
 
         void Reload();
-        string Render(string templateName, object data);
+        //string Render(string templateName, object data);
     }
 }

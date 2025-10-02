@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Text;
 using HandlebarsDotNet;
 
 namespace Bam.Generators
@@ -29,12 +30,46 @@ namespace Bam.Generators
         bool _loaded = false;
         public bool IsLoaded => _loaded;
 
-        public string Render(string templateName, object data)
+        public void Render(object? toRender, Stream output)
+        {
+            string templateName = toRender?.GetType().Name ?? "default";
+            Render(templateName, toRender, output);
+        }
+
+        public void Render(string templateName, object? toRender, Stream output)
+        {
+            string rendered = Render(templateName, toRender);
+
+            using (StreamWriter sw = new StreamWriter(output, Encoding.UTF8, Encoding.UTF8.GetByteCount(rendered), true))
+            {
+                sw.Write(rendered);
+                sw.Flush();
+            }
+        }
+
+        public string Render(object toRender)
+        {
+            string templateName = toRender?.GetType().Name ?? "default";
+           return Render(templateName, toRender);
+        }
+
+        public string Render(string templateName, object? data)
         {
             if (!_loaded)
             {
                 Reload();
             }
+
+            if (string.IsNullOrEmpty(templateName))
+            {
+                throw new ArgumentNullException("templateName");
+            }
+
+            if (data == null)
+            {
+                throw new ArgumentNullException("data");
+            }
+
             if (!Templates.ContainsKey(templateName))
             {
                 Args.Throw<InvalidOperationException>("Specified template not found: {0}", templateName);
@@ -99,5 +134,6 @@ namespace Bam.Generators
             }
             
         }
+
     }
 }
