@@ -15,7 +15,7 @@
     <None Update="dao-repo-gen.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="dao-repo-gen.yaml">
+    <None Update="DaoRepoGenerationConfig.yaml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

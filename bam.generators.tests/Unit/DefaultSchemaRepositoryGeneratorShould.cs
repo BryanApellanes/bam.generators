@@ -15,7 +15,9 @@ namespace Bam.Generators.Tests.Unit
         [UnitTest]
         public void ShouldGenerateSchemaRepository()
         {
-            HandlebarsSchemaRepositoryGenerator generator = new HandlebarsSchemaRepositoryGenerator(new ConsoleLogger());
+            string configPath = RuntimeSettings.GetEntryAssemblyDirectoryFilePathFor("DaoRepoGenerationConfig.yaml");
+            DaoRepoGenerationConfig config = DaoRepoGenerationConfig.ReadFrom(configPath);
+            HandlebarsSchemaRepositoryGenerator generator = new HandlebarsSchemaRepositoryGenerator(config, new ConsoleLogger());
             generator.GenerateSource();
         }
     }
