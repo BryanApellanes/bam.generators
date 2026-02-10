@@ -37,6 +37,7 @@ namespace Bam.Generators.Tests.Unit
             repo.ShouldBeOfType<DaoRepository>();
         }
 
+        [ConsoleCommand("DaoRepositoryShould Create Entry")]
         [UnitTest]
         public void CreateEntry()
         {
@@ -51,6 +52,7 @@ namespace Bam.Generators.Tests.Unit
             testPerson.Id.ShouldBeGreaterThan(0, $"Id should have been greater than 0 but was {testPerson.Id}");
         }
 
+        [ConsoleCommand("DaoRepositoryShould Retrieve Entry")]
         [UnitTest]
         public void RetrieveEntry()
         {
@@ -67,6 +69,7 @@ namespace Bam.Generators.Tests.Unit
             retrievedPerson.Name.ShouldEqual(testName);
         }
 
+        [ConsoleCommand("DaoRepositoryShould Update Entry")]
         [UnitTest]
         public void UpdateEntry()
         {
@@ -91,6 +94,7 @@ namespace Bam.Generators.Tests.Unit
             updatedPerson.Name.ShouldEqual(updatedName);
         }
 
+        [ConsoleCommand("DaoRepositoryShould Delete Entry")]
         [UnitTest]
         public void DeleteEntry()
         {
@@ -114,6 +118,7 @@ namespace Bam.Generators.Tests.Unit
             shouldBeNull.ShouldBeNull($"Expected to retrieve null but got data: {shouldBeNull?.ToJson()}");
         }
 
+        [ConsoleCommand("DaoRepositoryShould Save Children")]
         [UnitTest]
         public void SaveChildren()
         {
@@ -139,6 +144,7 @@ namespace Bam.Generators.Tests.Unit
             retrieved.TestCars.Count.ShouldEqual(1);
         }
 
+        [ConsoleCommand("DaoRepositoryShould Save Xrefs")]
         [UnitTest]
         public void SaveXrefs()
         {
