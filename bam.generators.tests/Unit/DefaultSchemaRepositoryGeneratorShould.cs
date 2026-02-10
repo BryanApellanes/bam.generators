@@ -1,4 +1,4 @@
-﻿using Bam.Console;
+using Bam.Console;
 using Bam.DependencyInjection;
 using Bam.Services;
 using Bam.Test;
@@ -15,10 +15,25 @@ namespace Bam.Generators.Tests.Unit
         [UnitTest]
         public void ShouldGenerateSchemaRepository()
         {
-            string configPath = RuntimeSettings.GetEntryAssemblyDirectoryFilePathFor("DaoRepoGenerationConfig.yaml");
-            DaoRepoGenerationConfig config = DaoRepoGenerationConfig.ReadFrom(configPath);
-            HandlebarsSchemaRepositoryGenerator generator = new HandlebarsSchemaRepositoryGenerator(config, new ConsoleLogger());
-            generator.GenerateSource();
+            When.A<HandlebarsSchemaRepositoryGenerator>("generates source",
+                () =>
+                {
+                    string configPath = RuntimeSettings.GetEntryAssemblyDirectoryFilePathFor("DaoRepoGenerationConfig.yaml");
+                    DaoRepoGenerationConfig config = DaoRepoGenerationConfig.ReadFrom(configPath);
+                    return new HandlebarsSchemaRepositoryGenerator(config, new ConsoleLogger());
+                },
+                (generator) =>
+                {
+                    generator.GenerateSource();
+                    return generator;
+                })
+            .TheTest
+            .ShouldPass(because =>
+            {
+                because.TheResult.IsNotNull();
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
         }
     }
 }

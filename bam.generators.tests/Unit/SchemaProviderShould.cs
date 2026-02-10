@@ -1,4 +1,3 @@
-﻿using Bam.Console;
 using Bam.Data.Schema;
 using Bam.Generators.Tests.TestClasses;
 using Bam.Data.Repositories;
@@ -31,12 +30,19 @@ namespace Bam.Generators.Tests.Unit
         public void GenerateTypeSchema()
         {
             string testName = 32.RandomLetters();
-            SchemaProvider schemaGenerator = Get<SchemaProvider>();
-            TypeSchema typeSchema = schemaGenerator.CreateTypeSchema(testName, typeof(TestPerson));
-            typeSchema.Name.ShouldBe(testName);
-            typeSchema.Tables.Count.ShouldBeEqualTo(3);
 
-            Message.PrintLine(typeSchema.ToString(), ConsoleColor.DarkYellow);
+            When.A<SchemaProvider>("creates a TypeSchema",
+                () => Get<SchemaProvider>(),
+                (schemaGenerator) => schemaGenerator.CreateTypeSchema(testName, typeof(TestPerson)))
+            .TheTest
+            .ShouldPass(because =>
+            {
+                because.TheResult.IsNotNull()
+                    .As<TypeSchema>("Name equals test name", ts => testName.Equals(ts?.Name))
+                    .As<TypeSchema>("has 3 tables", ts => ts?.Tables.Count == 3);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
         }
     }
 }

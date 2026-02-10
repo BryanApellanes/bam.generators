@@ -1,4 +1,4 @@
-﻿using Bam.DependencyInjection;
+using Bam.DependencyInjection;
 using Bam.Test;
 using NSubstitute;
 using Bam.Services;
@@ -17,12 +17,22 @@ namespace Bam.Generators.Tests.Unit
         {
             IHandlebarsDirectory mockHandlebarsDirectory = Substitute.For<IHandlebarsDirectory>();
             IHandlebarsEmbeddedResources mockHandlebarsEmbeddedResources = Substitute.For<IHandlebarsEmbeddedResources>();
-            HandlebarsCSharpDaoCodeWriter codeWriter = new HandlebarsCSharpDaoCodeWriter(mockHandlebarsDirectory, mockHandlebarsEmbeddedResources);
 
-            codeWriter.Load();
-
-            mockHandlebarsDirectory.Received().Reload();
-            mockHandlebarsEmbeddedResources.Received().Reload();
+            When.A<HandlebarsCSharpDaoCodeWriter>("calls Load",
+                new HandlebarsCSharpDaoCodeWriter(mockHandlebarsDirectory, mockHandlebarsEmbeddedResources),
+                (codeWriter) =>
+                {
+                    codeWriter.Load();
+                    return codeWriter;
+                })
+            .TheTest
+            .ShouldPass(because =>
+            {
+                because.ItsTrue("Reload was called on HandlebarsDirectory", () => mockHandlebarsDirectory.Received().Reload());
+                because.ItsTrue("Reload was called on HandlebarsEmbeddedResources", () => mockHandlebarsEmbeddedResources.Received().Reload());
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
         }
     }
 }
