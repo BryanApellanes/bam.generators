@@ -30,8 +30,9 @@
 		public {{{Type.FullName}}} GetOne{{Type.Name}}Where(WhereDelegate<{{Type.Name}}Columns> where)
 		{
 			Type wrapperType = GetWrapperType<{{{Type.FullName}}}>();
-			var data = ({{{Type.FullName}}}){{DaoNamespace}}.{{Type.Name}}.GetOneWhere(where, Database)?.CopyAs(wrapperType, this); 
-            return new DaoRepoData<{{{Type.FullName}}}>(data, this); 
+			var data = ({{{Type.FullName}}}){{DaoNamespace}}.{{Type.Name}}.GetOneWhere(where, Database)?.CopyAs(wrapperType, this);
+            if (data == null) return null;
+            return new DaoRepoData<{{{Type.FullName}}}>(data, this);
         }
 
 		/// <summary>
@@ -47,7 +48,8 @@
         {
             Type wrapperType = GetWrapperType<{{{Type.FullName}}}>();
             var data = ({{{Type.FullName}}}){{DaoNamespace}}.{{Type.Name}}.OneWhere(where, Database)?.CopyAs(wrapperType, this);
-            return new DaoRepoData<{{{Type.FullName}}}>(data, this);           
+            if (data == null) return null;
+            return new DaoRepoData<{{{Type.FullName}}}>(data, this);
         }
 
 		/// <summary>
