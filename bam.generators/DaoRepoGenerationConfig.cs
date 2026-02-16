@@ -9,6 +9,10 @@ namespace Bam.Generators
     /// </summary>
     public class DaoRepoGenerationConfig : IDaoRepoGenerationConfig
     {
+        /// <summary>
+        /// Initializes a new instance with default settings: CheckForIds enabled, template path under AppPaths.Data,
+        /// output to "Generated_Dao", and TypeAssembly set to the entry assembly.
+        /// </summary>
         public DaoRepoGenerationConfig()
         {
             CheckForIds = true;
@@ -21,6 +25,9 @@ namespace Bam.Generators
             }
         }
 
+        /// <summary>
+        /// The default file path for the YAML configuration file ("./DaoRepoGenerationConfig.yaml").
+        /// </summary>
         public static string DefaultFilePath = $"./{nameof(DaoRepoGenerationConfig)}.yaml";
         
         /// <summary>
@@ -75,22 +82,25 @@ namespace Bam.Generators
         /// </summary>
         public bool UseInheritanceSchema { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether compiler warnings should be treated as errors during code generation.
+        /// </summary>
         public bool WarningsAsErrors { get; set; }
         
         /// <summary>
         /// Load the config from the file ./DaoRepoGenerationConfig.yaml.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A <see cref="DaoRepoGenerationConfig"/> deserialized from the default YAML file.</returns>
         public static DaoRepoGenerationConfig ReadFile()
         {
             return ReadFrom(DefaultFilePath);
         }
 
         /// <summary>
-        /// Load the configuration from the specified file.
+        /// Load the configuration from the specified file path.
         /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
+        /// <param name="path">The file path to load the configuration from.</param>
+        /// <returns>A <see cref="DaoRepoGenerationConfig"/> deserialized from the specified file.</returns>
         public static DaoRepoGenerationConfig ReadFrom(string path)
         {
             return ReadFrom(new FileInfo(path));
