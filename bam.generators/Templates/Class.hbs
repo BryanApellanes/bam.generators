@@ -629,7 +629,7 @@ namespace {{Namespace}}
             IQuerySet query = GetQuerySet(db);
             query.Count<{{Model.ClassName}}>();
             query.Execute(db);
-            return (long)query.Results[0].DataRow[0];
+            return query.Results.As<CountResult>(0).Value;
         }
 
 		/// <summary>
