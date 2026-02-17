@@ -23,15 +23,15 @@ namespace Bam.Generators
         /// </summary>
         /// <param name="directory">The directory containing Handlebars template files.</param>
         /// <param name="logger">An optional logger; defaults to <see cref="Log.Default"/> if not provided.</param>
-        public HandlebarsDirectory(DirectoryInfo directory, ILogger logger = null)
+        public HandlebarsDirectory(DirectoryInfo directory, ILogger? logger = null)
         {
             Args.ThrowIfNull(directory, "directory");
             FileExtension = "hbs";
             Directory = directory;
-            Logger = logger ?? Log.Default;
+            Logger = logger ?? Log.Default!;
             if (!directory.Exists)
             {
-                Logger.Warning("Handlebars directory does not exist: {0}", _directory.FullName);
+                Logger.Warning("Handlebars directory does not exist: {0}", _directory!.FullName);
             }
         }
 
@@ -40,7 +40,7 @@ namespace Bam.Generators
         /// </summary>
         /// <param name="directoryPath">The path to the directory containing Handlebars template files.</param>
         /// <param name="logger">An optional logger; defaults to <see cref="Log.Default"/> if not provided.</param>
-        public HandlebarsDirectory(string directoryPath, ILogger logger = null) : this(new DirectoryInfo(directoryPath), logger)
+        public HandlebarsDirectory(string directoryPath, ILogger? logger = null) : this(new DirectoryInfo(directoryPath), logger)
         {
         }
 
@@ -52,7 +52,7 @@ namespace Bam.Generators
         /// <summary>
         /// Gets the dictionary of compiled template functions keyed by template name.
         /// </summary>
-        public Dictionary<string, Func<object, string>> Templates { get; private set; }
+        public Dictionary<string, Func<object, string>> Templates { get; private set; } = null!;
 
         /// <summary>
         /// Determines whether a template with the specified name has been loaded.
@@ -84,7 +84,7 @@ namespace Bam.Generators
                 }
                 foreach (string key in dir.Templates.Keys)
                 {
-                    combined.Templates.AddMissing(key, dir.Templates[key]);
+                    combined.Templates.TryAdd(key, dir.Templates[key]);
                 }
             }
             combined.Reload();
@@ -107,10 +107,10 @@ namespace Bam.Generators
             }
             else
             {
-                Templates.AddMissing(templateName, (obj) =>
+                Templates.TryAdd(templateName, (obj) =>
                 {
                     HandlebarsTemplate<object, object> template = HandlebarsDotNet.Handlebars.Compile(source);
-                    return template.DynamicInvoke(obj, obj) as string;
+                    return (template.DynamicInvoke(obj, obj) as string)!;
                 });
             }
         }
@@ -158,7 +158,7 @@ namespace Bam.Generators
             return string.Empty;
         }
 
-        DirectoryInfo _directory;
+        DirectoryInfo _directory = null!;
         /// <summary>
         /// Gets or sets the directory from which templates are loaded. Setting this also initializes partials subdirectories.
         /// </summary>
@@ -196,7 +196,7 @@ namespace Bam.Generators
         /// <summary>
         /// Gets or sets the set of directories that contain partial templates.
         /// </summary>
-        public HashSet<DirectoryInfo> PartialsDirectories { get; set; }
+        public HashSet<DirectoryInfo> PartialsDirectories { get; set; } = null!;
         readonly object _reloadLock = new object();
         bool _loaded = false;
 
@@ -244,7 +244,7 @@ namespace Bam.Generators
                     }
                     if (Directory != null && Directory.Exists)
                     {
-                        foreach (FileInfo file in Directory?.GetFiles($"*.{FileExtension}"))
+                        foreach (FileInfo file in Directory!.GetFiles($"*.{FileExtension}"))
                         {
                             AddCompiledTemplateFile(file);
                         }
@@ -267,10 +267,10 @@ namespace Bam.Generators
             Func<object, string> func = (obj) =>
             {
                 HandlebarsTemplate<object, object> template = HandlebarsDotNet.Handlebars.Compile(content);
-                return template.DynamicInvoke(obj, obj) as string;
+                return (template.DynamicInvoke(obj, obj) as string)!;
             };
-            Templates.AddMissing(shortName, func);
-            Templates.AddMissing(longName, func);
+            Templates.TryAdd(shortName, func);
+            Templates.TryAdd(longName, func);
         }
 
         private void SetDirectory(DirectoryInfo directory)
@@ -283,7 +283,7 @@ namespace Bam.Generators
                 {
                     _directory.Create();
                 }
-                DirectoryInfo partials = _directory.GetDirectories("Partials").FirstOrDefault();
+                DirectoryInfo? partials = _directory.GetDirectories("Partials").FirstOrDefault();
                 if (partials != null)
                 {
                     AddPartialsDirectory(partials.FullName);

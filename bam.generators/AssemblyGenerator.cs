@@ -23,7 +23,7 @@ namespace Bam.Generators
         /// <summary>
         /// The name of the assembly to generate, if this values is null a random name is generated.
         /// </summary>
-        public string AssemblyName { get; set; }
+        public string AssemblyName { get; set; } = null!;
         /// <summary>
         /// Gets or sets the directory path where generated source files are written.
         /// </summary>
@@ -37,7 +37,7 @@ namespace Bam.Generators
         /// <summary>
         /// Metadata file holding GeneratedAssemblyInfo
         /// </summary>
-        public string InfoFileName { get; set; }
+        public string InfoFileName { get; set; } = null!;
         /// <summary>
         /// Gets or sets the hash algorithm used for source file content hashing.
         /// </summary>
@@ -46,7 +46,7 @@ namespace Bam.Generators
         /// <summary>
         /// Gets or sets an optional seed value used as the initial input when computing the cumulative source hash.
         /// </summary>
-        public string Seed { get; set; }
+        public string Seed { get; set; } = null!;
 
         /// <summary>
         /// Generates an assembly from the source files, writing source first if not already written.
@@ -90,19 +90,19 @@ namespace Bam.Generators
         /// Occurs when source files have been written to the source directory.
         /// </summary>
         [Verbosity(VerbosityLevel.Information, SenderMessageFormat = "SourceWritten({GeneratorType}):AssemblyName:{AssemblyName}\r\nSourceDirectoryPath:{SourceDirectoryPath}")]
-        public event EventHandler SourceWritten;
+        public event EventHandler SourceWritten = null!;
 
         /// <summary>
         /// Occurs when the assembly has been compiled from source.
         /// </summary>
         [Verbosity(VerbosityLevel.Information, SenderMessageFormat = "AssemblyCompiled({GeneratorType}):AssemblyName:{AssemblyName}\r\nSourceDirectoryPath:{SourceDirectoryPath}")]
-        public event EventHandler AssemblyCompiled;
+        public event EventHandler AssemblyCompiled = null!;
 
         /// <summary>
         /// Occurs when the compiled assembly has been saved to disk.
         /// </summary>
         [Verbosity(VerbosityLevel.Information, SenderMessageFormat = "AssemblySaved({GeneratorType}):AssemblyName:{AssemblyName}\r\nSourceDirectoryPath:{SourceDirectoryPath}")]
-        public event EventHandler AssemblySaved;
+        public event EventHandler AssemblySaved = null!;
 
         /// <summary>
         /// When overridden in a derived class, writes the generated source files to the specified directory.
@@ -172,7 +172,7 @@ namespace Bam.Generators
             return currentHash;
         }
 
-        Dictionary<string, string> _fileHashes;
+        Dictionary<string, string> _fileHashes = null!;
         readonly object _hashFileLock = new object();
         /// <summary>
         /// Hashes all .cs files in the source directory and caches the results.
@@ -203,7 +203,7 @@ namespace Bam.Generators
             }
 
             string contentHash = new FileInfo(filePath).ContentHash(HashAlgorithm);
-            _fileHashes.AddMissing(filePath, contentHash);
+            _fileHashes.TryAdd(filePath, contentHash);
             return contentHash;
         }
 

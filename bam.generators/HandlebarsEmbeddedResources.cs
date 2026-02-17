@@ -133,7 +133,7 @@ namespace Bam.Generators
                 {
                     foreach (Assembly assembly in Assemblies)
                     {
-                        using (TextReader sr = new StreamReader(assembly.GetManifestResourceStream(resourceName)))
+                        using (TextReader sr = new StreamReader(assembly.GetManifestResourceStream(resourceName)!))
                         {
                             string longName = Path.GetFileNameWithoutExtension(resourceName);
                             string shortName = longName.Substring(longName.LastIndexOf(".") + 1);
@@ -148,7 +148,7 @@ namespace Bam.Generators
                 {
                     foreach (Assembly assembly in Assemblies)
                     {
-                        using (TextReader sr = new StreamReader(assembly.GetManifestResourceStream(resourceName)))
+                        using (TextReader sr = new StreamReader(assembly.GetManifestResourceStream(resourceName)!))
                         {
                             string longName = Path.GetFileNameWithoutExtension(resourceName);
                             string shortName = longName.Substring(longName.LastIndexOf(".") + 1);
@@ -156,8 +156,8 @@ namespace Bam.Generators
 
                             HandlebarsTemplate<object, object> compiled = HandlebarsDotNet.Handlebars.Compile(templateText);
 
-                            Templates.AddMissing(longName, compiled);
-                            Templates.AddMissing(shortName, compiled);
+                            Templates.TryAdd(longName, compiled);
+                            Templates.TryAdd(shortName, compiled);
                         }
                     }
                 });

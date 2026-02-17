@@ -39,13 +39,13 @@ namespace Bam.Generators
         /// Gets or sets the type assembly.
         /// </summary>
         [CompositeKey]
-        public string TypeAssembly { get; set; }
+        public string TypeAssembly { get; set; } = null!;
 
         /// <summary>
         /// Gets or sets the schema name.
         /// </summary>
         [CompositeKey]
-        public string SchemaName { get; set; }
+        public string SchemaName { get; set; } = null!;
 
         /// <summary>
         /// Gets or sets from which namespace to find types to generate dao types and wrappers for.
@@ -54,7 +54,7 @@ namespace Bam.Generators
         /// From name space.
         /// </value>
         [CompositeKey]
-        public string FromNamespace { get; set; }
+        public string FromNamespace { get; set; } = null!;
 
         /// <summary>
         /// Gets or sets the target namespace for generated dao types.  Defaults to FromNamespace suffixed with ".Dao".

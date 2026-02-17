@@ -17,7 +17,7 @@ namespace Bam.Generators
         /// Initializes a new instance with dependencies resolved from a default service registry.
         /// </summary>
         /// <param name="daoConfig">The DAO repository generation configuration.</param>
-        public HandlebarsSchemaRepositoryGeneratorSettings(IDaoRepoGenerationConfig daoConfig) : base(ServiceRegistry.Get<IDaoCodeWriter>(), ServiceRegistry.Get<IDaoTargetStreamResolver>(),ServiceRegistry.Get<IWrapperGenerator>())
+        public HandlebarsSchemaRepositoryGeneratorSettings(IDaoRepoGenerationConfig daoConfig) : base(ServiceRegistry!.Get<IDaoCodeWriter>(), ServiceRegistry!.Get<IDaoTargetStreamResolver>(),ServiceRegistry!.Get<IWrapperGenerator>())
         {
             this.DaoRepoGenerationConfig = daoConfig;
         }

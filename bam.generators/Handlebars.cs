@@ -23,12 +23,12 @@
         /// <summary>
         /// Gets or sets the directory-based template source for loading Handlebars templates from the file system.
         /// </summary>
-        public static HandlebarsDirectory HandlebarsDirectory { get; set; }
+        public static HandlebarsDirectory HandlebarsDirectory { get; set; } = null!;
 
         /// <summary>
         /// Gets or sets the embedded resource-based template source for loading Handlebars templates from assemblies.
         /// </summary>
-        public static HandlebarsEmbeddedResources HandlebarsEmbeddedResources { get; set; }
+        public static HandlebarsEmbeddedResources HandlebarsEmbeddedResources { get; set; } = null!;
 
         /// <summary>
         /// Renders the specified Handlebars template with the given model and writes the output to a stream.

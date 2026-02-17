@@ -19,7 +19,7 @@ namespace Bam.Generators
         /// </summary>
         /// <param name="database">An optional database instance. If provided, overrides the default database.</param>
         /// <param name="logger">An optional logger instance. If provided, overrides the default logger.</param>
-        public DefaultDaoRepository(IDatabase? database = null, ILogger? logger = null) : base(ServiceRegistry.Get<ISchemaProvider>(), ServiceRegistry.Get<IDaoGenerator>(), ServiceRegistry.Get<IWrapperGenerator>())
+        public DefaultDaoRepository(IDatabase? database = null, ILogger? logger = null) : base(ServiceRegistry!.Get<ISchemaProvider>(), ServiceRegistry!.Get<IDaoGenerator>(), ServiceRegistry!.Get<IWrapperGenerator>())
         {
             if(database != null)
             {

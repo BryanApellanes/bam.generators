@@ -69,7 +69,7 @@ namespace Bam.Generators
         /// <summary>
         /// Gets or sets the target namespace for generated DAO code.
         /// </summary>
-        public string Namespace { get; set; }
+        public string Namespace { get; set; } = null!;
 
         /// <summary>
         /// Gets or sets the resolver that determines output stream locations for each generated file type.
@@ -209,13 +209,13 @@ namespace Bam.Generators
 
         private void Render(string templateName, object renderModel, Stream output)
         {
-            if ((HandlebarsDirectory?.Templates?.ContainsKey(templateName)).Value)
+            if ((HandlebarsDirectory?.Templates?.ContainsKey(templateName)) == true)
             {
                 string code = HandlebarsDirectory.Render(templateName, renderModel);
 
                 code.WriteToStream(output);
             }
-            else if ((HandlebarsEmbeddedResources?.Templates?.ContainsKey(templateName)).Value)
+            else if ((HandlebarsEmbeddedResources?.Templates?.ContainsKey(templateName)) == true)
             {
                 string code = HandlebarsEmbeddedResources.Render(templateName, renderModel);
                 code.WriteToStream(output);

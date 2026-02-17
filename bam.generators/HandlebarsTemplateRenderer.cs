@@ -51,7 +51,7 @@ namespace Bam.Generators
         /// <summary>
         /// Gets or sets the logger used for diagnostics.
         /// </summary>
-        public ILogger Logger { get; set; }
+        public ILogger Logger { get; set; } = null!;
 
         /// <summary>
         /// Gets or sets the set of directory-based template sources.
@@ -153,7 +153,7 @@ namespace Bam.Generators
                 HandlebarsEmbeddedResources.Reload();
             }
 
-            HandlebarsDirectory handlebarsDirectory = GetHandlebarsDirectory(templateName);
+            HandlebarsDirectory? handlebarsDirectory = GetHandlebarsDirectory(templateName);
             if (handlebarsDirectory != null)
             { 
                 string code = handlebarsDirectory.Render(templateName, renderModel);
@@ -170,12 +170,12 @@ namespace Bam.Generators
             }
         }
 
-        private HandlebarsDirectory GetHandlebarsDirectory(string templateName)
+        private HandlebarsDirectory? GetHandlebarsDirectory(string templateName)
         {
-            HandlebarsDirectory toUse = HandlebarsDirectories.FirstOrDefault(h => h.HasTemplate(templateName));
+            HandlebarsDirectory? toUse = HandlebarsDirectories.FirstOrDefault(h => h.HasTemplate(templateName));
             if (HandlebarsDirectories.Count(h => h.HasTemplate(templateName)) > 1)
             {
-                (Logger ?? Log.Default).Info("Multiple templates named {0} were found, using {1}", templateName, Path.Combine(toUse.Directory.FullName, templateName));
+                (Logger ?? Log.Default!).Info("Multiple templates named {0} were found, using {1}", templateName, Path.Combine(toUse!.Directory.FullName, templateName));
             }
 
             return toUse;
