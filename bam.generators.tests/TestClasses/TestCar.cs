@@ -4,11 +4,11 @@
     {
         public TestCar() { }
         public ulong Id { get; set; }
-        public string Make { get; set; }
-        public string Model { get; set; }
+        public string Make { get; set; } = null!;
+        public string Model { get; set; } = null!;
 
         public ulong TestPersonId { get; set; }
 
-        public virtual TestPerson TestPerson { get; set; }
+        public virtual TestPerson TestPerson { get; set; } = null!;
     }
 }

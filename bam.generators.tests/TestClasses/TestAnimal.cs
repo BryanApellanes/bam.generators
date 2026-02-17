@@ -5,8 +5,8 @@
         public TestAnimal() { }
 
         public ulong Id { get; set; }
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
 
-        public virtual List<TestPerson> Owners { get; set; }
+        public virtual List<TestPerson> Owners { get; set; } = null!;
     }
 }

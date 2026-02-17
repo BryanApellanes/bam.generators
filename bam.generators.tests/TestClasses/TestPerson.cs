@@ -8,7 +8,7 @@
             this.Pets = new List<TestAnimal>();
         }
 
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
 
         public ulong Id { get; set; }
 
@@ -18,7 +18,7 @@
         public ulong ULongProperty { get; set; }
         public long LongProperty { get; set; }
         public decimal DecimalProperty { get; set; }
-        public byte[] ByteArrayProperty { get; set; }
+        public byte[] ByteArrayProperty { get; set; } = null!;
         public DateTime? DateTimeProperty { get; set; }
 
         public virtual List<TestAnimal> Pets { get; set; }

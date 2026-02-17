@@ -58,7 +58,7 @@ namespace Bam.Generators.Tests.Unit
                     object? addTypeException = repo.LastException;
                     TestPerson testPerson = repo.Create(new TestPerson { Name = testName });
                     object? createException = repo.LastException;
-                    TestPerson retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id);
+                    TestPerson retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id)!;
                     return new object?[] { addTypeException, createException, retrievedPerson };
                 })
             .TheTest
@@ -91,9 +91,9 @@ namespace Bam.Generators.Tests.Unit
                     TestPerson testPerson = repo.Create(new TestPerson { Name = testName });
                     object? createException = repo.LastException;
 
-                    TestPerson retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id);
-                    retrievedPerson.Name = updatedName;
-                    TestPerson updatedPerson = repo.Update(retrievedPerson);
+                    TestPerson retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id)!;
+                    retrievedPerson!.Name = updatedName;
+                    TestPerson updatedPerson = repo.Update(retrievedPerson)!;
 
                     return new object?[] { addTypeException, createException, testPerson, retrievedPerson, updatedPerson };
                 })
@@ -149,7 +149,7 @@ namespace Bam.Generators.Tests.Unit
                 because.ItsTrue("created Id is greater than 0", testPerson.Id > 0);
                 because.ItsTrue("created name equals test name", testName.Equals(testPerson.Name));
                 because.ItsTrue("retrieved is not null", retrievedPerson != null);
-                because.ItsTrue("retrieved Id equals created Id", retrievedPerson.Id == testPerson.Id);
+                because.ItsTrue("retrieved Id equals created Id", retrievedPerson!.Id == testPerson.Id);
                 because.ItsTrue("delete returned true", deleted);
                 because.ItsTrue("re-retrieve returns null after delete", results[5] == null);
             })
@@ -179,7 +179,7 @@ namespace Bam.Generators.Tests.Unit
                     testPerson.TestCars.Add(testCar);
 
                     testPerson = repo.Create(testPerson);
-                    TestPerson retrieved = repo.Retrieve<TestPerson>(testPerson.Id);
+                    TestPerson retrieved = repo.Retrieve<TestPerson>(testPerson.Id)!;
 
                     return new object?[] { addTypeException, testPerson, retrieved };
                 })
@@ -216,8 +216,8 @@ namespace Bam.Generators.Tests.Unit
                     testPerson.Pets.Add(new TestAnimal { Name = testAnimalName });
 
                     testPerson = repo.Create(testPerson);
-                    TestPerson retrieved = repo.Retrieve<TestPerson>(testPerson.Id);
-                    TestAnimal pet = repo.Retrieve<TestAnimal>(retrieved.Pets[0].Id);
+                    TestPerson retrieved = repo.Retrieve<TestPerson>(testPerson.Id)!;
+                    TestAnimal pet = repo.Retrieve<TestAnimal>(retrieved!.Pets[0].Id)!;
 
                     return new object?[] { addTypeException, testPerson, retrieved, pet };
                 })
@@ -231,11 +231,11 @@ namespace Bam.Generators.Tests.Unit
                 TestAnimal pet = (TestAnimal)results[3]!;
                 because.ItsTrue("created Id is greater than 0", testPerson.Id > 0);
                 because.ItsTrue("retrieved is not null", retrieved != null);
-                because.ItsTrue("retrieved name equals test name", testPersonName.Equals(retrieved.Name));
+                because.ItsTrue("retrieved name equals test name", testPersonName.Equals(retrieved!.Name));
                 because.ItsTrue("retrieved has 1 pet", retrieved.Pets.Count == 1);
                 because.ItsTrue("pet Id is greater than 0", retrieved.Pets[0].Id > 0);
                 because.ItsTrue("pet is not null", pet != null);
-                because.ItsTrue("pet name equals test animal name", testAnimalName.Equals(pet.Name));
+                because.ItsTrue("pet name equals test animal name", testAnimalName.Equals(pet!.Name));
                 because.ItsTrue("pet has 1 owner", pet.Owners.Count == 1);
                 because.ItsTrue("pet owner Id equals retrieved person Id", pet.Owners[0].Id == retrieved.Id);
             })

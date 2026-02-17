@@ -98,7 +98,7 @@ namespace Bam.Generators.Tests.Unit
                     object? addTypeException = repo.LastException;
                     TestPerson testPerson = repo.Create(new TestPerson { Name = testName });
                     object? createException = repo.LastException;
-                    TestPerson retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id);
+                    TestPerson retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id)!;
                     return new object?[] { addTypeException, createException, retrievedPerson };
                 })
             .TheTest
@@ -131,9 +131,9 @@ namespace Bam.Generators.Tests.Unit
                     TestPerson testPerson = repo.Create(new TestPerson { Name = testName });
                     object? createException = repo.LastException;
 
-                    TestPerson? retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id);
+                    TestPerson? retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id)!;
                     retrievedPerson!.Name = updatedName;
-                    TestPerson updatedPerson = repo.Update(retrievedPerson);
+                    TestPerson updatedPerson = repo.Update(retrievedPerson)!;
 
                     return new object?[] { addTypeException, createException, testPerson, retrievedPerson, updatedPerson };
                 })
@@ -171,7 +171,7 @@ namespace Bam.Generators.Tests.Unit
                     TestPerson testPerson = repo.Create(new TestPerson { Name = testName });
                     object? createException = repo.LastException;
 
-                    TestPerson retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id);
+                    TestPerson retrievedPerson = repo.Retrieve<TestPerson>(testPerson.Id)!;
                     bool deleted = repo.Delete(retrievedPerson);
                     TestPerson? shouldBeNull = repo.Retrieve<TestPerson>(testPerson.Id);
 
@@ -218,7 +218,7 @@ namespace Bam.Generators.Tests.Unit
                     testPerson.TestCars.Add(testCar);
 
                     testPerson = repo.Create(testPerson);
-                    TestPerson retrieved = repo.Retrieve<TestPerson>(testPerson.Id);
+                    TestPerson retrieved = repo.Retrieve<TestPerson>(testPerson.Id)!;
 
                     return new object?[] { addTypeException, testPerson, retrieved };
                 })
@@ -255,7 +255,7 @@ namespace Bam.Generators.Tests.Unit
                     testPerson.Pets.Add(new TestAnimal { Name = testAnimalName });
 
                     testPerson = repo.Create(testPerson);
-                    TestPerson retrieved = repo.Retrieve<TestPerson>(testPerson.Id);
+                    TestPerson retrieved = repo.Retrieve<TestPerson>(testPerson.Id)!;
 
                     return new object?[] { addTypeException, testPerson, retrieved };
                 })
