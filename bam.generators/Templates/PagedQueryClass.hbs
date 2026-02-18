@@ -12,6 +12,6 @@ namespace {{Namespace}}
 {
     public class {{Model.ClassName}}PagedQuery: PagedQuery<{{Model.ClassName}}Columns, {{Model.ClassName}}>
     { 
-		public {{Model.ClassName}}PagedQuery({{Model.ClassName}}Columns orderByColumn,{{Model.ClassName}}Query query, Database db = null) : base(orderByColumn, query, db) { }
+		public {{Model.ClassName}}PagedQuery({{Model.ClassName}}Columns orderByColumn,{{Model.ClassName}}Query query, Database db = null!) : base(orderByColumn, query, db) { }
     }
 }

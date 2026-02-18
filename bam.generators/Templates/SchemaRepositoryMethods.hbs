@@ -17,7 +17,7 @@
 		public void SetOne{{Type.Name}}Where(WhereDelegate<{{Type.Name}}Columns> where, out {{{Type.FullName}}} result)
 		{
 			{{DaoNamespace}}.{{Type.Name}}.SetOneWhere(where, out {{DaoNamespace}}.{{Type.Name}} daoResult, Database);
-			var data = daoResult.CopyAs<{{{Type.FullName}}}>();
+			var data = daoResult.CopyAs<{{{Type.FullName}}}>()!;
             result = new DaoRepoData<{{{Type.FullName}}}>(data, this);
 		}
 
@@ -30,7 +30,7 @@
 		public {{{Type.FullName}}} GetOne{{Type.Name}}Where(WhereDelegate<{{Type.Name}}Columns> where)
 		{
 			Type wrapperType = GetWrapperType<{{{Type.FullName}}}>();
-			var data = ({{{Type.FullName}}}){{DaoNamespace}}.{{Type.Name}}.GetOneWhere(where, Database)?.CopyAs(wrapperType, this);
+			var data = ({{{Type.FullName}}}){{DaoNamespace}}.{{Type.Name}}.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             if (data == null) return null;
             return new DaoRepoData<{{{Type.FullName}}}>(data, this);
         }
@@ -47,9 +47,9 @@
 		public {{{Type.FullName}}} One{{Type.Name}}Where(WhereDelegate<{{Type.Name}}Columns> where)
         {
             Type wrapperType = GetWrapperType<{{{Type.FullName}}}>();
-            var data = ({{{Type.FullName}}}){{DaoNamespace}}.{{Type.Name}}.OneWhere(where, Database)?.CopyAs(wrapperType, this);
+            var data = ({{{Type.FullName}}}){{DaoNamespace}}.{{Type.Name}}.OneWhere(where, Database)?.CopyAs(wrapperType, this)!;
             if (data == null) return null;
-            return new DaoRepoData<{{{Type.FullName}}}>(data, this);
+            return new DaoRepoData<{{{Type.FullName}}}>(data!, this);
         }
 
 		/// <summary>
@@ -59,7 +59,7 @@
 		/// and returns a IQueryFilter which is the result of any comparisons
 		/// between {{{Type.FullName}}}Columns and other values
 		/// </param>
-		public IEnumerable<{{{Type.FullName}}}> {{TypeNamePluralized}}Where(WhereDelegate<{{Type.Name}}Columns> where, OrderBy<{{Type.Name}}Columns> orderBy = null)
+		public IEnumerable<{{{Type.FullName}}}> {{TypeNamePluralized}}Where(WhereDelegate<{{Type.Name}}Columns> where, OrderBy<{{Type.Name}}Columns> orderBy = null!)
         {
             return Wrap<{{{Type.FullName}}}>({{DaoNamespace}}.{{Type.Name}}.Where(where, orderBy, Database));
         }

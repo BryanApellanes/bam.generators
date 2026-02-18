@@ -10,9 +10,9 @@ namespace {{Namespace}}
     public class {{Model.ClassName}}Collection: DaoCollection<{{Model.ClassName}}Columns, {{Model.ClassName}}>
     { 
 		public {{Model.ClassName}}Collection(){}
-		public {{Model.ClassName}}Collection(IDatabase db, DataTable table, IDao dao = null, string rc = null) : base(db, table, dao, rc) { }
-		public {{Model.ClassName}}Collection(DataTable table, IDao dao = null, string rc = null) : base(table, dao, rc) { }
-		public {{Model.ClassName}}Collection(IQuery<{{Model.ClassName}}Columns, {{Model.ClassName}}> q, Bam.Data.Dao dao = null, string rc = null) : base(q, dao, rc) { }
+		public {{Model.ClassName}}Collection(IDatabase db, DataTable table, IDao dao = null!, string rc = null!) : base(db, table, dao, rc) { }
+		public {{Model.ClassName}}Collection(DataTable table, IDao dao = null!, string rc = null!) : base(table, dao, rc) { }
+		public {{Model.ClassName}}Collection(IQuery<{{Model.ClassName}}Columns, {{Model.ClassName}}> q, Bam.Data.Dao dao = null!, string rc = null!) : base(q, dao, rc) { }
 		public {{Model.ClassName}}Collection(IDatabase db, IQuery<{{Model.ClassName}}Columns, {{Model.ClassName}}> q, bool load) : base(db, q, load) { }
 		public {{Model.ClassName}}Collection(IQuery<{{Model.ClassName}}Columns, {{Model.ClassName}}> q, bool load) : base(q, load) { }
     }
