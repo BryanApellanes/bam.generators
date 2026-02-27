@@ -78,6 +78,12 @@ namespace Bam.Generators
         public bool CheckForIds { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to generate a repository that extends AsyncDaoRepository instead of DaoRepository.
+        /// UseInheritanceSchema takes precedence if both are true.
+        /// </summary>
+        public bool UseAsync { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether to generate a repository that inherits from `DaoInheritanceRepository`, if `false` inherit from DaoRepository.
         /// </summary>
         public bool UseInheritanceSchema { get; set; }
