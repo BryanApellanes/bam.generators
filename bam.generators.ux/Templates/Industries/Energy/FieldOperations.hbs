@@ -1,0 +1,90 @@
+<section class="page-header">
+    <h1 class="page-header__title">{{Page.Title}}</h1>
+    <p class="page-header__description">Keeping your field operations connected, monitored, and running.</p>
+</section>
+
+<section class="field-ops">
+    <div class="field-ops__content">
+        <h2 class="field-ops__title">Field Operations Support</h2>
+        <p class="field-ops__text">{{Site.CompanyName}} provides end-to-end IT support for energy field operations. From remote well sites to mobile crews, we deliver the connectivity, monitoring, and communication systems your teams need to operate safely and efficiently.</p>
+    </div>
+</section>
+
+<section class="field-ops__capabilities">
+    <h2 class="field-ops__capabilities-title">Field Capabilities</h2>
+    <div class="field-ops__capabilities-grid">
+        <div class="field-ops__capabilities-card">
+            <h3 class="field-ops__capabilities-card-title">Remote Site Connectivity</h3>
+            <p class="field-ops__capabilities-card-text">We deploy and maintain connectivity at remote locations using satellite, cellular, and microwave links, ensuring your SCADA data, video feeds, and communications stay online.</p>
+        </div>
+        <div class="field-ops__capabilities-card">
+            <h3 class="field-ops__capabilities-card-title">Mobile Workforce Support</h3>
+            <p class="field-ops__capabilities-card-text">Ruggedized devices, mobile data solutions, and field-optimized applications that give your crews the tools they need in any environment.</p>
+        </div>
+        <div class="field-ops__capabilities-card">
+            <h3 class="field-ops__capabilities-card-title">Real-Time Monitoring</h3>
+            <p class="field-ops__capabilities-card-text">Centralized dashboards for monitoring remote equipment, environmental conditions, and operational metrics across your entire field footprint.</p>
+        </div>
+        <div class="field-ops__capabilities-card">
+            <h3 class="field-ops__capabilities-card-title">Rapid Deployment</h3>
+            <p class="field-ops__capabilities-card-text">Pre-configured, portable IT kits for rapid deployment to new sites, emergency operations, or temporary field offices.</p>
+        </div>
+    </div>
+</section>
+
+<section class="service-area">
+    <h2 class="service-area__title">Service Area</h2>
+    <div class="service-area__content">
+        {{#if Site.IndustryProperties.ServiceArea}}
+        <p class="service-area__text">{{Site.IndustryProperties.ServiceArea}}</p>
+        {{else}}
+        <p class="service-area__text">{{Site.CompanyName}} provides field operations IT support across our full service area. Contact us to confirm coverage for your specific locations.</p>
+        {{/if}}
+        <div class="service-area__map-placeholder" id="service-area-map" data-company="{{Site.CompanySlug}}">
+            <p class="service-area__map-fallback">Service area map loading...</p>
+        </div>
+    </div>
+</section>
+
+<section class="support-247">
+    <h2 class="support-247__title">24/7 Field Support</h2>
+    <div class="support-247__content">
+        <p class="support-247__text">Energy operations do not stop, and neither does our support. {{Site.CompanyName}} provides around-the-clock monitoring and support for your field IT infrastructure.</p>
+        <div class="support-247__grid">
+            <div class="support-247__item">
+                <h3 class="support-247__item-title">Remote Troubleshooting</h3>
+                <p class="support-247__item-text">Our network operations center can remotely diagnose and resolve many field issues without dispatching a technician.</p>
+            </div>
+            <div class="support-247__item">
+                <h3 class="support-247__item-title">Emergency Dispatch</h3>
+                <p class="support-247__item-text">When on-site support is needed, our field technicians are available for emergency dispatch to your locations.</p>
+            </div>
+            <div class="support-247__item">
+                <h3 class="support-247__item-title">Proactive Monitoring</h3>
+                <p class="support-247__item-text">Automated alerts and monitoring detect issues before they impact operations, reducing downtime and service interruptions.</p>
+            </div>
+        </div>
+        {{#if Site.Phone}}
+        <p class="support-247__phone">24/7 Support Line: <a href="tel:{{Site.Phone}}">{{Site.Phone}}</a></p>
+        {{/if}}
+    </div>
+</section>
+
+{{#if Site.EnabledIntegrations}}
+<section class="integrations">
+    <h2 class="integrations__title">Field Operations Platforms</h2>
+    <div class="integrations__list">
+        {{#each Site.EnabledIntegrations}}
+            {{> IntegrationLink}}
+        {{/each}}
+    </div>
+</section>
+{{/if}}
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Improve Your Field Operations</h2>
+        <p class="cta__text">Contact {{Site.CompanyName}} to discuss IT solutions for your field operations.</p>
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Request a Field Assessment</a>
+    </div>
+</section>

@@ -1,0 +1,11 @@
+<section class="hero">
+    <div class="hero__container container">
+        <div class="hero__content">
+            <h1 class="hero__title">{{#if HeroTitle}}{{HeroTitle}}{{else}}{{Site.CompanyName}}{{/if}}</h1>
+            <p class="hero__subtitle">{{#if HeroSubtitle}}{{HeroSubtitle}}{{else}}{{Site.Tagline}}{{/if}}</p>
+            {{#if HeroCtaText}}
+            <a href="{{#if HeroCtaUrl}}{{HeroCtaUrl}}{{else}}/contact{{/if}}" class="hero__cta btn btn--primary">{{HeroCtaText}}</a>
+            {{/if}}
+        </div>
+    </div>
+</section>

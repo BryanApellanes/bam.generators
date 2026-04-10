@@ -1,0 +1,88 @@
+<section class="page-header">
+    <h1 class="page-header__title">{{Page.Title}}</h1>
+    <p class="page-header__description">IT services engineered for the construction industry.</p>
+</section>
+
+<section class="services">
+    <div class="services__grid">
+        <div class="services__card">
+            <h3 class="services__card-title">Site Networks</h3>
+            <p class="services__card-text">Rapid-deployment networking for construction sites including Wi-Fi, LTE/5G failover, and ruggedized access points that withstand dust, weather, and vibration.</p>
+            <ul class="services__card-features">
+                <li>Temporary site Wi-Fi</li>
+                <li>Cellular failover connectivity</li>
+                <li>Weather-resistant equipment</li>
+                <li>VPN to main office</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">Fleet &amp; Asset Management</h3>
+            <p class="services__card-text">GPS tracking, telematics integration, and IT systems for managing your fleet of vehicles and heavy equipment.</p>
+            <ul class="services__card-features">
+                <li>GPS tracking systems</li>
+                <li>Telematics integration</li>
+                <li>Maintenance scheduling</li>
+                <li>Utilization reporting</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">Project IT</h3>
+            <p class="services__card-text">Infrastructure and support for project management platforms, BIM collaboration, and document management systems.</p>
+            <ul class="services__card-features">
+                <li>Procore, PlanGrid integration</li>
+                <li>BIM collaboration tools</li>
+                <li>Cloud document management</li>
+                <li>Field-to-office connectivity</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">VoIP &amp; Communications</h3>
+            <p class="services__card-text">Reliable voice and video communication systems that work on-site and in the office, keeping your teams connected.</p>
+            <ul class="services__card-features">
+                <li>Cloud-based phone systems</li>
+                <li>Push-to-talk solutions</li>
+                <li>Video conferencing</li>
+                <li>Unified communications</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">Security Systems</h3>
+            <p class="services__card-text">Job site security cameras, access control, and monitoring to protect equipment, materials, and your workforce.</p>
+            <ul class="services__card-features">
+                <li>Construction site cameras</li>
+                <li>Remote monitoring</li>
+                <li>Access control systems</li>
+                <li>Time-lapse documentation</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">Cloud &amp; Backup</h3>
+            <p class="services__card-text">Cloud infrastructure for project data, blueprints, and critical business systems with reliable backup and disaster recovery.</p>
+            <ul class="services__card-features">
+                <li>Cloud storage and sync</li>
+                <li>Automated backups</li>
+                <li>Disaster recovery</li>
+                <li>Mobile access</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+{{#if Site.EnabledIntegrations}}
+<section class="integrations">
+    <h2 class="integrations__title">Technology Partners</h2>
+    <div class="integrations__list">
+        {{#each Site.EnabledIntegrations}}
+            {{> IntegrationLink}}
+        {{/each}}
+    </div>
+</section>
+{{/if}}
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Need IT for Your Next Project?</h2>
+        <p class="cta__text">{{Site.CompanyName}} provides reliable technology solutions for construction companies of all sizes.</p>
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Request a Consultation</a>
+    </div>
+</section>

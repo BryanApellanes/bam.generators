@@ -1,0 +1,34 @@
+<nav class="nav" role="navigation" aria-label="Main navigation">
+    <div class="nav__container container">
+        <button class="nav__toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="Toggle navigation">
+            <span class="nav__toggle-bar"></span>
+            <span class="nav__toggle-bar"></span>
+            <span class="nav__toggle-bar"></span>
+        </button>
+        <ul class="nav__menu" id="nav-menu" role="menubar">
+            {{#each Navigation}}
+            <li class="nav__item" role="none">
+                <a href="{{Href}}" class="nav__link{{#if IsActive}} nav__link--active{{/if}}" role="menuitem">{{Label}}</a>
+            </li>
+            {{/each}}
+            {{#if Site.AuthEnabled}}
+            <li class="nav__item nav__item--auth" role="none">
+                <a href="/login" class="nav__link nav__link--login" role="menuitem">Login</a>
+            </li>
+            {{/if}}
+        </ul>
+    </div>
+</nav>
+<script>
+(function() {
+    var toggle = document.querySelector('.nav__toggle');
+    var menu = document.querySelector('.nav__menu');
+    if (toggle && menu) {
+        toggle.addEventListener('click', function() {
+            var expanded = toggle.getAttribute('aria-expanded') === 'true';
+            toggle.setAttribute('aria-expanded', !expanded);
+            menu.classList.toggle('nav__menu--open');
+        });
+    }
+})();
+</script>

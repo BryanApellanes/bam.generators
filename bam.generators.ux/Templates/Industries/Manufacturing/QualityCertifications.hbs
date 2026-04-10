@@ -1,0 +1,84 @@
+<section class="page-header">
+    <h1 class="page-header__title">{{Page.Title}}</h1>
+    <p class="page-header__description">Quality management and industry certifications that demonstrate our commitment to excellence.</p>
+</section>
+
+<section class="quality-overview">
+    <div class="quality-overview__content">
+        <h2 class="quality-overview__title">Quality Management</h2>
+        <p class="quality-overview__text">{{Site.CompanyName}} maintains rigorous quality management practices and industry certifications. Our commitment to quality ensures that every IT solution we deliver meets the high standards required in manufacturing environments.</p>
+    </div>
+</section>
+
+<section class="certifications">
+    <h2 class="certifications__title">Industry Certifications</h2>
+    <div class="certifications__content">
+        {{#if Site.IndustryProperties.Certifications}}
+        <p class="certifications__text">{{Site.IndustryProperties.Certifications}}</p>
+        {{else}}
+        <div class="certifications__grid">
+            <div class="certifications__item">
+                <h4 class="certifications__item-title">ISO 9001:2015</h4>
+                <p class="certifications__item-text">Quality management system certification demonstrating consistent delivery of products and services that meet customer and regulatory requirements.</p>
+            </div>
+            <div class="certifications__item">
+                <h4 class="certifications__item-title">ISO 27001</h4>
+                <p class="certifications__item-text">Information security management system certification ensuring systematic protection of sensitive manufacturing and business data.</p>
+            </div>
+            <div class="certifications__item">
+                <h4 class="certifications__item-title">SOC 2 Type II</h4>
+                <p class="certifications__item-text">Independent audit of security, availability, processing integrity, confidentiality, and privacy controls.</p>
+            </div>
+            <div class="certifications__item">
+                <h4 class="certifications__item-title">ITAR Compliance</h4>
+                <p class="certifications__item-text">Compliance with International Traffic in Arms Regulations for manufacturers in defense and aerospace supply chains.</p>
+            </div>
+        </div>
+        {{/if}}
+    </div>
+</section>
+
+<section class="quality-practices">
+    <h2 class="quality-practices__title">Quality Practices</h2>
+    <div class="quality-practices__grid">
+        <div class="quality-practices__card">
+            <h3 class="quality-practices__card-title">Continuous Improvement</h3>
+            <p class="quality-practices__card-text">We apply lean and continuous improvement methodologies to our IT service delivery, regularly measuring and improving our processes.</p>
+        </div>
+        <div class="quality-practices__card">
+            <h3 class="quality-practices__card-title">Change Management</h3>
+            <p class="quality-practices__card-text">Structured change management processes ensure that updates, deployments, and modifications are planned, tested, and documented.</p>
+        </div>
+        <div class="quality-practices__card">
+            <h3 class="quality-practices__card-title">Documentation</h3>
+            <p class="quality-practices__card-text">Comprehensive documentation of all systems, configurations, and procedures provides transparency and supports audit readiness.</p>
+        </div>
+        <div class="quality-practices__card">
+            <h3 class="quality-practices__card-title">Vendor Management</h3>
+            <p class="quality-practices__card-text">Rigorous evaluation and ongoing management of technology vendors and partners to maintain quality throughout the supply chain.</p>
+        </div>
+    </div>
+</section>
+
+{{#if Page.Properties.AuditHistory}}
+<section class="audit-history">
+    <h2 class="audit-history__title">Audit History</h2>
+    <div class="audit-history__content">
+        {{#each Page.Properties.AuditHistory}}
+        <div class="audit-history__item">
+            <span class="audit-history__item-date">{{this.Date}}</span>
+            <span class="audit-history__item-type">{{this.Type}}</span>
+            <span class="audit-history__item-result">{{this.Result}}</span>
+        </div>
+        {{/each}}
+    </div>
+</section>
+{{/if}}
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Quality You Can Count On</h2>
+        <p class="cta__text">Contact {{Site.CompanyName}} to learn more about our quality commitments and certifications.</p>
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Contact Us</a>
+    </div>
+</section>

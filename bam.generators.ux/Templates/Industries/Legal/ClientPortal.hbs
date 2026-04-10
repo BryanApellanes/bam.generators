@@ -1,0 +1,86 @@
+<section class="page-header">
+    <h1 class="page-header__title">{{Page.Title}}</h1>
+    <p class="page-header__description">Secure access to your case information, documents, and communications.</p>
+</section>
+
+{{#if Site.EnabledIntegrations}}
+<section class="client-portal__integrations">
+    <h2 class="client-portal__integrations-title">Portal Access</h2>
+    <p class="client-portal__integrations-text">Use the links below to access your client portal and related systems.</p>
+    <div class="client-portal__integrations-list">
+        {{#each Site.EnabledIntegrations}}
+            {{> IntegrationLink}}
+        {{/each}}
+    </div>
+</section>
+{{/if}}
+
+<section class="client-portal">
+    <div class="client-portal__content">
+        <h2 class="client-portal__title">What You Can Access</h2>
+        <div class="client-portal__grid">
+            <div class="client-portal__card">
+                <h3 class="client-portal__card-title">Case Status</h3>
+                <p class="client-portal__card-text">View real-time updates on your case, including milestones, upcoming deadlines, and recent activity.</p>
+            </div>
+            <div class="client-portal__card">
+                <h3 class="client-portal__card-title">Documents</h3>
+                <p class="client-portal__card-text">Access, download, and securely upload case-related documents. All files are encrypted and protected.</p>
+            </div>
+            <div class="client-portal__card">
+                <h3 class="client-portal__card-title">Secure Messaging</h3>
+                <p class="client-portal__card-text">Communicate directly with your legal team through encrypted messaging that protects attorney-client privilege.</p>
+            </div>
+            <div class="client-portal__card">
+                <h3 class="client-portal__card-title">Billing &amp; Invoices</h3>
+                <p class="client-portal__card-text">Review invoices, view payment history, and make secure payments online at your convenience.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="client-portal__security">
+    <h2 class="client-portal__security-title">Security &amp; Privacy</h2>
+    <div class="client-portal__security-content">
+        <p class="client-portal__security-text">Your data security is our highest priority. The {{Site.CompanyName}} client portal uses industry-leading security measures to protect your confidential information.</p>
+        <ul class="client-portal__security-list">
+            <li>256-bit AES encryption for all data at rest</li>
+            <li>TLS 1.3 encryption for all data in transit</li>
+            <li>Multi-factor authentication required</li>
+            <li>Automatic session timeouts</li>
+            <li>Complete audit trail of all access</li>
+            <li>SOC 2 Type II certified infrastructure</li>
+        </ul>
+    </div>
+</section>
+
+<section class="client-portal__help">
+    <h2 class="client-portal__help-title">Need Help?</h2>
+    <div class="client-portal__help-content">
+        <div class="client-portal__help-item">
+            <h3 class="client-portal__help-item-title">First Time Logging In?</h3>
+            <p class="client-portal__help-item-text">You should have received a welcome email with your login credentials. If you have not received it, contact our office and we will resend your access information.</p>
+        </div>
+        <div class="client-portal__help-item">
+            <h3 class="client-portal__help-item-title">Forgot Your Password?</h3>
+            <p class="client-portal__help-item-text">Use the "Forgot Password" link on the portal login page. For security purposes, password reset links expire after 24 hours.</p>
+        </div>
+        <div class="client-portal__help-item">
+            <h3 class="client-portal__help-item-title">Technical Issues?</h3>
+            <p class="client-portal__help-item-text">If you are experiencing technical difficulties, please contact our support team for assistance.</p>
+        </div>
+    </div>
+</section>
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Contact Our Office</h2>
+        {{#if Site.Phone}}
+        <p class="cta__phone">Call: <a href="tel:{{Site.Phone}}">{{Site.Phone}}</a></p>
+        {{/if}}
+        {{#if Site.Email}}
+        <p class="cta__email">Email: <a href="mailto:{{Site.Email}}">{{Site.Email}}</a></p>
+        {{/if}}
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Contact Us</a>
+    </div>
+</section>

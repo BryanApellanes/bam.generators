@@ -1,0 +1,58 @@
+{{> Hero
+    title=Site.CompanyName
+    subtitle=Site.Tagline
+    description="Rugged, reliable IT solutions for construction companies and job sites."
+    cssClass="hero--construction"
+}}
+
+<section class="features">
+    <div class="features__header">
+        <h2 class="features__title">Built for Construction</h2>
+        <p class="features__subtitle">Technology that works as hard as your crews.</p>
+    </div>
+    <div class="features__grid">
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F4F6;</div>
+            <h3 class="features__card-title">Job Site Networks</h3>
+            <p class="features__card-text">Temporary and permanent networking solutions for active construction sites, including cellular failover and ruggedized equipment.</p>
+        </div>
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F4F1;</div>
+            <h3 class="features__card-title">Device Management</h3>
+            <p class="features__card-text">Mobile device management for tablets, phones, and ruggedized field devices used by your crews and project managers.</p>
+        </div>
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F4CA;</div>
+            <h3 class="features__card-title">Project Tracking</h3>
+            <p class="features__card-text">IT infrastructure for project management tools, document sharing, and real-time collaboration between office and field.</p>
+        </div>
+        <div class="features__card">
+            <div class="features__card-icon">&#x26D1;</div>
+            <h3 class="features__card-title">Safety IT</h3>
+            <p class="features__card-text">Technology solutions for safety compliance, incident reporting, and real-time monitoring of job site conditions.</p>
+        </div>
+    </div>
+</section>
+
+{{#if Site.EnabledIntegrations}}
+<section class="integrations">
+    <h2 class="integrations__title">Integrated Platforms</h2>
+    <p class="integrations__subtitle">Connect with the construction management tools your team uses every day.</p>
+    <div class="integrations__list">
+        {{#each Site.EnabledIntegrations}}
+            {{> IntegrationLink}}
+        {{/each}}
+    </div>
+</section>
+{{/if}}
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Get Your Sites Connected</h2>
+        <p class="cta__text">{{Site.CompanyName}} delivers IT solutions that stand up to the demands of construction. Contact us for a site assessment.</p>
+        {{#if Site.Phone}}
+        <p class="cta__phone">Call us: <a href="tel:{{Site.Phone}}">{{Site.Phone}}</a></p>
+        {{/if}}
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Request a Site Assessment</a>
+    </div>
+</section>

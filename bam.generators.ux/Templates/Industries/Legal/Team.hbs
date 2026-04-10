@@ -1,0 +1,77 @@
+<section class="page-header">
+    <h1 class="page-header__title">{{Page.Title}}</h1>
+    <p class="page-header__description">Meet the professionals at {{Site.CompanyName}}.</p>
+</section>
+
+<section class="team">
+    {{#if Page.Properties.TeamMembers}}
+    <div class="team__grid">
+        {{#each Page.Properties.TeamMembers}}
+        <div class="team__card">
+            {{#if this.PhotoUrl}}
+            <div class="team__card-photo">
+                <img src="{{this.PhotoUrl}}" alt="{{this.Name}}" class="team__card-img" loading="lazy" />
+            </div>
+            {{/if}}
+            <div class="team__card-content">
+                <h3 class="team__card-name">{{this.Name}}</h3>
+                {{#if this.Title}}
+                <p class="team__card-title">{{this.Title}}</p>
+                {{/if}}
+                {{#if this.Credentials}}
+                <p class="team__card-credentials">{{this.Credentials}}</p>
+                {{/if}}
+                {{#if this.Bio}}
+                <p class="team__card-bio">{{this.Bio}}</p>
+                {{/if}}
+                {{#if this.PracticeAreas}}
+                <div class="team__card-areas">
+                    <h4 class="team__card-areas-title">Practice Areas</h4>
+                    <ul class="team__card-areas-list">
+                        {{#each this.PracticeAreas}}
+                        <li>{{this}}</li>
+                        {{/each}}
+                    </ul>
+                </div>
+                {{/if}}
+                {{#if this.Education}}
+                <div class="team__card-education">
+                    <h4 class="team__card-education-title">Education</h4>
+                    <ul class="team__card-education-list">
+                        {{#each this.Education}}
+                        <li>{{this}}</li>
+                        {{/each}}
+                    </ul>
+                </div>
+                {{/if}}
+                {{#if this.Email}}
+                <p class="team__card-email">
+                    <a href="mailto:{{this.Email}}">{{this.Email}}</a>
+                </p>
+                {{/if}}
+                {{#if this.Phone}}
+                <p class="team__card-phone">
+                    <a href="tel:{{this.Phone}}">{{this.Phone}}</a>
+                </p>
+                {{/if}}
+            </div>
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <div class="team__placeholder">
+        <p class="team__placeholder-text">Team information is being updated. Please check back soon or contact our office to learn more about our professionals.</p>
+    </div>
+    {{/if}}
+</section>
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Get in Touch</h2>
+        <p class="cta__text">Reach out to {{Site.CompanyName}} to speak with a member of our team.</p>
+        {{#if Site.Phone}}
+        <p class="cta__phone">Call us: <a href="tel:{{Site.Phone}}">{{Site.Phone}}</a></p>
+        {{/if}}
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Contact Us</a>
+    </div>
+</section>

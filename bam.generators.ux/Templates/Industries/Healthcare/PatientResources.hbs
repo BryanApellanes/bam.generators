@@ -1,0 +1,101 @@
+<section class="page-header">
+    <h1 class="page-header__title">{{Page.Title}}</h1>
+    <p class="page-header__description">Access your patient portal, telehealth services, and helpful resources.</p>
+</section>
+
+<section class="patient-portal">
+    <h2 class="patient-portal__title">Patient Portal Access</h2>
+    <div class="patient-portal__content">
+        <p class="patient-portal__text">Our secure patient portal gives you convenient access to your health information, appointment scheduling, and direct communication with your care team.</p>
+        {{#if Site.EnabledIntegrations}}
+        <div class="patient-portal__links">
+            <h3 class="patient-portal__links-title">Portal Links</h3>
+            <div class="patient-portal__links-list">
+                {{#each Site.EnabledIntegrations}}
+                    {{> IntegrationLink}}
+                {{/each}}
+            </div>
+        </div>
+        {{/if}}
+        <div class="patient-portal__features">
+            <h3 class="patient-portal__features-title">What You Can Do</h3>
+            <ul class="patient-portal__features-list">
+                <li>View test results and medical records</li>
+                <li>Schedule and manage appointments</li>
+                <li>Request prescription refills</li>
+                <li>Message your care team securely</li>
+                <li>View and pay bills online</li>
+                <li>Complete intake forms before your visit</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="telehealth">
+    <h2 class="telehealth__title">Telehealth Services</h2>
+    <div class="telehealth__content">
+        <p class="telehealth__text">Connect with your healthcare provider from the comfort of your home through our secure, HIPAA-compliant telehealth platform.</p>
+        <div class="telehealth__grid">
+            <div class="telehealth__card">
+                <h3 class="telehealth__card-title">Getting Started</h3>
+                <ol class="telehealth__steps">
+                    <li>Log in to your patient portal</li>
+                    <li>Select "Schedule Telehealth Visit"</li>
+                    <li>Choose your provider and available time</li>
+                    <li>Join your visit from any device with a camera</li>
+                </ol>
+            </div>
+            <div class="telehealth__card">
+                <h3 class="telehealth__card-title">Technical Requirements</h3>
+                <ul class="telehealth__requirements">
+                    <li>Stable internet connection</li>
+                    <li>Device with camera and microphone</li>
+                    <li>Updated web browser (Chrome, Firefox, Safari, or Edge)</li>
+                    <li>Quiet, private location</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="faq">
+    <h2 class="faq__title">Frequently Asked Questions</h2>
+    <div class="faq__list">
+        <div class="faq__item">
+            <h3 class="faq__question">How do I access the patient portal?</h3>
+            <p class="faq__answer">You can access the patient portal through the link above or by visiting our website and selecting "Patient Portal." If you have not yet registered, contact our office and we will provide your enrollment instructions.</p>
+        </div>
+        <div class="faq__item">
+            <h3 class="faq__question">Is my information secure?</h3>
+            <p class="faq__answer">Yes. All patient data is encrypted and transmitted over secure connections. Our systems are fully HIPAA compliant, and we conduct regular security audits to protect your information.</p>
+        </div>
+        <div class="faq__item">
+            <h3 class="faq__question">What if I forget my password?</h3>
+            <p class="faq__answer">Use the "Forgot Password" link on the portal login page. You will receive a secure reset link at the email address on file. If you continue to have trouble, contact our office for assistance.</p>
+        </div>
+        <div class="faq__item">
+            <h3 class="faq__question">Can I schedule appointments online?</h3>
+            <p class="faq__answer">Yes. The patient portal allows you to view available appointment times and schedule visits directly. You will receive a confirmation email and optional reminder notifications.</p>
+        </div>
+        <div class="faq__item">
+            <h3 class="faq__question">How do telehealth visits work?</h3>
+            <p class="faq__answer">Telehealth visits are conducted through a secure video connection. After scheduling, you will receive a link to join the visit at your appointment time. No additional software is required.</p>
+        </div>
+        {{#if Site.IndustryProperties.AdditionalFAQ}}
+        <div class="faq__item">
+            <p class="faq__answer">{{Site.IndustryProperties.AdditionalFAQ}}</p>
+        </div>
+        {{/if}}
+    </div>
+</section>
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Need Help?</h2>
+        <p class="cta__text">Our support team is available to assist you with portal access, telehealth setup, or any other questions.</p>
+        {{#if Site.Phone}}
+        <p class="cta__phone">Call us: <a href="tel:{{Site.Phone}}">{{Site.Phone}}</a></p>
+        {{/if}}
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Contact Support</a>
+    </div>
+</section>

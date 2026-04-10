@@ -1,0 +1,103 @@
+<section class="page-header">
+    <h1 class="page-header__title">{{Page.Title}}</h1>
+    <p class="page-header__description">Your partner in maintaining HIPAA compliance and protecting patient data.</p>
+</section>
+
+<section class="compliance-overview">
+    <div class="compliance-overview__content">
+        <h2 class="compliance-overview__title">HIPAA Compliance Services</h2>
+        <p class="compliance-overview__text">{{Site.CompanyName}} provides comprehensive HIPAA compliance support for healthcare organizations of all sizes. We help you meet regulatory requirements while maintaining efficient clinical workflows.</p>
+    </div>
+</section>
+
+<section class="compliance-areas">
+    <h2 class="compliance-areas__title">Compliance Coverage</h2>
+    <div class="compliance-areas__grid">
+        <div class="compliance-areas__card">
+            <h3 class="compliance-areas__card-title">Technical Safeguards</h3>
+            <ul class="compliance-areas__list">
+                <li>Access controls and authentication</li>
+                <li>Audit logging and monitoring</li>
+                <li>Data encryption at rest and in transit</li>
+                <li>Automatic session management</li>
+            </ul>
+        </div>
+        <div class="compliance-areas__card">
+            <h3 class="compliance-areas__card-title">Administrative Safeguards</h3>
+            <ul class="compliance-areas__list">
+                <li>Risk analysis and management</li>
+                <li>Workforce training programs</li>
+                <li>Contingency planning</li>
+                <li>Business associate management</li>
+            </ul>
+        </div>
+        <div class="compliance-areas__card">
+            <h3 class="compliance-areas__card-title">Physical Safeguards</h3>
+            <ul class="compliance-areas__list">
+                <li>Facility access controls</li>
+                <li>Workstation security</li>
+                <li>Device and media controls</li>
+                <li>Disposal procedures</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="certifications">
+    <h2 class="certifications__title">Security Certifications</h2>
+    <p class="certifications__subtitle">{{Site.CompanyName}} maintains industry-recognized security certifications.</p>
+    <div class="certifications__grid">
+        {{#if Site.IndustryProperties.Certifications}}
+        <p class="certifications__text">{{Site.IndustryProperties.Certifications}}</p>
+        {{else}}
+        <div class="certifications__item">
+            <h4 class="certifications__item-title">SOC 2 Type II</h4>
+            <p class="certifications__item-text">Independently audited controls for security, availability, and confidentiality.</p>
+        </div>
+        <div class="certifications__item">
+            <h4 class="certifications__item-title">HITRUST CSF</h4>
+            <p class="certifications__item-text">Healthcare-specific security framework certification.</p>
+        </div>
+        {{/if}}
+    </div>
+</section>
+
+<section class="baa-info">
+    <h2 class="baa-info__title">Business Associate Agreements</h2>
+    <div class="baa-info__content">
+        <p class="baa-info__text">{{Site.CompanyName}} executes a Business Associate Agreement (BAA) with every healthcare client. Our BAA ensures that all protected health information (PHI) we access, store, or transmit is handled in full compliance with HIPAA regulations.</p>
+        <ul class="baa-info__list">
+            <li>Standard BAA provided at no additional cost</li>
+            <li>Custom BAA terms available upon request</li>
+            <li>Annual BAA review and updates</li>
+            <li>Subcontractor BAA management</li>
+        </ul>
+    </div>
+</section>
+
+<section class="compliance-checklist">
+    <h2 class="compliance-checklist__title">HIPAA Compliance Checklist</h2>
+    <p class="compliance-checklist__subtitle">Key areas we address for your organization:</p>
+    <div class="compliance-checklist__content">
+        <ul class="compliance-checklist__list">
+            <li class="compliance-checklist__item">Annual security risk assessment</li>
+            <li class="compliance-checklist__item">Written policies and procedures</li>
+            <li class="compliance-checklist__item">Employee security awareness training</li>
+            <li class="compliance-checklist__item">Access control and user authentication</li>
+            <li class="compliance-checklist__item">Data encryption (at rest and in transit)</li>
+            <li class="compliance-checklist__item">Audit log monitoring and review</li>
+            <li class="compliance-checklist__item">Incident response and breach notification plan</li>
+            <li class="compliance-checklist__item">Business associate agreement management</li>
+            <li class="compliance-checklist__item">Backup and disaster recovery testing</li>
+            <li class="compliance-checklist__item">Physical security controls</li>
+        </ul>
+    </div>
+</section>
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Schedule a Compliance Assessment</h2>
+        <p class="cta__text">Let {{Site.CompanyName}} evaluate your current compliance posture and identify areas for improvement.</p>
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Request Assessment</a>
+    </div>
+</section>

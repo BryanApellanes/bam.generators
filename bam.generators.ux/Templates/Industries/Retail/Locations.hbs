@@ -1,0 +1,73 @@
+<section class="page-header">
+    <h1 class="page-header__title">{{Page.Title}}</h1>
+    <p class="page-header__description">Find a {{Site.CompanyName}} location near you.</p>
+</section>
+
+<section class="locations">
+    {{#if Page.Properties.Locations}}
+    <div class="locations__grid">
+        {{#each Page.Properties.Locations}}
+        <div class="locations__card">
+            <h3 class="locations__card-name">{{this.Name}}</h3>
+            {{#if this.Address}}
+            <p class="locations__card-address">{{this.Address}}</p>
+            {{/if}}
+            {{#if this.Phone}}
+            <p class="locations__card-phone">
+                <a href="tel:{{this.Phone}}">{{this.Phone}}</a>
+            </p>
+            {{/if}}
+            {{#if this.Hours}}
+            <div class="locations__card-hours">
+                <h4 class="locations__card-hours-title">Hours</h4>
+                <p class="locations__card-hours-text">{{this.Hours}}</p>
+            </div>
+            {{/if}}
+            {{#if this.Features}}
+            <div class="locations__card-features">
+                {{#each this.Features}}
+                <span class="locations__card-feature">{{this}}</span>
+                {{/each}}
+            </div>
+            {{/if}}
+            {{#if this.MapUrl}}
+            <a href="{{this.MapUrl}}" class="locations__card-link" target="_blank" rel="noopener noreferrer">Get Directions</a>
+            {{/if}}
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <div class="locations__primary">
+        <div class="locations__card">
+            <h3 class="locations__card-name">{{Site.CompanyName}}</h3>
+            {{#if Site.FullAddress}}
+            <p class="locations__card-address">{{Site.FullAddress}}</p>
+            {{/if}}
+            {{#if Site.Phone}}
+            <p class="locations__card-phone">
+                <a href="tel:{{Site.Phone}}">{{Site.Phone}}</a>
+            </p>
+            {{/if}}
+            {{#if Site.Email}}
+            <p class="locations__card-email">
+                <a href="mailto:{{Site.Email}}">{{Site.Email}}</a>
+            </p>
+            {{/if}}
+        </div>
+    </div>
+    {{/if}}
+
+    <div class="locations__map-placeholder">
+        <div class="locations__map" id="locations-map" data-company="{{Site.CompanySlug}}">
+            <p class="locations__map-fallback">Interactive map loading...</p>
+        </div>
+    </div>
+</section>
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Questions About a Location?</h2>
+        <p class="cta__text">Contact {{Site.CompanyName}} for more information about any of our locations.</p>
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Contact Us</a>
+    </div>
+</section>

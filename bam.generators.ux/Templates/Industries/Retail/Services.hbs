@@ -1,0 +1,88 @@
+<section class="page-header">
+    <h1 class="page-header__title">{{Page.Title}}</h1>
+    <p class="page-header__description">End-to-end IT services for retail stores, restaurants, and hospitality businesses.</p>
+</section>
+
+<section class="services">
+    <div class="services__grid">
+        <div class="services__card">
+            <h3 class="services__card-title">POS Setup &amp; Support</h3>
+            <p class="services__card-text">Complete point-of-sale system deployment, configuration, and ongoing support. We work with all major POS platforms to ensure reliable transactions.</p>
+            <ul class="services__card-features">
+                <li>Hardware procurement and setup</li>
+                <li>Software configuration</li>
+                <li>Payment processing integration</li>
+                <li>Staff training</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">Wi-Fi Management</h3>
+            <p class="services__card-text">Enterprise-grade wireless networks with separate guest and business segments, captive portals, and analytics.</p>
+            <ul class="services__card-features">
+                <li>Site surveys and design</li>
+                <li>Guest network with branding</li>
+                <li>Bandwidth management</li>
+                <li>Usage analytics</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">Security Cameras</h3>
+            <p class="services__card-text">IP camera systems with remote viewing, motion detection, and integration with your existing security infrastructure.</p>
+            <ul class="services__card-features">
+                <li>Camera placement planning</li>
+                <li>HD and 4K systems</li>
+                <li>Cloud and local storage</li>
+                <li>Mobile viewing apps</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">Inventory IT</h3>
+            <p class="services__card-text">Technology infrastructure for inventory management including barcode systems, RFID, and integration with your supply chain.</p>
+            <ul class="services__card-features">
+                <li>Barcode and RFID systems</li>
+                <li>Real-time tracking</li>
+                <li>Multi-location sync</li>
+                <li>Reporting and analytics</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">Network Infrastructure</h3>
+            <p class="services__card-text">Reliable, secure networking designed for high-traffic retail environments with PCI compliance in mind.</p>
+            <ul class="services__card-features">
+                <li>Structured cabling</li>
+                <li>Firewall and security</li>
+                <li>PCI-compliant segmentation</li>
+                <li>Redundant connectivity</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">Help Desk</h3>
+            <p class="services__card-text">Dedicated support for your retail team with fast response times and retail-specific expertise.</p>
+            <ul class="services__card-features">
+                <li>Phone, email, and chat support</li>
+                <li>Remote troubleshooting</li>
+                <li>On-site dispatch</li>
+                <li>Escalation management</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+{{#if Site.EnabledIntegrations}}
+<section class="integrations">
+    <h2 class="integrations__title">Technology Partners</h2>
+    <div class="integrations__list">
+        {{#each Site.EnabledIntegrations}}
+            {{> IntegrationLink}}
+        {{/each}}
+    </div>
+</section>
+{{/if}}
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Ready to Modernize?</h2>
+        <p class="cta__text">Contact {{Site.CompanyName}} for a free retail technology assessment.</p>
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Request a Consultation</a>
+    </div>
+</section>

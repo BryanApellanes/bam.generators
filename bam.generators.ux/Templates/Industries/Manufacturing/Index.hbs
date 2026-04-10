@@ -1,0 +1,58 @@
+{{> Hero
+    title=Site.CompanyName
+    subtitle=Site.Tagline
+    description="IT solutions that keep your production lines running and your data secure."
+    cssClass="hero--manufacturing"
+}}
+
+<section class="features">
+    <div class="features__header">
+        <h2 class="features__title">Built for Manufacturing</h2>
+        <p class="features__subtitle">Technology that supports production efficiency, quality, and uptime.</p>
+    </div>
+    <div class="features__grid">
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F3ED;</div>
+            <h3 class="features__card-title">Production Networks</h3>
+            <p class="features__card-text">Reliable, segmented networks designed for manufacturing environments that keep production systems isolated and protected.</p>
+        </div>
+        <div class="features__card">
+            <div class="features__card-icon">&#x2699;</div>
+            <h3 class="features__card-title">SCADA &amp; ICS Support</h3>
+            <p class="features__card-text">Specialized IT support for SCADA systems, PLCs, and industrial control networks that drive your manufacturing operations.</p>
+        </div>
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F512;</div>
+            <h3 class="features__card-title">Cybersecurity</h3>
+            <p class="features__card-text">Multi-layered security protecting both your IT and OT environments from cyber threats targeting manufacturing.</p>
+        </div>
+        <div class="features__card">
+            <div class="features__card-icon">&#x23F1;</div>
+            <h3 class="features__card-title">Maximum Uptime</h3>
+            <p class="features__card-text">Redundant systems, proactive monitoring, and rapid response to minimize downtime and keep production on schedule.</p>
+        </div>
+    </div>
+</section>
+
+{{#if Site.EnabledIntegrations}}
+<section class="integrations">
+    <h2 class="integrations__title">Integrated Platforms</h2>
+    <p class="integrations__subtitle">Connect with your manufacturing execution and enterprise systems.</p>
+    <div class="integrations__list">
+        {{#each Site.EnabledIntegrations}}
+            {{> IntegrationLink}}
+        {{/each}}
+    </div>
+</section>
+{{/if}}
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Optimize Your Production IT</h2>
+        <p class="cta__text">{{Site.CompanyName}} delivers technology solutions engineered for manufacturing. Contact us for a plant assessment.</p>
+        {{#if Site.Phone}}
+        <p class="cta__phone">Call us: <a href="tel:{{Site.Phone}}">{{Site.Phone}}</a></p>
+        {{/if}}
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Request a Plant Assessment</a>
+    </div>
+</section>

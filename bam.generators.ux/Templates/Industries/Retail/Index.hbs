@@ -1,0 +1,58 @@
+{{> Hero
+    title=Site.CompanyName
+    subtitle=Site.Tagline
+    description="Technology solutions that keep your retail operations running smoothly."
+    cssClass="hero--retail"
+}}
+
+<section class="features">
+    <div class="features__header">
+        <h2 class="features__title">Built for Retail</h2>
+        <p class="features__subtitle">IT solutions tailored to the unique demands of retail and hospitality.</p>
+    </div>
+    <div class="features__grid">
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F4B3;</div>
+            <h3 class="features__card-title">POS Systems</h3>
+            <p class="features__card-text">Reliable point-of-sale setup, integration, and support to keep transactions moving and your customers happy.</p>
+        </div>
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F4F6;</div>
+            <h3 class="features__card-title">Guest Wi-Fi</h3>
+            <p class="features__card-text">Secure, branded guest Wi-Fi that enhances the customer experience while keeping your business network protected.</p>
+        </div>
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F4E6;</div>
+            <h3 class="features__card-title">Inventory Systems</h3>
+            <p class="features__card-text">IT infrastructure for real-time inventory tracking across all locations, reducing shrink and improving accuracy.</p>
+        </div>
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F6E0;</div>
+            <h3 class="features__card-title">IT Support</h3>
+            <p class="features__card-text">Responsive help desk and on-site support so your team can resolve issues quickly and stay focused on customers.</p>
+        </div>
+    </div>
+</section>
+
+{{#if Site.EnabledIntegrations}}
+<section class="integrations">
+    <h2 class="integrations__title">Integrated Platforms</h2>
+    <p class="integrations__subtitle">Connect your retail systems for a seamless experience.</p>
+    <div class="integrations__list">
+        {{#each Site.EnabledIntegrations}}
+            {{> IntegrationLink}}
+        {{/each}}
+    </div>
+</section>
+{{/if}}
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Upgrade Your Retail Technology</h2>
+        <p class="cta__text">Let {{Site.CompanyName}} modernize your retail IT. Schedule a free assessment today.</p>
+        {{#if Site.Phone}}
+        <p class="cta__phone">Call us: <a href="tel:{{Site.Phone}}">{{Site.Phone}}</a></p>
+        {{/if}}
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Get Started</a>
+    </div>
+</section>

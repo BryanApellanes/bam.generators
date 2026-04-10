@@ -1,0 +1,77 @@
+<section class="page-header">
+    <h1 class="page-header__title">{{Page.Title}}</h1>
+    {{#if Page.Properties.MenuSubtitle}}
+    <p class="page-header__description">{{Page.Properties.MenuSubtitle}}</p>
+    {{/if}}
+</section>
+
+<section class="menu">
+    {{#if Page.Properties.MenuSections}}
+    <div class="menu__sections">
+        {{#each Page.Properties.MenuSections}}
+        <div class="menu__section">
+            <h2 class="menu__section-title">{{this.Name}}</h2>
+            {{#if this.Description}}
+            <p class="menu__section-description">{{this.Description}}</p>
+            {{/if}}
+            <div class="menu__items">
+                {{#each this.Items}}
+                <div class="menu__item">
+                    <div class="menu__item-header">
+                        <h3 class="menu__item-name">{{this.Name}}</h3>
+                        {{#if this.Price}}
+                        <span class="menu__item-price">{{this.Price}}</span>
+                        {{/if}}
+                    </div>
+                    {{#if this.Description}}
+                    <p class="menu__item-description">{{this.Description}}</p>
+                    {{/if}}
+                    {{#if this.Tags}}
+                    <div class="menu__item-tags">
+                        {{#each this.Tags}}
+                        <span class="menu__item-tag">{{this}}</span>
+                        {{/each}}
+                    </div>
+                    {{/if}}
+                </div>
+                {{/each}}
+            </div>
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <div class="menu__placeholder">
+        <p class="menu__placeholder-text">Menu information is being updated. Please check back soon or contact us for current offerings.</p>
+    </div>
+    {{/if}}
+
+    {{#if Page.Properties.MenuNote}}
+    <div class="menu__note">
+        <p class="menu__note-text">{{Page.Properties.MenuNote}}</p>
+    </div>
+    {{/if}}
+</section>
+
+{{#if Site.EnabledIntegrations}}
+<section class="integrations">
+    <h2 class="integrations__title">Order Online</h2>
+    <div class="integrations__list">
+        {{#each Site.EnabledIntegrations}}
+            {{> IntegrationLink}}
+        {{/each}}
+    </div>
+</section>
+{{/if}}
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Visit Us Today</h2>
+        {{#if Site.FullAddress}}
+        <p class="cta__address">{{Site.FullAddress}}</p>
+        {{/if}}
+        {{#if Site.Phone}}
+        <p class="cta__phone">Call: <a href="tel:{{Site.Phone}}">{{Site.Phone}}</a></p>
+        {{/if}}
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Get Directions</a>
+    </div>
+</section>

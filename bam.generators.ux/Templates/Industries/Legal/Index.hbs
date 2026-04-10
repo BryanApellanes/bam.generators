@@ -1,0 +1,58 @@
+{{> Hero
+    title=Site.CompanyName
+    subtitle=Site.Tagline
+    description="Secure, reliable IT solutions built for the demands of legal practice."
+    cssClass="hero--legal"
+}}
+
+<section class="features">
+    <div class="features__header">
+        <h2 class="features__title">Technology for Legal Professionals</h2>
+        <p class="features__subtitle">Protect your clients, your practice, and your reputation with purpose-built legal IT.</p>
+    </div>
+    <div class="features__grid">
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F4C4;</div>
+            <h3 class="features__card-title">Document Security</h3>
+            <p class="features__card-text">Enterprise-grade document management and security for privileged communications, case files, and client records.</p>
+        </div>
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F4E7;</div>
+            <h3 class="features__card-title">Encrypted Email</h3>
+            <p class="features__card-text">End-to-end encrypted email and secure file sharing that protects attorney-client privilege in every communication.</p>
+        </div>
+        <div class="features__card">
+            <div class="features__card-icon">&#x2696;</div>
+            <h3 class="features__card-title">Compliance</h3>
+            <p class="features__card-text">IT solutions that help your firm meet ethical obligations for data security, retention, and client confidentiality.</p>
+        </div>
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F5A5;</div>
+            <h3 class="features__card-title">Managed IT</h3>
+            <p class="features__card-text">Comprehensive IT management so your attorneys and staff can focus on practicing law, not troubleshooting technology.</p>
+        </div>
+    </div>
+</section>
+
+{{#if Site.EnabledIntegrations}}
+<section class="integrations">
+    <h2 class="integrations__title">Integrated Platforms</h2>
+    <p class="integrations__subtitle">Seamless connectivity with the legal tools your firm relies on.</p>
+    <div class="integrations__list">
+        {{#each Site.EnabledIntegrations}}
+            {{> IntegrationLink}}
+        {{/each}}
+    </div>
+</section>
+{{/if}}
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Protect Your Practice</h2>
+        <p class="cta__text">Schedule a confidential consultation to learn how {{Site.CompanyName}} can secure your firm's technology.</p>
+        {{#if Site.Phone}}
+        <p class="cta__phone">Call us: <a href="tel:{{Site.Phone}}">{{Site.Phone}}</a></p>
+        {{/if}}
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Schedule a Consultation</a>
+    </div>
+</section>

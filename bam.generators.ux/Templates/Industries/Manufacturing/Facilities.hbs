@@ -1,0 +1,115 @@
+<section class="page-header">
+    <h1 class="page-header__title">{{Page.Title}}</h1>
+    <p class="page-header__description">Our facilities and the technology infrastructure that powers them.</p>
+</section>
+
+<section class="facilities">
+    {{#if Page.Properties.Facilities}}
+    <div class="facilities__grid">
+        {{#each Page.Properties.Facilities}}
+        <div class="facilities__card">
+            {{#if this.ImageUrl}}
+            <div class="facilities__card-image">
+                <img src="{{this.ImageUrl}}" alt="{{this.Name}}" class="facilities__card-img" loading="lazy" />
+            </div>
+            {{/if}}
+            <div class="facilities__card-content">
+                <h3 class="facilities__card-name">{{this.Name}}</h3>
+                {{#if this.Location}}
+                <p class="facilities__card-location">{{this.Location}}</p>
+                {{/if}}
+                {{#if this.Description}}
+                <p class="facilities__card-text">{{this.Description}}</p>
+                {{/if}}
+                {{#if this.SquareFootage}}
+                <p class="facilities__card-size">{{this.SquareFootage}} sq ft</p>
+                {{/if}}
+                {{#if this.Capabilities}}
+                <div class="facilities__card-capabilities">
+                    <h4 class="facilities__card-capabilities-title">Capabilities</h4>
+                    <ul class="facilities__card-capabilities-list">
+                        {{#each this.Capabilities}}
+                        <li>{{this}}</li>
+                        {{/each}}
+                    </ul>
+                </div>
+                {{/if}}
+                {{#if this.Certifications}}
+                <div class="facilities__card-certs">
+                    <h4 class="facilities__card-certs-title">Certifications</h4>
+                    <ul class="facilities__card-certs-list">
+                        {{#each this.Certifications}}
+                        <li>{{this}}</li>
+                        {{/each}}
+                    </ul>
+                </div>
+                {{/if}}
+                {{#if this.Phone}}
+                <p class="facilities__card-phone">
+                    <a href="tel:{{this.Phone}}">{{this.Phone}}</a>
+                </p>
+                {{/if}}
+            </div>
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <div class="facilities__primary">
+        <div class="facilities__card">
+            <div class="facilities__card-content">
+                <h3 class="facilities__card-name">{{Site.CompanyName}} - Main Facility</h3>
+                {{#if Site.FullAddress}}
+                <p class="facilities__card-location">{{Site.FullAddress}}</p>
+                {{/if}}
+                {{#if Site.Phone}}
+                <p class="facilities__card-phone">
+                    <a href="tel:{{Site.Phone}}">{{Site.Phone}}</a>
+                </p>
+                {{/if}}
+                {{#if Site.Email}}
+                <p class="facilities__card-email">
+                    <a href="mailto:{{Site.Email}}">{{Site.Email}}</a>
+                </p>
+                {{/if}}
+                {{#if Site.IndustryProperties.FacilityDescription}}
+                <p class="facilities__card-text">{{Site.IndustryProperties.FacilityDescription}}</p>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+    {{/if}}
+</section>
+
+{{#if Site.IndustryProperties.TotalSquareFootage}}
+<section class="facilities-stats">
+    <h2 class="facilities-stats__title">At a Glance</h2>
+    <div class="facilities-stats__grid">
+        {{#if Site.IndustryProperties.TotalSquareFootage}}
+        <div class="facilities-stats__item">
+            <span class="facilities-stats__value">{{Site.IndustryProperties.TotalSquareFootage}}</span>
+            <span class="facilities-stats__label">Total Square Footage</span>
+        </div>
+        {{/if}}
+        {{#if Site.IndustryProperties.FacilityCount}}
+        <div class="facilities-stats__item">
+            <span class="facilities-stats__value">{{Site.IndustryProperties.FacilityCount}}</span>
+            <span class="facilities-stats__label">Facilities</span>
+        </div>
+        {{/if}}
+        {{#if Site.IndustryProperties.ProductionLines}}
+        <div class="facilities-stats__item">
+            <span class="facilities-stats__value">{{Site.IndustryProperties.ProductionLines}}</span>
+            <span class="facilities-stats__label">Production Lines</span>
+        </div>
+        {{/if}}
+    </div>
+</section>
+{{/if}}
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Schedule a Facility Tour</h2>
+        <p class="cta__text">Interested in learning more about our facilities? Contact {{Site.CompanyName}} to arrange a visit.</p>
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Contact Us</a>
+    </div>
+</section>

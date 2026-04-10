@@ -1,0 +1,74 @@
+<section class="page-header">
+    <h1 class="page-header__title">{{Page.Title}}</h1>
+    <p class="page-header__description">IT capabilities designed to support modern manufacturing operations.</p>
+</section>
+
+<section class="capabilities">
+    {{#if Page.Properties.Capabilities}}
+    <div class="capabilities__grid">
+        {{#each Page.Properties.Capabilities}}
+        <div class="capabilities__card">
+            <h3 class="capabilities__card-title">{{this.Name}}</h3>
+            {{#if this.Description}}
+            <p class="capabilities__card-text">{{this.Description}}</p>
+            {{/if}}
+            {{#if this.Specs}}
+            <ul class="capabilities__card-specs">
+                {{#each this.Specs}}
+                <li>{{this}}</li>
+                {{/each}}
+            </ul>
+            {{/if}}
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <div class="capabilities__default">
+        <div class="capabilities__grid">
+            <div class="capabilities__card">
+                <h3 class="capabilities__card-title">OT/IT Network Design</h3>
+                <p class="capabilities__card-text">Properly segmented networks that protect operational technology while enabling the data flow needed for modern manufacturing intelligence.</p>
+            </div>
+            <div class="capabilities__card">
+                <h3 class="capabilities__card-title">MES Integration</h3>
+                <p class="capabilities__card-text">IT infrastructure and support for Manufacturing Execution Systems, connecting the plant floor to enterprise planning and quality systems.</p>
+            </div>
+            <div class="capabilities__card">
+                <h3 class="capabilities__card-title">Industrial IoT</h3>
+                <p class="capabilities__card-text">Sensor networks, edge computing, and data platforms for collecting and analyzing production data in real time.</p>
+            </div>
+            <div class="capabilities__card">
+                <h3 class="capabilities__card-title">ERP Connectivity</h3>
+                <p class="capabilities__card-text">Network and systems infrastructure to support SAP, Oracle, and other ERP platforms that drive manufacturing operations.</p>
+            </div>
+            <div class="capabilities__card">
+                <h3 class="capabilities__card-title">Warehouse &amp; Logistics IT</h3>
+                <p class="capabilities__card-text">Barcode, RFID, and wireless systems for warehouse management, shipping, and supply chain visibility.</p>
+            </div>
+            <div class="capabilities__card">
+                <h3 class="capabilities__card-title">Production Monitoring</h3>
+                <p class="capabilities__card-text">Dashboards and alerting systems for real-time production visibility, OEE tracking, and performance analytics.</p>
+            </div>
+        </div>
+    </div>
+    {{/if}}
+</section>
+
+{{#if Site.EnabledIntegrations}}
+<section class="integrations">
+    <h2 class="integrations__title">Technology Partners</h2>
+    <div class="integrations__list">
+        {{#each Site.EnabledIntegrations}}
+            {{> IntegrationLink}}
+        {{/each}}
+    </div>
+</section>
+{{/if}}
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Explore Our Manufacturing IT Solutions</h2>
+        <p class="cta__text">Contact {{Site.CompanyName}} to discuss how we can support your manufacturing technology needs.</p>
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Request a Consultation</a>
+    </div>
+</section>

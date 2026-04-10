@@ -1,0 +1,20 @@
+<header class="header">
+    <div class="header__container container">
+        <a href="/" class="header__brand">
+            {{#if Site.LogoUrl}}
+            <img src="{{Site.LogoUrl}}" alt="{{Site.CompanyName}}" class="header__logo">
+            {{/if}}
+            <div class="header__text">
+                <span class="header__company-name">{{Site.CompanyName}}</span>
+                {{#if Site.Tagline}}
+                <span class="header__tagline">{{Site.Tagline}}</span>
+                {{/if}}
+            </div>
+        </a>
+        {{#if Site.Phone}}
+        <div class="header__contact">
+            <a href="tel:{{Site.Phone}}" class="header__phone">{{Site.Phone}}</a>
+        </div>
+        {{/if}}
+    </div>
+</header>

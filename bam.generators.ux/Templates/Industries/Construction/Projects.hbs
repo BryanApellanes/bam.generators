@@ -1,0 +1,86 @@
+<section class="page-header">
+    <h1 class="page-header__title">{{Page.Title}}</h1>
+    <p class="page-header__description">See how {{Site.CompanyName}} delivers results on real projects.</p>
+</section>
+
+<section class="projects">
+    {{#if Page.Properties.Projects}}
+    <div class="projects__grid">
+        {{#each Page.Properties.Projects}}
+        <div class="projects__card">
+            {{#if this.ImageUrl}}
+            <div class="projects__card-image">
+                <img src="{{this.ImageUrl}}" alt="{{this.Name}}" class="projects__card-img" loading="lazy" />
+            </div>
+            {{/if}}
+            <div class="projects__card-content">
+                <h3 class="projects__card-title">{{this.Name}}</h3>
+                {{#if this.Client}}
+                <p class="projects__card-client">Client: {{this.Client}}</p>
+                {{/if}}
+                {{#if this.Location}}
+                <p class="projects__card-location">{{this.Location}}</p>
+                {{/if}}
+                {{#if this.Description}}
+                <p class="projects__card-text">{{this.Description}}</p>
+                {{/if}}
+                {{#if this.Scope}}
+                <div class="projects__card-scope">
+                    <h4 class="projects__card-scope-title">Scope</h4>
+                    <p class="projects__card-scope-text">{{this.Scope}}</p>
+                </div>
+                {{/if}}
+                {{#if this.Highlights}}
+                <ul class="projects__card-highlights">
+                    {{#each this.Highlights}}
+                    <li>{{this}}</li>
+                    {{/each}}
+                </ul>
+                {{/if}}
+                {{#if this.CompletionDate}}
+                <p class="projects__card-date">Completed: {{this.CompletionDate}}</p>
+                {{/if}}
+            </div>
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <div class="projects__placeholder">
+        <p class="projects__placeholder-text">Project portfolio coming soon. Contact us to learn about our recent work.</p>
+    </div>
+    {{/if}}
+</section>
+
+{{#if Site.IndustryProperties.ProjectStats}}
+<section class="project-stats">
+    <h2 class="project-stats__title">By the Numbers</h2>
+    <div class="project-stats__grid">
+        {{#if Site.IndustryProperties.ProjectsCompleted}}
+        <div class="project-stats__item">
+            <span class="project-stats__value">{{Site.IndustryProperties.ProjectsCompleted}}</span>
+            <span class="project-stats__label">Projects Completed</span>
+        </div>
+        {{/if}}
+        {{#if Site.IndustryProperties.YearsExperience}}
+        <div class="project-stats__item">
+            <span class="project-stats__value">{{Site.IndustryProperties.YearsExperience}}</span>
+            <span class="project-stats__label">Years Experience</span>
+        </div>
+        {{/if}}
+        {{#if Site.IndustryProperties.StatesServed}}
+        <div class="project-stats__item">
+            <span class="project-stats__value">{{Site.IndustryProperties.StatesServed}}</span>
+            <span class="project-stats__label">States Served</span>
+        </div>
+        {{/if}}
+    </div>
+</section>
+{{/if}}
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Start Your Next Project With Us</h2>
+        <p class="cta__text">Contact {{Site.CompanyName}} to discuss IT solutions for your upcoming construction project.</p>
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Get in Touch</a>
+    </div>
+</section>

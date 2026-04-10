@@ -1,0 +1,88 @@
+<section class="page-header">
+    <h1 class="page-header__title">{{Page.Title}}</h1>
+    <p class="page-header__description">Specialized IT services for energy exploration, production, and distribution.</p>
+</section>
+
+<section class="services">
+    <div class="services__grid">
+        <div class="services__card">
+            <h3 class="services__card-title">Remote Site IT</h3>
+            <p class="services__card-text">Complete IT infrastructure for remote well sites, pump stations, and field offices including power, connectivity, and environmental hardening.</p>
+            <ul class="services__card-features">
+                <li>Solar and battery-powered systems</li>
+                <li>Satellite and cellular connectivity</li>
+                <li>Environmental enclosures</li>
+                <li>Remote management and monitoring</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">Field Communications</h3>
+            <p class="services__card-text">Reliable voice and data communications for field crews operating in remote locations with limited infrastructure.</p>
+            <ul class="services__card-features">
+                <li>Two-way radio systems</li>
+                <li>Satellite phones and hotspots</li>
+                <li>Push-to-talk over cellular</li>
+                <li>Emergency communication plans</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">SCADA Network Security</h3>
+            <p class="services__card-text">Cybersecurity services specifically designed for SCADA and industrial control systems in energy environments.</p>
+            <ul class="services__card-features">
+                <li>OT/IT network segmentation</li>
+                <li>Intrusion detection for ICS</li>
+                <li>NERC CIP compliance support</li>
+                <li>Vulnerability assessments</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">Asset Tracking</h3>
+            <p class="services__card-text">GPS and IoT-based tracking for vehicles, equipment, and materials across your operational footprint.</p>
+            <ul class="services__card-features">
+                <li>Real-time GPS tracking</li>
+                <li>Geofencing and alerts</li>
+                <li>Maintenance scheduling</li>
+                <li>Utilization analytics</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">Satellite &amp; LTE Connectivity</h3>
+            <p class="services__card-text">High-availability connectivity solutions for locations beyond the reach of traditional broadband, including VSAT and private LTE.</p>
+            <ul class="services__card-features">
+                <li>VSAT satellite systems</li>
+                <li>Private LTE/5G networks</li>
+                <li>Bonded cellular</li>
+                <li>Failover and redundancy</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">Safety Systems IT</h3>
+            <p class="services__card-text">Technology infrastructure for safety monitoring, gas detection, environmental sensors, and emergency response systems.</p>
+            <ul class="services__card-features">
+                <li>Gas and environmental monitoring</li>
+                <li>Lone worker safety systems</li>
+                <li>Emergency muster systems</li>
+                <li>Incident reporting platforms</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+{{#if Site.EnabledIntegrations}}
+<section class="integrations">
+    <h2 class="integrations__title">Technology Partners</h2>
+    <div class="integrations__list">
+        {{#each Site.EnabledIntegrations}}
+            {{> IntegrationLink}}
+        {{/each}}
+    </div>
+</section>
+{{/if}}
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Need Field-Ready IT?</h2>
+        <p class="cta__text">{{Site.CompanyName}} specializes in technology that works where you work. Let us design a solution for your operations.</p>
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Request a Consultation</a>
+    </div>
+</section>

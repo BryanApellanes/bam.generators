@@ -1,0 +1,80 @@
+<section class="page-header">
+    <h1 class="page-header__title">{{Page.Title}}</h1>
+    <p class="page-header__description">Areas of expertise served by {{Site.CompanyName}}.</p>
+</section>
+
+<section class="practice-areas">
+    {{#if Page.Properties.PracticeAreas}}
+    <div class="practice-areas__grid">
+        {{#each Page.Properties.PracticeAreas}}
+        <div class="practice-areas__card">
+            <h3 class="practice-areas__card-title">{{this.Name}}</h3>
+            {{#if this.Description}}
+            <p class="practice-areas__card-text">{{this.Description}}</p>
+            {{/if}}
+            {{#if this.Services}}
+            <ul class="practice-areas__card-services">
+                {{#each this.Services}}
+                <li>{{this}}</li>
+                {{/each}}
+            </ul>
+            {{/if}}
+            {{#if this.LinkUrl}}
+            <a href="{{this.LinkUrl}}" class="practice-areas__card-link">Learn More</a>
+            {{/if}}
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <div class="practice-areas__default">
+        <div class="practice-areas__grid">
+            <div class="practice-areas__card">
+                <h3 class="practice-areas__card-title">Corporate Law</h3>
+                <p class="practice-areas__card-text">Comprehensive legal services for businesses including formation, governance, contracts, and compliance.</p>
+            </div>
+            <div class="practice-areas__card">
+                <h3 class="practice-areas__card-title">Litigation</h3>
+                <p class="practice-areas__card-text">Experienced trial attorneys representing clients in complex civil and commercial disputes.</p>
+            </div>
+            <div class="practice-areas__card">
+                <h3 class="practice-areas__card-title">Real Estate</h3>
+                <p class="practice-areas__card-text">Full-service real estate law including transactions, development, leasing, and land use.</p>
+            </div>
+            <div class="practice-areas__card">
+                <h3 class="practice-areas__card-title">Employment Law</h3>
+                <p class="practice-areas__card-text">Counsel for employers and employees on workplace issues, compliance, and dispute resolution.</p>
+            </div>
+            <div class="practice-areas__card">
+                <h3 class="practice-areas__card-title">Intellectual Property</h3>
+                <p class="practice-areas__card-text">Protection and enforcement of patents, trademarks, copyrights, and trade secrets.</p>
+            </div>
+            <div class="practice-areas__card">
+                <h3 class="practice-areas__card-title">Estate Planning</h3>
+                <p class="practice-areas__card-text">Wills, trusts, probate, and estate administration to protect your family and your legacy.</p>
+            </div>
+        </div>
+    </div>
+    {{/if}}
+</section>
+
+{{#if Site.EnabledIntegrations}}
+<section class="integrations">
+    <h2 class="integrations__title">Client Resources</h2>
+    <div class="integrations__list">
+        {{#each Site.EnabledIntegrations}}
+            {{> IntegrationLink}}
+        {{/each}}
+    </div>
+</section>
+{{/if}}
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">How Can We Help?</h2>
+        <p class="cta__text">Contact {{Site.CompanyName}} to discuss your legal needs.</p>
+        {{#if Site.Phone}}
+        <p class="cta__phone">Call us: <a href="tel:{{Site.Phone}}">{{Site.Phone}}</a></p>
+        {{/if}}
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Schedule a Consultation</a>
+    </div>
+</section>

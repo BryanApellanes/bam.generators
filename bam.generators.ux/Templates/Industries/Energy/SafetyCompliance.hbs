@@ -1,0 +1,90 @@
+<section class="page-header">
+    <h1 class="page-header__title">{{Page.Title}}</h1>
+    <p class="page-header__description">Safety, regulatory compliance, and environmental responsibility in every solution.</p>
+</section>
+
+<section class="safety-overview">
+    <div class="safety-overview__content">
+        <h2 class="safety-overview__title">Safety Is Non-Negotiable</h2>
+        <p class="safety-overview__text">{{Site.CompanyName}} designs and deploys IT systems that support the rigorous safety standards required in energy operations. Every solution we deliver considers the safety of field personnel, the protection of critical infrastructure, and environmental stewardship.</p>
+    </div>
+</section>
+
+<section class="safety-solutions">
+    <h2 class="safety-solutions__title">Safety Technology</h2>
+    <div class="safety-solutions__grid">
+        <div class="safety-solutions__card">
+            <h3 class="safety-solutions__card-title">Gas Detection &amp; Environmental Monitoring</h3>
+            <p class="safety-solutions__card-text">Networked gas detection and environmental sensor systems with real-time alerting to protect personnel and meet regulatory requirements.</p>
+        </div>
+        <div class="safety-solutions__card">
+            <h3 class="safety-solutions__card-title">Lone Worker Safety</h3>
+            <p class="safety-solutions__card-text">GPS tracking, check-in systems, and emergency alert devices for personnel working in remote or isolated locations.</p>
+        </div>
+        <div class="safety-solutions__card">
+            <h3 class="safety-solutions__card-title">Emergency Response Systems</h3>
+            <p class="safety-solutions__card-text">Communication and coordination systems for emergency response, including muster point tracking and mass notification.</p>
+        </div>
+        <div class="safety-solutions__card">
+            <h3 class="safety-solutions__card-title">Incident Management</h3>
+            <p class="safety-solutions__card-text">Digital incident reporting, investigation tracking, and corrective action management to drive continuous safety improvement.</p>
+        </div>
+    </div>
+</section>
+
+<section class="certifications">
+    <h2 class="certifications__title">Certifications &amp; Regulatory Compliance</h2>
+    <div class="certifications__content">
+        {{#if Site.IndustryProperties.Certifications}}
+        <p class="certifications__text">{{Site.IndustryProperties.Certifications}}</p>
+        {{else}}
+        <div class="certifications__grid">
+            <div class="certifications__item">
+                <h4 class="certifications__item-title">OSHA Compliance</h4>
+                <p class="certifications__item-text">IT systems that support OSHA record-keeping, hazard communication, and reporting requirements for energy operations.</p>
+            </div>
+            <div class="certifications__item">
+                <h4 class="certifications__item-title">NERC CIP</h4>
+                <p class="certifications__item-text">Cybersecurity solutions aligned with North American Electric Reliability Corporation Critical Infrastructure Protection standards.</p>
+            </div>
+            <div class="certifications__item">
+                <h4 class="certifications__item-title">API Standards</h4>
+                <p class="certifications__item-text">Technology deployments that comply with American Petroleum Institute standards for upstream and midstream operations.</p>
+            </div>
+            <div class="certifications__item">
+                <h4 class="certifications__item-title">EPA Reporting</h4>
+                <p class="certifications__item-text">Data collection and reporting systems for environmental compliance, emissions monitoring, and regulatory submissions.</p>
+            </div>
+        </div>
+        {{/if}}
+    </div>
+</section>
+
+<section class="environmental">
+    <h2 class="environmental__title">Environmental Responsibility</h2>
+    <div class="environmental__content">
+        <p class="environmental__text">{{Site.CompanyName}} is committed to environmental responsibility in our technology solutions for the energy sector.</p>
+        <div class="environmental__grid">
+            <div class="environmental__item">
+                <h3 class="environmental__item-title">Emissions Monitoring</h3>
+                <p class="environmental__item-text">IoT sensor networks and data platforms for continuous emissions monitoring, leak detection, and regulatory reporting.</p>
+            </div>
+            <div class="environmental__item">
+                <h3 class="environmental__item-title">Energy-Efficient IT</h3>
+                <p class="environmental__item-text">Solar-powered remote systems, low-power equipment, and efficient data center practices that minimize the environmental footprint of your IT operations.</p>
+            </div>
+            <div class="environmental__item">
+                <h3 class="environmental__item-title">Environmental Data Management</h3>
+                <p class="environmental__item-text">Centralized platforms for managing environmental data, permits, inspections, and compliance documentation.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Strengthen Your Safety &amp; Compliance Posture</h2>
+        <p class="cta__text">Contact {{Site.CompanyName}} to discuss safety technology and compliance support for your energy operations.</p>
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Schedule a Review</a>
+    </div>
+</section>

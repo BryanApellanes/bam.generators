@@ -1,0 +1,88 @@
+<section class="page-header">
+    <h1 class="page-header__title">{{Page.Title}}</h1>
+    <p class="page-header__description">Comprehensive IT services designed for healthcare environments.</p>
+</section>
+
+<section class="services">
+    <div class="services__grid">
+        <div class="services__card">
+            <h3 class="services__card-title">Managed IT Services</h3>
+            <p class="services__card-text">Proactive monitoring, maintenance, and support for your entire healthcare IT infrastructure. We keep your systems running so you can focus on patient care.</p>
+            <ul class="services__card-features">
+                <li>24/7 network monitoring</li>
+                <li>Patch management</li>
+                <li>Help desk support</li>
+                <li>Vendor coordination</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">EHR Support</h3>
+            <p class="services__card-text">Implementation, optimization, and ongoing support for your electronic health record system. We work with all major EHR platforms.</p>
+            <ul class="services__card-features">
+                <li>System implementation</li>
+                <li>Data migration</li>
+                <li>Workflow optimization</li>
+                <li>Staff training</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">HIPAA Compliance</h3>
+            <p class="services__card-text">End-to-end compliance services including risk assessments, policy development, and ongoing monitoring to keep your organization audit-ready.</p>
+            <ul class="services__card-features">
+                <li>Risk assessments</li>
+                <li>Policy documentation</li>
+                <li>Staff training</li>
+                <li>Breach response planning</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">Telehealth IT</h3>
+            <p class="services__card-text">Reliable, secure telehealth infrastructure so your providers can deliver care remotely with confidence.</p>
+            <ul class="services__card-features">
+                <li>Platform selection</li>
+                <li>Network optimization</li>
+                <li>HIPAA-compliant video</li>
+                <li>Patient onboarding tools</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">Network Security</h3>
+            <p class="services__card-text">Multi-layered security designed for healthcare environments, protecting sensitive patient data from evolving threats.</p>
+            <ul class="services__card-features">
+                <li>Firewall management</li>
+                <li>Endpoint protection</li>
+                <li>Intrusion detection</li>
+                <li>Security awareness training</li>
+            </ul>
+        </div>
+        <div class="services__card">
+            <h3 class="services__card-title">Data Backup &amp; Recovery</h3>
+            <p class="services__card-text">HIPAA-compliant backup solutions with tested disaster recovery plans to ensure your data is always protected and recoverable.</p>
+            <ul class="services__card-features">
+                <li>Encrypted backups</li>
+                <li>Off-site replication</li>
+                <li>Disaster recovery planning</li>
+                <li>Regular recovery testing</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+{{#if Site.EnabledIntegrations}}
+<section class="integrations">
+    <h2 class="integrations__title">Technology Partners</h2>
+    <div class="integrations__list">
+        {{#each Site.EnabledIntegrations}}
+            {{> IntegrationLink}}
+        {{/each}}
+    </div>
+</section>
+{{/if}}
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Need Healthcare IT Support?</h2>
+        <p class="cta__text">Contact {{Site.CompanyName}} to discuss how we can support your organization.</p>
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Request a Consultation</a>
+    </div>
+</section>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | {{Site.CompanyName}}</title>
+    {{#if Site.FaviconUrl}}
+    <link rel="icon" href="{{Site.FaviconUrl}}" type="image/x-icon">
+    {{/if}}
+    <link rel="stylesheet" href="/css/{{Site.CompanySlug}}.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family={{Theme.FontFamily}}:wght@300;400;500;600;700&family={{Theme.HeadingFontFamily}}:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="login-page">
+    <div class="login">
+        <div class="login__container">
+            <div class="login__brand">
+                {{#if Site.LogoUrl}}
+                <img src="{{Site.LogoUrl}}" alt="{{Site.CompanyName}}" class="login__logo">
+                {{/if}}
+                <h1 class="login__company-name">{{Site.CompanyName}}</h1>
+                {{#if Site.Tagline}}
+                <p class="login__tagline">{{Site.Tagline}}</p>
+                {{/if}}
+            </div>
+            <form class="login__form form" method="post" action="{{Site.AuthApiUrl}}/login">
+                <h2 class="login__heading">Sign In</h2>
+                <div class="form__group">
+                    <label class="form__label" for="login-email">Email</label>
+                    <input class="form__input" type="email" id="login-email" name="email" required placeholder="your@email.com" autocomplete="email">
+                </div>
+                <div class="form__group">
+                    <label class="form__label" for="login-password">Password</label>
+                    <input class="form__input" type="password" id="login-password" name="password" required placeholder="Enter your password" autocomplete="current-password">
+                </div>
+                <button type="submit" class="form__submit btn btn--primary btn--full-width">Sign In</button>
+                <div class="login__links">
+                    <a href="/forgot-password" class="login__link">Forgot your password?</a>
+                </div>
+            </form>
+            <div class="login__footer">
+                <a href="/" class="login__back">&larr; Back to {{Site.CompanyName}}</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

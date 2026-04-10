@@ -1,0 +1,81 @@
+<section class="page-header">
+    <h1 class="page-header__title">{{Page.Title}}</h1>
+    <p class="page-header__description">Safety-first technology solutions and compliance support for construction operations.</p>
+</section>
+
+<section class="safety-overview">
+    <div class="safety-overview__content">
+        <h2 class="safety-overview__title">Our Commitment to Safety</h2>
+        <p class="safety-overview__text">{{Site.CompanyName}} integrates safety into every technology solution we deploy. From job site monitoring to incident reporting systems, we help construction companies maintain a safe work environment and stay compliant with OSHA and industry regulations.</p>
+    </div>
+</section>
+
+<section class="safety-solutions">
+    <h2 class="safety-solutions__title">Safety Technology Solutions</h2>
+    <div class="safety-solutions__grid">
+        <div class="safety-solutions__card">
+            <h3 class="safety-solutions__card-title">Job Site Monitoring</h3>
+            <p class="safety-solutions__card-text">Real-time monitoring of job site conditions including environmental sensors, camera systems, and access control to maintain safe working conditions.</p>
+        </div>
+        <div class="safety-solutions__card">
+            <h3 class="safety-solutions__card-title">Incident Reporting</h3>
+            <p class="safety-solutions__card-text">Digital incident reporting and tracking systems that streamline documentation, notifications, and corrective action follow-up.</p>
+        </div>
+        <div class="safety-solutions__card">
+            <h3 class="safety-solutions__card-title">Training Management</h3>
+            <p class="safety-solutions__card-text">IT systems for managing safety training records, certifications, and scheduling to ensure your workforce stays current on all requirements.</p>
+        </div>
+        <div class="safety-solutions__card">
+            <h3 class="safety-solutions__card-title">Communication Systems</h3>
+            <p class="safety-solutions__card-text">Reliable communication infrastructure for emergency alerts, daily safety briefings, and real-time coordination across active job sites.</p>
+        </div>
+    </div>
+</section>
+
+<section class="certifications">
+    <h2 class="certifications__title">Certifications &amp; Compliance</h2>
+    <div class="certifications__content">
+        {{#if Site.IndustryProperties.Certifications}}
+        <p class="certifications__text">{{Site.IndustryProperties.Certifications}}</p>
+        {{else}}
+        <div class="certifications__grid">
+            <div class="certifications__item">
+                <h4 class="certifications__item-title">OSHA Compliance</h4>
+                <p class="certifications__item-text">Our solutions help you meet OSHA record-keeping, reporting, and communication requirements for construction sites.</p>
+            </div>
+            <div class="certifications__item">
+                <h4 class="certifications__item-title">ISNetworld / Avetta</h4>
+                <p class="certifications__item-text">We maintain contractor compliance profiles and can assist with your prequalification documentation.</p>
+            </div>
+            <div class="certifications__item">
+                <h4 class="certifications__item-title">NFPA Standards</h4>
+                <p class="certifications__item-text">Electrical and fire safety compliance for temporary and permanent installations on construction sites.</p>
+            </div>
+        </div>
+        {{/if}}
+    </div>
+</section>
+
+<section class="compliance-checklist">
+    <h2 class="compliance-checklist__title">Safety IT Checklist</h2>
+    <div class="compliance-checklist__content">
+        <ul class="compliance-checklist__list">
+            <li class="compliance-checklist__item">Digital safety plan documentation and distribution</li>
+            <li class="compliance-checklist__item">Electronic daily safety briefing logs</li>
+            <li class="compliance-checklist__item">Incident reporting and tracking system</li>
+            <li class="compliance-checklist__item">Certification and training record management</li>
+            <li class="compliance-checklist__item">Emergency communication and alert systems</li>
+            <li class="compliance-checklist__item">Environmental monitoring and data logging</li>
+            <li class="compliance-checklist__item">Site access control and visitor management</li>
+            <li class="compliance-checklist__item">Equipment inspection digital checklists</li>
+        </ul>
+    </div>
+</section>
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Improve Your Safety Technology</h2>
+        <p class="cta__text">Let {{Site.CompanyName}} help you build a safer, more compliant job site with the right technology.</p>
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Schedule a Safety IT Review</a>
+    </div>
+</section>

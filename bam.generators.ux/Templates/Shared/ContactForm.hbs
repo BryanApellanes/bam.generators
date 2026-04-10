@@ -1,0 +1,51 @@
+<section class="contact">
+    <div class="contact__container container">
+        <div class="contact__grid">
+            <div class="contact__form-wrapper">
+                <h2 class="contact__heading">Get In Touch</h2>
+                <form class="contact__form form" method="post" action="/contact">
+                    <div class="form__group">
+                        <label class="form__label" for="contact-name">Name</label>
+                        <input class="form__input" type="text" id="contact-name" name="name" required placeholder="Your name">
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="contact-email">Email</label>
+                        <input class="form__input" type="email" id="contact-email" name="email" required placeholder="your@email.com">
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="contact-phone">Phone</label>
+                        <input class="form__input" type="tel" id="contact-phone" name="phone" placeholder="(555) 123-4567">
+                    </div>
+                    <div class="form__group">
+                        <label class="form__label" for="contact-message">Message</label>
+                        <textarea class="form__textarea" id="contact-message" name="message" rows="5" required placeholder="How can we help you?"></textarea>
+                    </div>
+                    <button type="submit" class="form__submit btn btn--primary">Send Message</button>
+                </form>
+            </div>
+            <div class="contact__info">
+                <h2 class="contact__heading">Contact Information</h2>
+                <div class="contact__details">
+                    {{#if Site.Phone}}
+                    <div class="contact__detail">
+                        <h3 class="contact__detail-label">Phone</h3>
+                        <a href="tel:{{Site.Phone}}">{{Site.Phone}}</a>
+                    </div>
+                    {{/if}}
+                    {{#if Site.Email}}
+                    <div class="contact__detail">
+                        <h3 class="contact__detail-label">Email</h3>
+                        <a href="mailto:{{Site.Email}}">{{Site.Email}}</a>
+                    </div>
+                    {{/if}}
+                    {{#if Site.FullAddress}}
+                    <div class="contact__detail">
+                        <h3 class="contact__detail-label">Address</h3>
+                        <p>{{Site.FullAddress}}</p>
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

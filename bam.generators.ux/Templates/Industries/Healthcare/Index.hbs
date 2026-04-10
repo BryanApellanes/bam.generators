@@ -1,0 +1,58 @@
+{{> Hero
+    title=Site.CompanyName
+    subtitle=Site.Tagline
+    description="Trusted healthcare IT solutions — secure, compliant, and always available."
+    cssClass="hero--healthcare"
+}}
+
+<section class="features">
+    <div class="features__header">
+        <h2 class="features__title">Why {{Site.CompanyName}}?</h2>
+        <p class="features__subtitle">Purpose-built IT for healthcare organizations</p>
+    </div>
+    <div class="features__grid">
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F6E1;</div>
+            <h3 class="features__card-title">HIPAA Compliant</h3>
+            <p class="features__card-text">Every solution we deploy meets or exceeds HIPAA technical safeguard requirements, with full documentation and audit support.</p>
+        </div>
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F4CB;</div>
+            <h3 class="features__card-title">EHR Integration</h3>
+            <p class="features__card-text">Seamless integration with leading electronic health record systems including Epic, Cerner, and Allscripts.</p>
+        </div>
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F512;</div>
+            <h3 class="features__card-title">Secure Communications</h3>
+            <p class="features__card-text">Encrypted email, secure messaging, and compliant telehealth platforms to protect patient data in transit.</p>
+        </div>
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F4DE;</div>
+            <h3 class="features__card-title">24/7 Support</h3>
+            <p class="features__card-text">Round-the-clock monitoring and support so your clinical staff never has to wait for critical IT issues.</p>
+        </div>
+    </div>
+</section>
+
+{{#if Site.EnabledIntegrations}}
+<section class="integrations">
+    <h2 class="integrations__title">Integrated Platforms</h2>
+    <p class="integrations__subtitle">Connect with the systems your practice already relies on.</p>
+    <div class="integrations__list">
+        {{#each Site.EnabledIntegrations}}
+            {{> IntegrationLink}}
+        {{/each}}
+    </div>
+</section>
+{{/if}}
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Ready to Secure Your Practice?</h2>
+        <p class="cta__text">Schedule a free consultation to learn how {{Site.CompanyName}} can protect your patients and your practice.</p>
+        {{#if Site.Phone}}
+        <p class="cta__phone">Call us: <a href="tel:{{Site.Phone}}">{{Site.Phone}}</a></p>
+        {{/if}}
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Get Started</a>
+    </div>
+</section>

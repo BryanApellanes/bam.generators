@@ -1,0 +1,58 @@
+{{> Hero
+    title=Site.CompanyName
+    subtitle=Site.Tagline
+    description="IT solutions for energy companies operating in demanding field environments."
+    cssClass="hero--energy"
+}}
+
+<section class="features">
+    <div class="features__header">
+        <h2 class="features__title">Engineered for Energy</h2>
+        <p class="features__subtitle">Reliable technology for remote operations, critical infrastructure, and field teams.</p>
+    </div>
+    <div class="features__grid">
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F4E1;</div>
+            <h3 class="features__card-title">Remote Monitoring</h3>
+            <p class="features__card-text">Real-time monitoring of remote sites and equipment via satellite, cellular, and radio networks for continuous operational visibility.</p>
+        </div>
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F4F1;</div>
+            <h3 class="features__card-title">Field IT</h3>
+            <p class="features__card-text">Ruggedized mobile solutions, field communications, and device management for crews working in harsh environments.</p>
+        </div>
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F512;</div>
+            <h3 class="features__card-title">SCADA Security</h3>
+            <p class="features__card-text">Specialized cybersecurity for SCADA systems, industrial control networks, and operational technology infrastructure.</p>
+        </div>
+        <div class="features__card">
+            <div class="features__card-icon">&#x1F4AC;</div>
+            <h3 class="features__card-title">Communication Systems</h3>
+            <p class="features__card-text">Multi-mode communication solutions including satellite, LTE, radio, and VoIP to keep field and office teams connected.</p>
+        </div>
+    </div>
+</section>
+
+{{#if Site.EnabledIntegrations}}
+<section class="integrations">
+    <h2 class="integrations__title">Integrated Platforms</h2>
+    <p class="integrations__subtitle">Connect with the energy management and field operations tools you depend on.</p>
+    <div class="integrations__list">
+        {{#each Site.EnabledIntegrations}}
+            {{> IntegrationLink}}
+        {{/each}}
+    </div>
+</section>
+{{/if}}
+
+<section class="cta">
+    <div class="cta__content">
+        <h2 class="cta__title">Power Your Operations With Better IT</h2>
+        <p class="cta__text">{{Site.CompanyName}} delivers technology that performs in the field. Contact us for a consultation.</p>
+        {{#if Site.Phone}}
+        <p class="cta__phone">Call us: <a href="tel:{{Site.Phone}}">{{Site.Phone}}</a></p>
+        {{/if}}
+        <a href="/{{Site.CompanySlug}}/contact" class="cta__button">Request a Consultation</a>
+    </div>
+</section>
