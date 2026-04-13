@@ -283,6 +283,168 @@ small { font-size: var(--text-sm); }
 }
 
 /* ==========================================================================
+   Features ("Built for" sections)
+   ========================================================================== */
+
+.features {
+    padding: var(--space-3xl) var(--space-lg);
+    max-width: var(--container-max);
+    margin: 0 auto;
+}
+
+.features__header {
+    text-align: center;
+    margin-bottom: var(--space-2xl);
+}
+
+.features__title {
+    font-family: var(--font-family-heading);
+    font-size: var(--text-4xl);
+    font-weight: 700;
+    color: var(--color-heading);
+    margin-bottom: var(--space-sm);
+}
+
+.features__subtitle {
+    font-size: var(--text-lg);
+    color: var(--color-text-muted);
+}
+
+.features__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-lg);
+}
+
+.features__card {
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-lg);
+    padding: var(--space-lg);
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.features__card:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+.features__card-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    background: var(--color-primary-light);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-md);
+    color: var(--color-primary);
+    font-size: 1.375rem;
+}
+
+.features__card-title {
+    font-family: var(--font-family-heading);
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--color-heading);
+    margin-bottom: var(--space-xs);
+}
+
+.features__card-text {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    line-height: 1.6;
+}
+
+/* ==========================================================================
+   Integrations
+   ========================================================================== */
+
+.integrations {
+    padding: var(--space-3xl) var(--space-lg);
+    max-width: var(--container-max);
+    margin: 0 auto;
+}
+
+.integrations__title {
+    font-family: var(--font-family-heading);
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    color: var(--color-heading);
+    text-align: center;
+    margin-bottom: var(--space-sm);
+}
+
+.integrations__subtitle {
+    font-size: var(--text-lg);
+    color: var(--color-text-muted);
+    text-align: center;
+    margin-bottom: var(--space-2xl);
+}
+
+.integrations__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-md);
+}
+
+/* ==========================================================================
+   CTA Section
+   ========================================================================== */
+
+.cta {
+    background: linear-gradient(135deg, var(--color-secondary), color-mix(in srgb, var(--color-secondary) 80%, black));
+    color: #ffffff;
+    padding: var(--space-4xl) var(--space-lg);
+    text-align: center;
+}
+
+.cta__content {
+    max-width: var(--container-narrow);
+    margin: 0 auto;
+}
+
+.cta__title {
+    font-family: var(--font-family-heading);
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    margin-bottom: var(--space-md);
+}
+
+.cta__text {
+    font-size: var(--text-lg);
+    opacity: 0.85;
+    margin-bottom: var(--space-lg);
+}
+
+.cta__phone {
+    font-size: var(--text-xl);
+    font-weight: 600;
+    margin-bottom: var(--space-lg);
+}
+
+.cta__phone a {
+    color: var(--color-accent);
+    text-decoration: none;
+}
+
+.cta__button {
+    display: inline-block;
+    padding: var(--space-md) var(--space-2xl);
+    background: var(--color-primary);
+    color: #ffffff;
+    font-weight: 600;
+    font-size: var(--text-base);
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    transition: background var(--transition);
+}
+
+.cta__button:hover {
+    background: var(--color-primary-dark);
+}
+
+/* ==========================================================================
    Header
    ========================================================================== */
 
