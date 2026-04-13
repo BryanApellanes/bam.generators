@@ -66,7 +66,10 @@ namespace Bam.Generators.Ux
 
         private string RenderTemplate(string templateName, object model)
         {
-            return _renderer.Render(templateName, model);
+            // Embedded resources use dot-separated names:
+            //   "Shared/Layout" → "bam.generators.ux.Templates.Shared.Layout"
+            string resourceName = "bam.generators.ux.Templates." + templateName.Replace("/", ".");
+            return _renderer.Render(resourceName, model);
         }
 
         private static string IndustryFolderName(string industry) => industry.ToLowerInvariant() switch
