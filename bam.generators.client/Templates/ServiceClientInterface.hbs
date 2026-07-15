@@ -18,6 +18,16 @@ namespace {{{Namespace}}}
 
         private async global::System.Threading.Tasks.Task<TR> InvokeRemoteAsync<TR>(string methodName, object[] args)
         {
+            if (_client.SessionState == null)
+            {
+                // Every BAM protocol request requires an established session (independent of
+                // [AnonymousAccess], which only exempts actor/JWT authentication, not the session
+                // itself — see ServerSessionInitializationHandler). This covers anonymous-access
+                // methods only; a caller invoking a non-anonymous method must establish an
+                // authenticated session (with an authorization token) on _client beforehand.
+                await _client.EstablishSessionAsync();
+            }
+
             global::Bam.Protocol.MethodInvocationRequest invocation = global::Bam.Protocol.MethodInvocationRequest.For(typeof({{{ServiceFullName}}}), methodName, args);
             invocation.OperationIdentifier = global::Bam.Protocol.OperationIdentifier.For(typeof({{{ServiceFullName}}}), methodName);
             string requestBody = global::Newtonsoft.Json.JsonConvert.SerializeObject(invocation);

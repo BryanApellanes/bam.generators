@@ -37,6 +37,7 @@ namespace Bam.Generators.Client.Tests.Unit
                 because.ItsTrue("declares the client class", () => source.Contains("class EchoServiceClient"));
                 because.ItsTrue("subclasses the service type", () => source.Contains(": global::Bam.Generators.Client.Tests.Fixtures.EchoService"));
                 because.ItsTrue("emits the private remote-invoke helper", () => source.Contains("InvokeRemoteAsync"));
+                because.ItsTrue("establishes a session before invoking when none exists", () => source.Contains("if (_client.SessionState == null)") && source.Contains("await _client.EstablishSessionAsync();"));
                 because.ItsTrue("selects the transport via the protocol field", () => source.Contains("CreateRequestBuilder(_protocol)"));
                 because.ItsTrue("overrides the base method", () => source.Contains("override"));
                 because.ItsTrue("emits a synchronous wrapper", () => source.Contains("GetAwaiter().GetResult()"));
@@ -63,6 +64,7 @@ namespace Bam.Generators.Client.Tests.Unit
                 because.ItsTrue("declares the client class", () => source.Contains("class EchoServiceClient"));
                 because.ItsTrue("implements the interface", () => source.Contains(": global::Bam.Generators.Client.Tests.Fixtures.IEchoService"));
                 because.ItsTrue("does not mark interface members as override", () => !source.Contains("override"));
+                because.ItsTrue("establishes a session before invoking when none exists", () => source.Contains("if (_client.SessionState == null)") && source.Contains("await _client.EstablishSessionAsync();"));
             })
             .SoBeHappy()
             .UnlessItFailed();
