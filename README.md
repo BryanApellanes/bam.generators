@@ -1,14 +1,15 @@
 # bam.generators
 
-Handlebars-based code generation for the Bam Framework — DAOs, service clients, and UX sites.
+Handlebars-based code generation for the Bam Framework — DAOs, service clients, UX sites, and service decorators.
 
 ## Overview
 
 `bam.generators` is the templating engine behind the framework's code-generation tools. Its core project wraps [Handlebars.Net](https://github.com/Handlebars-Net/Handlebars.Net) with a set of embedded `.hbs` templates (`Class`, `Collection`, `Dto`, `SchemaRepository`, `Wrapper`, `QueryClass`, foreign-key/xref property partials, and more) and the machinery to render them against a schema: `HandlebarsSchemaRepositoryGenerator`, `HandlebarsWrapperGenerator`, `HandlebarsCSharpDaoCodeWriter`, and the `DaoRepoGenerationConfig` type that drives generation from a YAML config. This is the engine `bamdb` invokes to turn POCO types into DAO source.
 
-Two sibling projects extend the same template-driven approach to other generation targets:
+Three sibling projects extend the same template-driven approach to other generation targets:
 - **`bam.generators.client`** generates strongly-typed service client code from a `bam.protocol`/`bam.server` service definition (`BamServiceClientGenerator`, `BamServiceClientModel`, `ServiceClientCodeWriter`).
 - **`bam.generators.ux`** generates UX site scaffolding — pages, navigation, themes, and color palettes — from a `UxGenerationConfig` (`UxSiteGenerator`, `HandlebarsUxSiteWriter`, `ColorPaletteGenerator`).
+- **`bam.generators.decorators`** generates strongly-typed decorators for service interfaces, and carries the runtime they run on: wrap a service registered in a `ServiceRegistry` and run handlers at the start, end and failure of its methods (`DecoratorGenerator`, `Decorator<I, T>`). See its [README](bam.generators.decorators/README.md).
 
 ## Key Classes
 
@@ -20,6 +21,8 @@ Two sibling projects extend the same template-driven approach to other generatio
 | `HandlebarsTemplateSet` / `HandlebarsEmbeddedResources` | Loads the embedded `.hbs` templates by name. |
 | `BamServiceClientGenerator` (client) | Generates a strongly-typed client for a Bam protocol service. |
 | `UxSiteGenerator` (ux) | Generates a UX site's pages/navigation/theme from a `UxGenerationConfig`. |
+| `DecoratorGenerator` (decorators) | Generates a typed decorator and its subscription extension methods for a service interface. |
+| `CSharpTypeName` | Renders fully-qualified, nullable-annotated C# type names for reflection-driven generators. |
 
 ## Dependencies
 
