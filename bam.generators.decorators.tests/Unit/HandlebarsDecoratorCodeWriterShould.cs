@@ -121,6 +121,54 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
+        public void RenderWithoutADirectorySource()
+        {
+            After.Setup(reg =>
+            {
+                reg.For<HandlebarsDecoratorCodeWriter>().Use(HandlebarsDecoratorCodeWriter.EmbeddedOnly());
+            })
+            .When<HandlebarsDecoratorCodeWriter>("has only the embedded templates", writer =>
+            {
+                DecoratorModel model = new DecoratorModel(typeof(IEchoService), typeof(EchoService));
+                return new EmbeddedOutcome(writer.HandlebarsDirectory == null, writer.GetSource(model) == RealWriter().GetSource(model));
+            })
+            .TheTest
+            .ShouldPass<EmbeddedOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("it has no directory source", outcome.HasNoDirectory);
+                because.ItsTrue("it renders the same source as a writer with an empty directory", outcome.RendersTheSame);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void UseATemplateThatStandsAlone()
+        {
+            // Handlebars partials are registered process-wide, so a template that referenced one could be
+            // changed by whatever any other generator loaded. The decorator template must reference none.
+            When.A<HandlebarsDecoratorCodeWriterShould>("reads the embedded templates", this, test =>
+            {
+                System.Reflection.Assembly assembly = typeof(HandlebarsDecoratorCodeWriter).Assembly;
+                string[] templates = assembly.GetManifestResourceNames().Where(name => name.EndsWith(".hbs")).ToArray();
+                bool referencesPartial = templates.Any(name =>
+                {
+                    using StreamReader reader = new StreamReader(assembly.GetManifestResourceStream(name)!);
+                    return reader.ReadToEnd().Contains("{{>");
+                });
+                return new TemplateOutcome(string.Join(",", templates.Select(name => name.Substring(name.LastIndexOf("Templates.")))), referencesPartial);
+            })
+            .TheTest
+            .ShouldPass<TemplateOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("there is one embedded template", outcome.Templates == "Templates.Decorator.hbs", outcome.Templates);
+                because.ItsTrue("it references no partials", !outcome.ReferencesPartial);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
         public void ReloadBothTemplateSourcesOnLoad()
         {
             IHandlebarsDirectory directory = Substitute.For<IHandlebarsDirectory>();
@@ -209,6 +257,10 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         private sealed record SourceOutcome(string Source);
+
+        private sealed record EmbeddedOutcome(bool HasNoDirectory, bool RendersTheSame);
+
+        private sealed record TemplateOutcome(string Templates, bool ReferencesPartial);
 
         private sealed record StreamOutcome(bool MatchesSource, bool LeftOpen);
 

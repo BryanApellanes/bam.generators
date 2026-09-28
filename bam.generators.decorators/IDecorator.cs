@@ -50,12 +50,23 @@ namespace Bam.Generators.Decorators
         Task<DecoratorInvocationResult<T, R>> InvokeAsync<R>(string methodName, params object?[] args);
 
         /// <summary>Subscribes <paramref name="handler"/> to <paramref name="methodName"/> for <paramref name="phase"/>.</summary>
+        /// <remarks>
+        /// A handler that throws does not stop the call: the exception is logged and the call goes ahead. To
+        /// stop a call, call <see cref="DecoratorInvocationContext.Reject(string)"/> on the context or throw a
+        /// <see cref="DecoratorRejectionException"/>. A handler subscribed to
+        /// <see cref="DecoratorPhase.Error"/> that returns a value suppresses the failure.
+        /// </remarks>
         /// <param name="phase">The phase the handler runs in.</param>
         /// <param name="methodName">The method to subscribe to, or <c>*</c> for every method.</param>
         /// <param name="handler">The handler. A non-null return value overrides the invocation's result.</param>
         void Subscribe(DecoratorPhase phase, string methodName, Func<DecoratorInvocationContext<T>, object?> handler);
 
         /// <summary>Subscribes an observe-only <paramref name="handler"/> to <paramref name="methodName"/> for <paramref name="phase"/>.</summary>
+        /// <remarks>
+        /// A handler that throws does not stop the call: the exception is logged and the call goes ahead. To
+        /// stop a call, call <see cref="DecoratorInvocationContext.Reject(string)"/> on the context or throw a
+        /// <see cref="DecoratorRejectionException"/>.
+        /// </remarks>
         /// <param name="phase">The phase the handler runs in.</param>
         /// <param name="methodName">The method to subscribe to, or <c>*</c> for every method.</param>
         /// <param name="handler">The handler.</param>
@@ -68,6 +79,10 @@ namespace Bam.Generators.Decorators
         void SubscribeError(string methodName, Func<DecoratorInvocationContext<T>, object?> func);
 
         /// <summary>Subscribes <paramref name="func"/> to run before <paramref name="methodName"/> is invoked; a non-null return value short-circuits the invocation.</summary>
+        /// <remarks>
+        /// Throwing from <paramref name="func"/> does not stop the call. To stop it, call
+        /// <see cref="DecoratorInvocationContext.Reject(string)"/> or throw a <see cref="DecoratorRejectionException"/>.
+        /// </remarks>
         void SubscribeStart(string methodName, Func<DecoratorInvocationContext<T>, object?> func);
     }
 }

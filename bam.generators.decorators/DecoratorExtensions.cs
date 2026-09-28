@@ -5,6 +5,12 @@ namespace Bam.Generators.Decorators
     /// instance that is one. These work without generated code; a generated decorator adds typed per-method
     /// equivalents (<c>OnMessageStart</c>, ...) on top of them.
     /// </summary>
+    /// <remarks>
+    /// A handler that throws does not stop the call: the exception is logged and the call goes ahead. To stop
+    /// a call — an authorization or validation check — the handler calls
+    /// <see cref="DecoratorInvocationContext.Reject(string)"/> or throws a
+    /// <see cref="DecoratorRejectionException"/>. An error handler that returns a value suppresses the failure.
+    /// </remarks>
     public static class DecoratorExtensions
     {
         /// <summary>

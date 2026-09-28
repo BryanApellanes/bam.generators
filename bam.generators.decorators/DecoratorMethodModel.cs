@@ -109,7 +109,7 @@ namespace Bam.Generators.Decorators
                 source.AppendLine($"{Indent}{{");
                 source.AppendLine($"{Indent}    {RenderBody(generics)}");
                 source.AppendLine($"{Indent}}}");
-                return source.ToString();
+                return source.ToString().TrimEnd();
             }
         }
 

@@ -43,7 +43,7 @@ namespace Bam.Generators.Decorators
                 source.AppendLine($"{Indent}    add => {Target}.{Event.Name} += value;");
                 source.AppendLine($"{Indent}    remove => {Target}.{Event.Name} -= value;");
                 source.AppendLine($"{Indent}}}");
-                return source.ToString();
+                return source.ToString().TrimEnd();
             }
         }
     }

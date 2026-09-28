@@ -10,8 +10,16 @@ namespace Bam.Generators.Decorators
     /// <see cref="RoslynCompiler"/> and loads the result. Each pair is resolved once and cached.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// Runtime compilation needs the assemblies of the service types on disk, and costs a compile on first
     /// use. Generate decorators ahead of time (and reference them) to avoid both.
+    /// </para>
+    /// <para>
+    /// What gets compiled is loaded into the process, so the default resolver renders from the templates
+    /// embedded in this assembly and nothing else: no template directory is read or created. A resolver given
+    /// its own <see cref="DecoratorGenerator"/> compiles whatever that generator renders; pass one that reads
+    /// templates from disk only when that directory is as trusted as the application's own binaries.
+    /// </para>
     /// </remarks>
     public class DecoratorTypeResolver : IDecoratorTypeResolver
     {
@@ -21,17 +29,20 @@ namespace Bam.Generators.Decorators
         private readonly Lazy<DecoratorGenerator> _generator;
 
         /// <summary>
-        /// Initializes a new instance with the default generator, which is not created (and loads no
-        /// templates) until a decorator actually has to be compiled.
+        /// Initializes a new instance that renders from the embedded templates only. The generator is not
+        /// created until a decorator actually has to be compiled.
         /// </summary>
         public DecoratorTypeResolver()
         {
-            _generator = new Lazy<DecoratorGenerator>(() => new DecoratorGenerator());
+            _generator = new Lazy<DecoratorGenerator>(() => new DecoratorGenerator(HandlebarsDecoratorCodeWriter.EmbeddedOnly(), new FsDecoratorTargetResolver()));
             _types = new ConcurrentDictionary<DecoratorKey, Lazy<Type>>();
         }
 
         /// <summary>Initializes a new instance that generates source with <paramref name="generator"/>.</summary>
-        /// <param name="generator">Renders the source of decorators that have to be compiled at runtime.</param>
+        /// <param name="generator">
+        /// Renders the source of decorators that have to be compiled at runtime. Its output is compiled and
+        /// loaded, so its template sources must be trusted.
+        /// </param>
         public DecoratorTypeResolver(DecoratorGenerator generator)
         {
             ArgumentNullException.ThrowIfNull(generator);
@@ -52,9 +63,20 @@ namespace Bam.Generators.Decorators
             ArgumentNullException.ThrowIfNull(interfaceType);
             ArgumentNullException.ThrowIfNull(implementationType);
 
-            return _types.GetOrAdd(
-                new DecoratorKey(interfaceType, implementationType),
-                key => new Lazy<Type>(() => FindGenerated(key.InterfaceType, key.ImplementationType) ?? Compile(key.InterfaceType, key.ImplementationType))).Value;
+            DecoratorKey key = new DecoratorKey(interfaceType, implementationType);
+            Lazy<Type> resolution = _types.GetOrAdd(
+                key,
+                pair => new Lazy<Type>(() => FindGenerated(pair.InterfaceType, pair.ImplementationType) ?? Compile(pair.InterfaceType, pair.ImplementationType)));
+            try
+            {
+                return resolution.Value;
+            }
+            catch (Exception)
+            {
+                // Lazy remembers a failure for good. Forget it, so a later attempt gets to try again.
+                _types.TryRemove(new KeyValuePair<DecoratorKey, Lazy<Type>>(key, resolution));
+                throw;
+            }
         }
 
         /// <summary>

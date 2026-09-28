@@ -20,7 +20,14 @@ namespace Bam.Generators.Decorators
     /// </para>
     /// <para>
     /// A handler or event subscriber that throws never breaks the decorated call: the exception is logged and
-    /// the invocation continues.
+    /// the invocation continues. That makes a handler that throws to stop a call fail open. To stop a call,
+    /// a handler calls <see cref="DecoratorInvocationContext.Reject(string)"/> or throws a
+    /// <see cref="DecoratorRejectionException"/>; the rejection reaches the caller, no further handlers run,
+    /// and no error handler can suppress it.
+    /// </para>
+    /// <para>
+    /// An error handler that supplies a result turns a failure into a success. Don't subscribe one to a
+    /// service whose callers rely on the exception, such as an authorization check that denies by throwing.
     /// </para>
     /// </remarks>
     /// <typeparam name="T">The implementation type being decorated.</typeparam>
@@ -379,6 +386,11 @@ namespace Bam.Generators.Decorators
                 return Complete(context, value, true);
             }
 
+            if (context.Rejected)
+            {
+                return Refuse<R>(context);
+            }
+
             try
             {
                 value = invocation();
@@ -399,6 +411,11 @@ namespace Bam.Generators.Decorators
                 return Complete(context, value, true);
             }
 
+            if (context.Rejected)
+            {
+                return Refuse<R>(context);
+            }
+
             try
             {
                 value = await invocation().ConfigureAwait(false);
@@ -411,30 +428,37 @@ namespace Bam.Generators.Decorators
             return Complete(context, value, false);
         }
 
+        // Handlers get their own copy of the arguments, so what they do to it never reaches the decorated method.
         private DecoratorInvocationContext<T> CreateContext(string methodName, MethodInfo? method, object?[] args)
         {
             return new DecoratorInvocationContext<T>(this)
             {
                 Method = method,
                 MethodName = methodName,
-                Args = args
+                Args = (object?[])args.Clone()
             };
         }
 
         // True when a start handler supplied the result, in which case the decorated method must not be called.
+        // False with context.Rejected set when a start handler rejected the call.
         private bool TryStart<R>(DecoratorInvocationContext<T> context, out R? value)
         {
             value = default;
             context.Enter(DecoratorPhase.Start, null);
             Raise(MethodStart, context, null);
             RunHandlers(context);
-            return context.ResultOverridden && TryConvert(context, out value);
+            return !context.Rejected && context.ResultOverridden && TryConvert(context, out value);
         }
 
         private DecoratorInvocationResult<T, R> Complete<R>(DecoratorInvocationContext<T> context, R? value, bool shortCircuited)
         {
             context.Enter(DecoratorPhase.End, value);
             RunHandlers(context);
+            if (context.Rejected)
+            {
+                return Refuse<R>(context);
+            }
+
             if (context.ResultOverridden && TryConvert(context, out R? replaced))
             {
                 value = replaced;
@@ -460,6 +484,10 @@ namespace Bam.Generators.Decorators
             context.Exception = exception;
             Raise(MethodError, context, null);
             RunHandlers(context);
+            if (context.Rejected)
+            {
+                return Refuse<R>(context);
+            }
 
             R? fallback = default;
             bool handled = context.ResultOverridden && TryConvert(context, out fallback);
@@ -469,6 +497,26 @@ namespace Bam.Generators.Decorators
                 MethodName = context.MethodName,
                 Exception = exception,
                 Handled = handled
+            };
+        }
+
+        // A rejection is final: it becomes the invocation's failure, and no handler gets to suppress it.
+        private DecoratorInvocationResult<T, R> Refuse<R>(DecoratorInvocationContext<T> context)
+        {
+            bool alreadyFailing = context.Phase == DecoratorPhase.Error;
+            context.Exception = context.Rejection;
+            if (!alreadyFailing)
+            {
+                context.Phase = DecoratorPhase.Error;
+                Raise(MethodError, context, null);
+            }
+
+            return new DecoratorInvocationResult<T, R>(this)
+            {
+                Method = context.Method,
+                MethodName = context.MethodName,
+                Exception = context.Rejection,
+                Rejected = true
             };
         }
 
@@ -490,12 +538,22 @@ namespace Bam.Generators.Decorators
             {
                 foreach (Func<DecoratorInvocationContext, object?> handler in shared.Get(context.Phase, context.MethodName))
                 {
+                    if (context.Rejected)
+                    {
+                        return;
+                    }
+
                     RunHandler(context, () => handler(context));
                 }
             }
 
             foreach (Func<DecoratorInvocationContext<T>, object?> handler in _handlers.Get(context.Phase, context.MethodName))
             {
+                if (context.Rejected)
+                {
+                    return;
+                }
+
                 RunHandler(context, () => handler(context));
             }
         }
@@ -505,10 +563,15 @@ namespace Bam.Generators.Decorators
             try
             {
                 object? returned = handler();
-                if (returned != null)
+                if (returned != null && !context.Rejected)
                 {
                     context.Result = returned;
                 }
+            }
+            catch (DecoratorRejectionException rejection)
+            {
+                // The one exception a handler throws on purpose to stop the call; it goes to the caller.
+                context.Reject(rejection);
             }
             catch (Exception ex)
             {

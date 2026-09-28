@@ -63,7 +63,7 @@ namespace Bam.Generators.Decorators
                     source.AppendLine($"{Indent}    set => {access} = value;");
                 }
                 source.AppendLine($"{Indent}}}");
-                return source.ToString();
+                return source.ToString().TrimEnd();
             }
         }
     }

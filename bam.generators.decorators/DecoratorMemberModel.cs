@@ -4,7 +4,7 @@ namespace Bam.Generators.Decorators
 {
     /// <summary>
     /// Handlebars render model for one interface member a generated decorator implements. Derived models
-    /// precompute the member's source in <see cref="RenderedMember"/>; the member template emits it.
+    /// precompute the member's source in <see cref="RenderedMember"/>; the decorator template emits it.
     /// </summary>
     public abstract class DecoratorMemberModel
     {
@@ -55,7 +55,7 @@ namespace Bam.Generators.Decorators
             return IsExplicit ? $"{DeclaringInterfaceName}.{name}" : name;
         }
 
-        /// <summary>Gets the fully rendered source of the member (consumed by the member template).</summary>
+        /// <summary>Gets the fully rendered source of the member (consumed by the decorator template).</summary>
         public abstract string RenderedMember { get; }
 
         /// <summary>Gets the types the rendered member mentions, used to reference their assemblies when compiling.</summary>

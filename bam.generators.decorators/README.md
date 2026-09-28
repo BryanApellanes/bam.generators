@@ -45,7 +45,27 @@ A handler given as an `Action` only observes. A handler given as a `Func` overri
 
 Setting `ctx.Result` does the same thing and also works for `null`, which is how a handler suppresses a failure in a `void` method. When several handlers override, the last one wins. A value of the wrong type for the method is logged and ignored.
 
-A handler that throws never breaks the decorated call. The exception is logged and the call continues.
+`ctx.Args` is a copy. A handler can read the arguments but changing them doesn't change what the decorated method receives.
+
+## Stopping a call
+
+A handler that throws never breaks the decorated call. The exception is logged and the call goes ahead. That means a guard written as a handler that throws fails open.
+
+To stop a call, reject it:
+
+```csharp
+registry.OnMethodStart<IAccountService, AccountService>(nameof(IAccountService.Close), ctx =>
+{
+    if (!IsAllowed(ctx.Args))
+    {
+        ctx.Reject(new UnauthorizedAccessException("not allowed"));
+    }
+});
+```
+
+`ctx.Reject(exception)` throws that exception to the caller. `ctx.Reject("reason")` and throwing a `DecoratorRejectionException` from the handler both throw a `DecoratorRejectionException`. At start the decorated method never runs, at end its result is discarded, on error the rejection replaces the failure. No further handlers run and no error handler can suppress a rejection.
+
+Two things to keep in mind when a decorated service makes decisions other code relies on. An error handler that returns a value turns a failure into a success, so don't subscribe one to a service that denies by throwing. And a registry-wide handler that returns a value changes the result of every matching method whose return type fits, so subscribe those by method name and keep `*` for handlers that only observe.
 
 ## Generating decorators
 
@@ -57,9 +77,11 @@ new DecoratorGenerator()
 
 This writes `EchoServiceDecorator.cs`, holding `EchoServiceDecorator` and `EchoServiceDecoratorExtensions`, in the namespace `{implementation namespace}.Decorators`. `GetSource<I, T>()` renders the same source without writing it.
 
-Templates are embedded (`Templates/*.hbs`). A template of the same name in `./Templates` overrides the embedded one.
+The template is embedded (`Templates/Decorator.hbs`). When generating with `DecoratorGenerator`, a `Decorator.hbs` in `./Templates` overrides the embedded one. The template references no partials, since Handlebars partials are registered process-wide.
 
 `registry.Decorate<I, T>()` uses a generated decorator when one is loaded. Otherwise it generates and compiles one on the spot, which costs a compile on first use and needs the service's assembly on disk. Register your own `IDecoratorTypeResolver` in the registry to change that.
+
+The `./Templates` override applies to generation only, not to `Decorate<I, T>()`. What `Decorate` compiles is loaded into the process, so the default resolver renders from the embedded template and nothing else. It reads no template directory and creates none. A resolver you construct with your own `DecoratorGenerator` compiles whatever that generator renders, so give it one that reads templates from disk only when that directory is as trusted as the application's binaries.
 
 ## What gets intercepted
 

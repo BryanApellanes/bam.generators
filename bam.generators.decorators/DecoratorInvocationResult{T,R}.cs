@@ -70,6 +70,12 @@ namespace Bam.Generators.Decorators
         public bool ShortCircuited { get; init; }
 
         /// <summary>
+        /// Gets a value indicating whether a handler rejected the call, in which case <see cref="Exception"/>
+        /// is the rejection and the invocation did not succeed.
+        /// </summary>
+        public bool Rejected { get; init; }
+
+        /// <summary>
         /// Gets a value indicating whether the invocation produced a usable value: it did not throw, or its
         /// failure was handled.
         /// </summary>

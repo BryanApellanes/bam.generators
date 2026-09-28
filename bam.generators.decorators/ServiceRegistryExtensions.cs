@@ -10,8 +10,21 @@ namespace Bam.Generators.Decorators
     /// registration.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// Decorating resolves the current registration once and registers the decorator as an instance, so a
     /// service registered as transient resolves to the same decorated instance from then on.
+    /// </para>
+    /// <para>
+    /// A handler that throws does not stop the call: the exception is logged and the call goes ahead. To stop
+    /// a call — an authorization or validation check — the handler calls
+    /// <see cref="DecoratorInvocationContext.Reject(string)"/> or throws a
+    /// <see cref="DecoratorRejectionException"/>. An error handler that returns a value suppresses the failure.
+    /// </para>
+    /// <para>
+    /// A registry-wide handler sees the arguments of every decorated call it matches, and one that returns a
+    /// value changes the result of every matching method whose return type fits. Subscribe those by method
+    /// name; keep <c>*</c> for handlers that only observe.
+    /// </para>
     /// </remarks>
     public static class ServiceRegistryExtensions
     {
