@@ -29,9 +29,30 @@ IEchoService echo = registry.Get<IEchoService>(); // the decorator
 
 The same three phases exist everywhere: `Start`, `End` and `Error`.
 
-Decorating resolves the current registration once and registers the decorator as an instance. A service registered as transient resolves to the same decorated instance from then on.
-
 A registry-wide handler decorates nothing by itself. It only fires for services that were decorated, either explicitly with `registry.Decorate<I, T>()` or by subscribing a typed handler.
+
+## What decorating does to a registration
+
+Decorating keeps the service's lifetime. `Decorate` puts a `DecoratorRegistration<I, T>` between the registry and the registration it replaces, and that resolves the previous registration each time the service is resolved. A transient service is still constructed per resolve, each instance wrapped in its own decorator. A single instance gets the same decorator every time.
+
+Nothing is constructed when a service is decorated or a handler is subscribed. The service is first resolved when you resolve it.
+
+Handlers live in three places, and run in this order:
+
+| Subscribed through | Runs for |
+|---|---|
+| `registry.OnMethodStart(name, ...)` | every decorated service in the registry |
+| `registry.OnMethodStart<I, T>(...)`, `registry.OnMessageStart(...)`, `registry.Decorate<I, T>().Subscribe(...)` | every instance of that service the registry resolves |
+| `echo.OnMessageStart(...)`, `decorator.Subscribe(...)` | that instance only |
+
+Two things to know about ordering:
+
+- Register the service before you decorate it or subscribe a typed handler to it. Only the registry-wide form can come first.
+- Registering the service again after decorating it replaces the decorator, and nothing tells you. Decorate it again, or subscribe another typed handler, and the handlers subscribed before are applied to the new registration.
+
+If the service is registered as something other than a `T`, decorating succeeds and resolving throws a `DecoratorException`. Checking sooner would mean constructing the service.
+
+`ServiceRegistry` currently invokes a factory registration four times per resolve (BryanApellanes/bam.base#7), so a decorated transient service is wrapped four times per resolve and the last one is returned. That's the registry's behavior with any transient registration, not something decorating adds.
 
 ## What a handler's return value does
 
@@ -92,9 +113,13 @@ The `./Templates` override applies to generation only, not to `Decorate<I, T>()`
 | Methods with `ref`/`out`/`in` or `ref struct` parameters | forwarded, no handlers |
 | Properties, indexers, events | forwarded, no handlers |
 
-Members that would clash with the decorator base (a method named `Invoke`, for example) are implemented explicitly, so they're reachable through the interface only.
+Members that would clash are implemented explicitly, so they're reachable through the interface only. That covers a name the decorator base already uses (a method named `Invoke`, for example), a signature two inherited interfaces both declare, and a property and a method that share a name.
 
-Generation fails with a `DecoratorGenerationException` for an interface that isn't public, an open generic, an init-only property, a ref-returning member, or a static abstract member.
+Each intercepted method gets a static field holding its `MethodInfo`, looked up once by exact parameter types. Handlers are told the overload that ran, as `ctx.Method`, mapped to the method on the decorated class so its attributes are there to read.
+
+Generated source compiles without warnings under `#nullable enable`. Nullable annotations are carried over, including `T?` on generic methods, and names that are C# keywords are escaped.
+
+Generation fails with a `DecoratorGenerationException` for an interface that isn't public, an open generic, an init-only property, a ref-returning member, a static abstract member, or a member whose name isn't a valid C# identifier.
 
 Overloads share their hooks, since handlers are selected by method name. Two generated decorators whose services share a method name both declare `registry.OnMessageStart(...)`; if both namespaces are imported, give the lambda parameter an explicit type to pick one.
 
@@ -104,4 +129,10 @@ Overloads share their hooks, since handlers are selected by method name. Two gen
 dotnet run --project bam.generators.decorators.tests/bam.generators.decorators.tests.csproj -- --ut
 ```
 
-`Fixtures/Generated` in the test project holds real generator output, compiled into the tests. One test compares it to what the generator produces today, so regenerate those files when a template changes.
+`Fixtures/Generated` in the test project holds real generator output, compiled into the tests. One test compares it to what the generator produces today, so regenerate those files when a template changes:
+
+```bash
+bam generate Decorator --config /full/path/to/config.yaml
+```
+
+The fixtures and the types they decorate are in the same assembly. If a change stops the checked-in fixtures from compiling, the assembly can't be built to regenerate them from. Fix the fixtures by hand far enough to compile, then regenerate over them.

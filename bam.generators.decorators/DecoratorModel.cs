@@ -89,12 +89,19 @@ namespace Bam.Generators.Decorators
         /// <summary>Gets the fully-qualified base type of the generated decorator.</summary>
         public string BaseTypeName => $"global::Bam.Generators.Decorators.Decorator<{InterfaceName}, {ImplementationName}>";
 
+        /// <summary>Gets the fully-qualified type of the registration the generated decorate method returns.</summary>
+        public string RegistrationTypeName => $"global::Bam.Generators.Decorators.DecoratorRegistration<{InterfaceName}, {ImplementationName}>";
+
+        /// <summary>Gets the methods handlers run for, each of which gets a field holding its <c>MethodInfo</c>.</summary>
+        public List<DecoratorMethodModel> InterceptedMethods => Methods.Where(method => method.IsIntercepted).ToList();
+
         /// <summary>Gets the fully-qualified type of the context handed to typed handlers.</summary>
         public string ContextTypeName => $"global::Bam.Generators.Decorators.DecoratorInvocationContext<{ImplementationName}>";
 
         /// <summary>
         /// Gets one type from each assembly the generated source depends on, for referencing those assemblies
-        /// when the source is compiled.
+        /// when the source is compiled. That is more than the types the source names: the compiler also needs
+        /// the assembly of every base class and interface of the types it touches, wherever they live.
         /// </summary>
         public Type[] ReferencedTypes
         {
@@ -108,9 +115,13 @@ namespace Bam.Generators.Decorators
                     typeof(ServiceRegistry),
                     typeof(ILogger)
                 };
-                types.AddRange(Members.SelectMany(member => member.ReferencedTypes).SelectMany(Flatten));
+                types.AddRange(Members.SelectMany(member => member.ReferencedTypes));
 
                 return types
+                    .SelectMany(Flatten)
+                    .Where(type => !type.IsGenericParameter)
+                    .SelectMany(WithAncestors)
+                    .SelectMany(Flatten)
                     .Where(type => !type.IsGenericParameter)
                     .GroupBy(type => type.Assembly)
                     .Select(group => group.First())
@@ -193,7 +204,7 @@ namespace Bam.Generators.Decorators
                     RequireIdentifiers(method.Name, method.GetParameters());
                     string signature = $"{method.Name}`{method.GetGenericArguments().Length}({SignatureOf(method.GetParameters())})";
                     bool isExplicit = IsExplicit(reserved, emitted, kinds, method, signature) || method.IsGenericMethodDefinition;
-                    Methods.Add(new DecoratorMethodModel(declaring, method, isExplicit));
+                    Methods.Add(new DecoratorMethodModel(declaring, method, isExplicit, Methods.Count));
                 }
             }
 
@@ -231,7 +242,7 @@ namespace Bam.Generators.Decorators
 
         private static string SignatureOf(ParameterInfo[] parameters)
         {
-            return string.Join(",", parameters.Select(parameter => parameter.ParameterType.ToString()));
+            return string.Join(",", parameters.Select(parameter => DecoratedMethod.SignatureOf(parameter.ParameterType)));
         }
 
         private void RequireSupported(PropertyInfo property)
@@ -303,6 +314,21 @@ namespace Bam.Generators.Decorators
         private static bool ContainsGenericParameter(Type type)
         {
             return Flatten(type).Any(candidate => candidate.IsGenericParameter);
+        }
+
+        // The type itself, its base classes and every interface it implements or inherits.
+        private static IEnumerable<Type> WithAncestors(Type type)
+        {
+            yield return type;
+            for (Type? baseType = type.BaseType; baseType != null; baseType = baseType.BaseType)
+            {
+                yield return baseType;
+            }
+
+            foreach (Type implemented in type.GetInterfaces())
+            {
+                yield return implemented;
+            }
         }
 
         // The type itself plus everything it is built from: element types and generic arguments.

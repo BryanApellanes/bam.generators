@@ -34,6 +34,7 @@ namespace Bam.Generators.Decorators
         {
             get
             {
+                yield return DeclaringInterface;
                 yield return Property.PropertyType;
                 foreach (ParameterInfo parameter in IndexParameters)
                 {
@@ -47,8 +48,8 @@ namespace Bam.Generators.Decorators
         {
             get
             {
-                string declaration = IsIndexer ? $"{Qualify("this")}[{RenderParameters(IndexParameters)}]" : Qualify(Property.Name);
-                string access = IsIndexer ? $"{Target}[{RenderArguments(IndexParameters)}]" : $"{Target}.{Property.Name}";
+                string declaration = IsIndexer ? $"{Qualify("this")}[{RenderParameters(IndexParameters)}]" : Qualify(IdentifierName);
+                string access = IsIndexer ? $"{Target}[{RenderArguments(IndexParameters)}]" : $"{Target}.{IdentifierName}";
 
                 StringBuilder source = new StringBuilder();
                 source.AppendLine($"{Indent}/// <inheritdoc />");

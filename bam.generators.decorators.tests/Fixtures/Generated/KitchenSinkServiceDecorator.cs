@@ -10,6 +10,19 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
     /// </summary>
     public partial class KitchenSinkServiceDecorator : global::Bam.Generators.Decorators.Decorator<global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService, global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService
     {
+        private static readonly global::System.Reflection.MethodInfo? __method0 = global::Bam.Generators.Decorators.DecoratedMethod.Find(typeof(global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService), "Add", 0, "System.Int32", "System.Int32");
+        private static readonly global::System.Reflection.MethodInfo? __method1 = global::Bam.Generators.Decorators.DecoratedMethod.Find(typeof(global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService), "Add", 0, "System.Double", "System.Double");
+        private static readonly global::System.Reflection.MethodInfo? __method2 = global::Bam.Generators.Decorators.DecoratedMethod.Find(typeof(global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService), "Reset", 0);
+        private static readonly global::System.Reflection.MethodInfo? __method3 = global::Bam.Generators.Decorators.DecoratedMethod.Find(typeof(global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService), "Find", 0, "System.String");
+        private static readonly global::System.Reflection.MethodInfo? __method4 = global::Bam.Generators.Decorators.DecoratedMethod.Find(typeof(global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService), "AddAsync", 0, "System.Int32", "System.Int32");
+        private static readonly global::System.Reflection.MethodInfo? __method5 = global::Bam.Generators.Decorators.DecoratedMethod.Find(typeof(global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService), "ResetAsync", 0);
+        private static readonly global::System.Reflection.MethodInfo? __method6 = global::Bam.Generators.Decorators.DecoratedMethod.Find(typeof(global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService), "DescribeAsync", 0, "System.String");
+        private static readonly global::System.Reflection.MethodInfo? __method7 = global::Bam.Generators.Decorators.DecoratedMethod.Find(typeof(global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService), "FlushAsync", 0);
+        private static readonly global::System.Reflection.MethodInfo? __method9 = global::Bam.Generators.Decorators.DecoratedMethod.Find(typeof(global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService), "Echo", 1, "TItem");
+        private static readonly global::System.Reflection.MethodInfo? __method10 = global::Bam.Generators.Decorators.DecoratedMethod.Find(typeof(global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService), "Fail", 0, "System.String");
+        private static readonly global::System.Reflection.MethodInfo? __method11 = global::Bam.Generators.Decorators.DecoratedMethod.Find(typeof(global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService), "FailAsync", 0, "System.String");
+        private static readonly global::System.Reflection.MethodInfo? __method12 = global::Bam.Generators.Decorators.DecoratedMethod.Find(typeof(global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService), "Invoke", 0, "System.String");
+
         /// <summary>Initializes a decorator around <paramref name="instance"/>.</summary>
         /// <param name="instance">The instance to decorate.</param>
         /// <param name="logger">Receives handler failures. Defaults to the framework's default logger.</param>
@@ -47,49 +60,49 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <inheritdoc />
         public global::System.Int32 Add(global::System.Int32 a, global::System.Int32 b)
         {
-            return base.Intercept<global::System.Int32>("Add", new object?[] { a, b }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).Add(a, b)).GetValue()!;
+            return base.Intercept<global::System.Int32>(__method0, "Add", new object?[] { a, b }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).Add(a, b)).GetValue()!;
         }
 
         /// <inheritdoc />
         public global::System.Double Add(global::System.Double a, global::System.Double b)
         {
-            return base.Intercept<global::System.Double>("Add", new object?[] { a, b }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).Add(a, b)).GetValue()!;
+            return base.Intercept<global::System.Double>(__method1, "Add", new object?[] { a, b }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).Add(a, b)).GetValue()!;
         }
 
         /// <inheritdoc />
         public void Reset()
         {
-            base.Intercept("Reset", global::System.Array.Empty<object?>(), () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).Reset()).ThrowIfFailed();
+            base.Intercept(__method2, "Reset", global::System.Array.Empty<object?>(), () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).Reset()).ThrowIfFailed();
         }
 
         /// <inheritdoc />
         public global::System.String? Find(global::System.String? key)
         {
-            return base.Intercept<global::System.String?>("Find", new object?[] { key }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).Find(key)).GetValue()!;
+            return base.Intercept<global::System.String?>(__method3, "Find", new object?[] { key }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).Find(key)).GetValue()!;
         }
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::System.Int32> AddAsync(global::System.Int32 a, global::System.Int32 b)
         {
-            return (await base.InterceptAsync<global::System.Int32>("AddAsync", new object?[] { a, b }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).AddAsync(a, b)).ConfigureAwait(false)).GetValue()!;
+            return (await base.InterceptAsync<global::System.Int32>(__method4, "AddAsync", new object?[] { a, b }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).AddAsync(a, b)).ConfigureAwait(false)).GetValue()!;
         }
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task ResetAsync()
         {
-            (await base.InterceptAsync("ResetAsync", global::System.Array.Empty<object?>(), () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).ResetAsync()).ConfigureAwait(false)).ThrowIfFailed();
+            (await base.InterceptAsync(__method5, "ResetAsync", global::System.Array.Empty<object?>(), () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).ResetAsync()).ConfigureAwait(false)).ThrowIfFailed();
         }
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.ValueTask<global::System.String> DescribeAsync(global::System.String subject)
         {
-            return (await base.InterceptAsync<global::System.String>("DescribeAsync", new object?[] { subject }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).DescribeAsync(subject).AsTask()).ConfigureAwait(false)).GetValue()!;
+            return (await base.InterceptAsync<global::System.String>(__method6, "DescribeAsync", new object?[] { subject }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).DescribeAsync(subject).AsTask()).ConfigureAwait(false)).GetValue()!;
         }
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.ValueTask FlushAsync()
         {
-            (await base.InterceptAsync("FlushAsync", global::System.Array.Empty<object?>(), () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).FlushAsync().AsTask()).ConfigureAwait(false)).ThrowIfFailed();
+            (await base.InterceptAsync(__method7, "FlushAsync", global::System.Array.Empty<object?>(), () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).FlushAsync().AsTask()).ConfigureAwait(false)).ThrowIfFailed();
         }
 
         /// <inheritdoc />
@@ -99,27 +112,27 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         }
 
         /// <inheritdoc />
-        TItem global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService.Echo<TItem>(TItem item)
+        TItem global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService.Echo<TItem>(TItem item) where TItem : class
         {
-            return base.Intercept<TItem>("Echo", new object?[] { item }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).Echo<TItem>(item)).GetValue()!;
+            return base.Intercept<TItem>(__method9, "Echo", new object?[] { item }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).Echo<TItem>(item)).GetValue()!;
         }
 
         /// <inheritdoc />
         public global::System.String Fail(global::System.String message)
         {
-            return base.Intercept<global::System.String>("Fail", new object?[] { message }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).Fail(message)).GetValue()!;
+            return base.Intercept<global::System.String>(__method10, "Fail", new object?[] { message }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).Fail(message)).GetValue()!;
         }
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::System.String> FailAsync(global::System.String message)
         {
-            return (await base.InterceptAsync<global::System.String>("FailAsync", new object?[] { message }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).FailAsync(message)).ConfigureAwait(false)).GetValue()!;
+            return (await base.InterceptAsync<global::System.String>(__method11, "FailAsync", new object?[] { message }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).FailAsync(message)).ConfigureAwait(false)).GetValue()!;
         }
 
         /// <inheritdoc />
         global::System.String global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService.Invoke(global::System.String @event)
         {
-            return base.Intercept<global::System.String>("Invoke", new object?[] { @event }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).Invoke(@event)).GetValue()!;
+            return base.Intercept<global::System.String>(__method12, "Invoke", new object?[] { @event }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService)base.Instance).Invoke(@event)).GetValue()!;
         }
     }
 
@@ -131,12 +144,12 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
     {
         /// <summary>
         /// Decorates the IKitchenSinkService registered in <paramref name="registry"/> so that resolving it yields a
-        /// KitchenSinkServiceDecorator wrapping the previous registration. Returns the existing decorator when the service is
-        /// already decorated.
+        /// KitchenSinkServiceDecorator wrapping what the previous registration resolves. The service keeps its lifetime.
+        /// Returns the existing registration when the service is already decorated.
         /// </summary>
         /// <param name="registry">The registry holding the registration.</param>
         /// <param name="logger">Receives handler failures. Defaults to the registry's logger.</param>
-        public static global::Bam.Generators.Decorators.Decorator<global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService, global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService> DecorateKitchenSinkService(this global::Bam.DependencyInjection.ServiceRegistry registry, global::Bam.Logging.ILogger? logger = null)
+        public static global::Bam.Generators.Decorators.DecoratorRegistration<global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService, global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService> DecorateKitchenSinkService(this global::Bam.DependencyInjection.ServiceRegistry registry, global::Bam.Logging.ILogger? logger = null)
         {
             return global::Bam.Generators.Decorators.ServiceRegistryExtensions.Decorate<global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService, global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService, KitchenSinkServiceDecorator>(registry, logger);
         }

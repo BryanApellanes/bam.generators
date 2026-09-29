@@ -5,7 +5,7 @@ namespace Bam.Generators.Decorators
     /// of every method invoked through it.
     /// </summary>
     /// <typeparam name="T">The implementation type being decorated.</typeparam>
-    public interface IDecorator<T> where T : class
+    public interface IDecorator<T> : IDecoratorSubscriber<T> where T : class
     {
         /// <summary>Gets the implementation type being decorated.</summary>
         Type ImplementationType { get; }
@@ -22,7 +22,7 @@ namespace Bam.Generators.Decorators
         /// <summary>Raised after a method returned, or was short-circuited by a start handler.</summary>
         event EventHandler<DecoratorEventArgs<T>>? MethodEnd;
 
-        /// <summary>Raised when a method threw, before the error handlers run.</summary>
+        /// <summary>Raised when a method threw or a handler rejected the call.</summary>
         event EventHandler<DecoratorEventArgs<T>>? MethodError;
 
         /// <summary>Raised when <see cref="Invoke{R}(string, object?[])"/> cannot find the named method.</summary>
@@ -48,29 +48,6 @@ namespace Bam.Generators.Decorators
         /// <param name="methodName">The name of the method to invoke.</param>
         /// <param name="args">The arguments to pass, in declaration order.</param>
         Task<DecoratorInvocationResult<T, R>> InvokeAsync<R>(string methodName, params object?[] args);
-
-        /// <summary>Subscribes <paramref name="handler"/> to <paramref name="methodName"/> for <paramref name="phase"/>.</summary>
-        /// <remarks>
-        /// A handler that throws does not stop the call: the exception is logged and the call goes ahead. To
-        /// stop a call, call <see cref="DecoratorInvocationContext.Reject(string)"/> on the context or throw a
-        /// <see cref="DecoratorRejectionException"/>. A handler subscribed to
-        /// <see cref="DecoratorPhase.Error"/> that returns a value suppresses the failure.
-        /// </remarks>
-        /// <param name="phase">The phase the handler runs in.</param>
-        /// <param name="methodName">The method to subscribe to, or <c>*</c> for every method.</param>
-        /// <param name="handler">The handler. A non-null return value overrides the invocation's result.</param>
-        void Subscribe(DecoratorPhase phase, string methodName, Func<DecoratorInvocationContext<T>, object?> handler);
-
-        /// <summary>Subscribes an observe-only <paramref name="handler"/> to <paramref name="methodName"/> for <paramref name="phase"/>.</summary>
-        /// <remarks>
-        /// A handler that throws does not stop the call: the exception is logged and the call goes ahead. To
-        /// stop a call, call <see cref="DecoratorInvocationContext.Reject(string)"/> on the context or throw a
-        /// <see cref="DecoratorRejectionException"/>.
-        /// </remarks>
-        /// <param name="phase">The phase the handler runs in.</param>
-        /// <param name="methodName">The method to subscribe to, or <c>*</c> for every method.</param>
-        /// <param name="handler">The handler.</param>
-        void Subscribe(DecoratorPhase phase, string methodName, Action<DecoratorInvocationContext<T>> handler);
 
         /// <summary>Subscribes <paramref name="func"/> to run after <paramref name="methodName"/> returns; a non-null return value replaces the result.</summary>
         void SubscribeEnd(string methodName, Func<DecoratorInvocationContext<T>, object?> func);

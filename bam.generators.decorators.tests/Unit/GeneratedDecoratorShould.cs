@@ -208,13 +208,15 @@ namespace Bam.Generators.Decorators.Tests.Unit
             {
                 return new DriftOutcome(
                     Normalize(generator.GetSource<IEchoService, EchoService>()) == Normalize(CheckedIn("EchoServiceDecorator.cs")),
-                    Normalize(generator.GetSource<IKitchenSinkService, KitchenSinkService>()) == Normalize(CheckedIn("KitchenSinkServiceDecorator.cs")));
+                    Normalize(generator.GetSource<IKitchenSinkService, KitchenSinkService>()) == Normalize(CheckedIn("KitchenSinkServiceDecorator.cs")),
+                    Normalize(generator.GetSource<IEdgeCaseService, EdgeCaseService>()) == Normalize(CheckedIn("EdgeCaseServiceDecorator.cs")));
             })
             .TheTest
             .ShouldPass<DriftOutcome>((because, outcome) =>
             {
                 because.ItsTrue("Fixtures/Generated/EchoServiceDecorator.cs is current", outcome.EchoCurrent, "regenerate the fixtures: the generator's output has changed");
                 because.ItsTrue("Fixtures/Generated/KitchenSinkServiceDecorator.cs is current", outcome.SinkCurrent, "regenerate the fixtures: the generator's output has changed");
+                because.ItsTrue("Fixtures/Generated/EdgeCaseServiceDecorator.cs is current", outcome.EdgeCurrent, "regenerate the fixtures: the generator's output has changed");
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -280,7 +282,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
         private sealed record ThrowOutcome(Exception? Sync, Exception? Async);
 
-        private sealed record DriftOutcome(bool EchoCurrent, bool SinkCurrent);
+        private sealed record DriftOutcome(bool EchoCurrent, bool SinkCurrent, bool EdgeCurrent);
 
         private sealed record CompileOutcome(bool Compiled, bool ImplementsInterface, string Diagnostics);
     }

@@ -28,8 +28,14 @@ namespace Bam.Generators.Decorators
         /// <summary>Gets the reflected member.</summary>
         public MemberInfo Member { get; }
 
-        /// <summary>Gets the member's name.</summary>
+        /// <summary>Gets the member's name, as reflection reports it.</summary>
         public string Name => Member.Name;
+
+        /// <summary>
+        /// Gets the member's name as it is written in source: a name that is a C# keyword is prefixed with
+        /// <c>@</c>, as it had to be where the interface declares it.
+        /// </summary>
+        public string IdentifierName => CSharpTypeName.Identifier(Member.Name);
 
         /// <summary>
         /// Gets a value indicating whether the member is rendered as an explicit interface implementation rather

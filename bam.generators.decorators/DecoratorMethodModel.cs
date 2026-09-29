@@ -14,11 +14,13 @@ namespace Bam.Generators.Decorators
         /// <param name="declaringInterface">The interface declaring the method.</param>
         /// <param name="method">The reflected method.</param>
         /// <param name="isExplicit">Whether to render an explicit interface implementation.</param>
-        public DecoratorMethodModel(Type declaringInterface, MethodInfo method, bool isExplicit)
+        /// <param name="index">The method's position among the decorator's methods, which names its field.</param>
+        public DecoratorMethodModel(Type declaringInterface, MethodInfo method, bool isExplicit, int index = 0)
             : base(declaringInterface, method, isExplicit)
         {
             Method = method;
             Parameters = method.GetParameters();
+            Index = index;
 
             Type returnType = method.ReturnType;
             if (returnType == typeof(void))
@@ -58,6 +60,9 @@ namespace Bam.Generators.Decorators
         /// <summary>Gets the method's parameters.</summary>
         public ParameterInfo[] Parameters { get; }
 
+        /// <summary>Gets the method's position among the decorator's methods.</summary>
+        public int Index { get; }
+
         /// <summary>Gets the shape of the method's return, which selects how it is intercepted.</summary>
         public DecoratorMethodKind Kind { get; }
 
@@ -80,11 +85,39 @@ namespace Bam.Generators.Decorators
         /// <summary>Gets the nullable-annotated name of <see cref="ResultType"/>; null when the method produces no value.</summary>
         public string? ResultTypeName => ResultType == null ? null : CSharpTypeName.OfResult(Method, ResultType);
 
+        /// <summary>
+        /// Gets the name of the generated static field holding this method's <see cref="MethodInfo"/>. The
+        /// generated member hands it to the decorator base, so handlers are told exactly which overload ran
+        /// instead of one guessed from the arguments.
+        /// </summary>
+        public string FieldName => "__method" + Index;
+
+        /// <summary>
+        /// Gets the declaration of the field named by <see cref="FieldName"/>: the method is looked up once, by
+        /// its declaring interface, name, generic arity and exact parameter types.
+        /// </summary>
+        public string RenderedField
+        {
+            get
+            {
+                List<string> arguments = new List<string>
+                {
+                    $"typeof({DeclaringInterfaceName})",
+                    CSharpTypeName.Literal(Method.Name),
+                    Method.GetGenericArguments().Length.ToString()
+                };
+                arguments.AddRange(Parameters.Select(parameter => CSharpTypeName.Literal(DecoratedMethod.SignatureOf(parameter.ParameterType))));
+
+                return $"{Indent}private static readonly global::System.Reflection.MethodInfo? {FieldName} = global::Bam.Generators.Decorators.DecoratedMethod.Find({string.Join(", ", arguments)});";
+            }
+        }
+
         /// <inheritdoc />
         public override IEnumerable<Type> ReferencedTypes
         {
             get
             {
+                yield return DeclaringInterface;
                 yield return Method.ReturnType;
                 foreach (ParameterInfo parameter in Parameters)
                 {
@@ -105,7 +138,7 @@ namespace Bam.Generators.Decorators
 
                 StringBuilder source = new StringBuilder();
                 source.AppendLine($"{Indent}/// <inheritdoc />");
-                source.AppendLine($"{Indent}{Modifier}{async}{CSharpTypeName.OfReturn(Method)} {Qualify(Method.Name)}{generics}({RenderParameters(Parameters)})");
+                source.AppendLine($"{Indent}{Modifier}{async}{CSharpTypeName.OfReturn(Method)} {Qualify(IdentifierName)}{generics}({RenderParameters(Parameters)}){CSharpTypeName.GenericConstraintsOf(Method)}");
                 source.AppendLine($"{Indent}{{");
                 source.AppendLine($"{Indent}    {RenderBody(generics)}");
                 source.AppendLine($"{Indent}}}");
@@ -115,13 +148,13 @@ namespace Bam.Generators.Decorators
 
         private string RenderBody(string generics)
         {
-            string call = $"{Target}.{Method.Name}{generics}({RenderArguments(Parameters)})";
+            string call = $"{Target}.{IdentifierName}{generics}({RenderArguments(Parameters)})";
             if (!IsIntercepted)
             {
                 return Kind == DecoratorMethodKind.Void ? $"{call};" : $"return {call};";
             }
 
-            string name = $"\"{Method.Name}\"";
+            string method = $"{FieldName}, {CSharpTypeName.Literal(Method.Name)}";
             string args = Parameters.Length == 0
                 ? "global::System.Array.Empty<object?>()"
                 : $"new object?[] {{ {string.Join(", ", Parameters.Select(parameter => CSharpTypeName.Identifier(parameter.Name!)))} }}";
@@ -129,17 +162,17 @@ namespace Bam.Generators.Decorators
             switch (Kind)
             {
                 case DecoratorMethodKind.Void:
-                    return $"base.Intercept({name}, {args}, () => {call}).ThrowIfFailed();";
+                    return $"base.Intercept({method}, {args}, () => {call}).ThrowIfFailed();";
                 case DecoratorMethodKind.Value:
-                    return $"return base.Intercept<{ResultTypeName}>({name}, {args}, () => {call}).GetValue()!;";
+                    return $"return base.Intercept<{ResultTypeName}>({method}, {args}, () => {call}).GetValue()!;";
                 case DecoratorMethodKind.Task:
-                    return $"(await base.InterceptAsync({name}, {args}, () => {call}).ConfigureAwait(false)).ThrowIfFailed();";
+                    return $"(await base.InterceptAsync({method}, {args}, () => {call}).ConfigureAwait(false)).ThrowIfFailed();";
                 case DecoratorMethodKind.ValueTask:
-                    return $"(await base.InterceptAsync({name}, {args}, () => {call}.AsTask()).ConfigureAwait(false)).ThrowIfFailed();";
+                    return $"(await base.InterceptAsync({method}, {args}, () => {call}.AsTask()).ConfigureAwait(false)).ThrowIfFailed();";
                 case DecoratorMethodKind.TaskOfResult:
-                    return $"return (await base.InterceptAsync<{ResultTypeName}>({name}, {args}, () => {call}).ConfigureAwait(false)).GetValue()!;";
+                    return $"return (await base.InterceptAsync<{ResultTypeName}>({method}, {args}, () => {call}).ConfigureAwait(false)).GetValue()!;";
                 default:
-                    return $"return (await base.InterceptAsync<{ResultTypeName}>({name}, {args}, () => {call}.AsTask()).ConfigureAwait(false)).GetValue()!;";
+                    return $"return (await base.InterceptAsync<{ResultTypeName}>({method}, {args}, () => {call}.AsTask()).ConfigureAwait(false)).GetValue()!;";
             }
         }
 

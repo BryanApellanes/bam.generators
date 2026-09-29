@@ -44,10 +44,11 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 because.ItsTrue("declares the decorator class", source.Contains("public partial class EchoServiceDecorator : "));
                 because.ItsTrue("extends the decorator base", source.Contains($": global::Bam.Generators.Decorators.Decorator<{FixtureNamespace}.IEchoService, {FixtureNamespace}.EchoService>, {FixtureNamespace}.IEchoService"));
                 because.ItsTrue("takes the instance and a logger", source.Contains($"public EchoServiceDecorator({FixtureNamespace}.EchoService instance, global::Bam.Logging.ILogger? logger = null) : base(instance, logger)"));
-                because.ItsTrue("routes the method through Intercept", source.Contains("return base.Intercept<global::System.String>(\"Message\", new object?[] { message }, () => "));
+                because.ItsTrue("looks the method up once, by its exact signature", source.Contains($"private static readonly global::System.Reflection.MethodInfo? __method0 = global::Bam.Generators.Decorators.DecoratedMethod.Find(typeof({FixtureNamespace}.IEchoService), \"Message\", 0, \"System.String\");"));
+                because.ItsTrue("routes the method through Intercept", source.Contains("return base.Intercept<global::System.String>(__method0, \"Message\", new object?[] { message }, () => "));
                 because.ItsTrue("forwards to the decorated instance", source.Contains($"(({FixtureNamespace}.IEchoService)base.Instance).Message(message)"));
                 because.ItsTrue("declares the extensions class", source.Contains("public static partial class EchoServiceDecoratorExtensions"));
-                because.ItsTrue("emits the decorate extension", source.Contains("DecorateEchoService(this global::Bam.DependencyInjection.ServiceRegistry registry"));
+                because.ItsTrue("emits the decorate extension, returning the registration", source.Contains($"public static global::Bam.Generators.Decorators.DecoratorRegistration<{FixtureNamespace}.IEchoService, {FixtureNamespace}.EchoService> DecorateEchoService(this global::Bam.DependencyInjection.ServiceRegistry registry"));
                 because.ItsTrue("emits a hook for each phase", source.Contains(" OnMessageStart(") && source.Contains(" OnMessageEnd(") && source.Contains(" OnMessageError("));
                 because.ItsTrue("emits typed handlers", source.Contains("global::System.String?> handler"));
                 because.ItsTrue("emits instance-level hooks", source.Contains($"OnMessageStart(this {FixtureNamespace}.IEchoService service"));
@@ -77,13 +78,14 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 because.ItsTrue("forwards an indexer", source.Contains("public global::System.String this[global::System.Int32 index]") && source.Contains($"set => {target}[index] = value;"));
                 because.ItsTrue("forwards an inherited property through its own interface", source.Contains($"(({FixtureNamespace}.INamedService)base.Instance).Name = value;"));
                 because.ItsTrue("forwards an event", source.Contains("public event global::System.EventHandler? Changed") && source.Contains($"add => {target}.Changed += value;"));
-                because.ItsTrue("intercepts a void method", source.Contains($"base.Intercept(\"Reset\", global::System.Array.Empty<object?>(), () => {target}.Reset()).ThrowIfFailed();"));
-                because.ItsTrue("awaits a Task<T> method", source.Contains("public async global::System.Threading.Tasks.Task<global::System.Int32> AddAsync(") && source.Contains("(await base.InterceptAsync<global::System.Int32>(\"AddAsync\""));
-                because.ItsTrue("awaits a Task method", source.Contains("(await base.InterceptAsync(\"ResetAsync\""));
+                because.ItsTrue("intercepts a void method", source.Contains($", \"Reset\", global::System.Array.Empty<object?>(), () => {target}.Reset()).ThrowIfFailed();"));
+                because.ItsTrue("awaits a Task<T> method", source.Contains("public async global::System.Threading.Tasks.Task<global::System.Int32> AddAsync(") && source.Contains("(await base.InterceptAsync<global::System.Int32>(__method") && source.Contains(", \"AddAsync\", new object?[] { a, b }, "));
+                because.ItsTrue("awaits a Task method", source.Contains("(await base.InterceptAsync(__method") && source.Contains(", \"ResetAsync\", global::System.Array.Empty<object?>(), "));
                 because.ItsTrue("converts a ValueTask<T> to a task", source.Contains(".DescribeAsync(subject).AsTask()"));
                 because.ItsTrue("converts a ValueTask to a task", source.Contains(".FlushAsync().AsTask()"));
                 because.ItsTrue("forwards a method with an out parameter untouched", source.Contains($"return {target}.TryParse(text, out value);"));
-                because.ItsTrue("implements a generic method explicitly", source.Contains($"TItem {FixtureNamespace}.IKitchenSinkService.Echo<TItem>(TItem item)"));
+                because.ItsTrue("implements a generic method explicitly, restating its constraint", source.Contains($"TItem {FixtureNamespace}.IKitchenSinkService.Echo<TItem>(TItem item) where TItem : class"));
+                because.ItsTrue("gives no field to a forwarded method", !source.Contains("\"TryParse\""));
                 because.ItsTrue("implements a colliding name explicitly and escapes keywords", source.Contains($"global::System.String {FixtureNamespace}.IKitchenSinkService.Invoke(global::System.String @event)"));
                 because.ItsTrue("keeps nullable annotations", source.Contains("public global::System.String? Find(global::System.String? key)"));
                 because.ItsTrue("emits no typed handler where overloads disagree", !source.Contains("OnAddStart(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func"));
@@ -139,6 +141,51 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 because.ItsTrue("it renders the same source as a writer with an empty directory", outcome.RendersTheSame);
             })
             .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest(RunSynchronously = true)]
+        public void RenderThroughItsDefaultConstructors()
+        {
+            // The constructors production code uses: no sources injected. They resolve ./Templates against the
+            // working directory, so this runs in a directory of its own.
+            string workingDirectory = Path.Combine(Path.GetTempPath(), "bam-decorator-cwd-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(workingDirectory);
+            string original = Environment.CurrentDirectory;
+
+            When.A<HandlebarsDecoratorCodeWriterShould>("renders with a default writer and a default generator", this, test =>
+            {
+                Environment.CurrentDirectory = workingDirectory;
+                try
+                {
+                    DecoratorModel model = new DecoratorModel(typeof(IEchoService), typeof(EchoService));
+                    string embedded = HandlebarsDecoratorCodeWriter.EmbeddedOnly().GetSource(model);
+                    HandlebarsDecoratorCodeWriter writer = new HandlebarsDecoratorCodeWriter();
+                    DecoratorGenerator generator = new DecoratorGenerator();
+                    IReadOnlyList<string> written = generator.AddServiceType<IEchoService, EchoService>().WriteSource(Path.Combine(workingDirectory, "out"));
+                    return new DefaultOutcome(
+                        writer.GetSource(model) == embedded,
+                        generator.GetSource<IEchoService, EchoService>() == embedded,
+                        written.Count == 1 && File.ReadAllText(written[0]) == embedded,
+                        writer.HandlebarsDirectory != null && generator.CodeWriter is HandlebarsDecoratorCodeWriter && generator.TargetResolver is FsDecoratorTargetResolver);
+                }
+                finally
+                {
+                    Environment.CurrentDirectory = original;
+                }
+            })
+            .TheTest
+            .ShouldPass<DefaultOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a default writer renders the embedded template when no override exists", outcome.WriterRendersEmbedded);
+                because.ItsTrue("a default generator renders the same", outcome.GeneratorRendersEmbedded);
+                because.ItsTrue("a default generator writes the same to disk", outcome.WritesEmbedded);
+                because.ItsTrue("the defaults are the Handlebars writer with a directory source and the file-system resolver", outcome.DefaultsAreInPlace);
+            })
+            .SoBeHappy(reg =>
+            {
+                Directory.Delete(workingDirectory, true);
+            })
             .UnlessItFailed();
         }
 
@@ -257,6 +304,8 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         private sealed record SourceOutcome(string Source);
+
+        private sealed record DefaultOutcome(bool WriterRendersEmbedded, bool GeneratorRendersEmbedded, bool WritesEmbedded, bool DefaultsAreInPlace);
 
         private sealed record EmbeddedOutcome(bool HasNoDirectory, bool RendersTheSame);
 

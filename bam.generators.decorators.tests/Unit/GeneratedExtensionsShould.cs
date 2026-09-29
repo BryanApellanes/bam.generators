@@ -158,16 +158,19 @@ namespace Bam.Generators.Decorators.Tests.Unit
             })
             .When<ServiceRegistry>("decorates with DecorateEchoService", registry =>
             {
-                Decorator<IEchoService, EchoService> decorator = registry.DecorateEchoService(logger);
-                Decorator<IEchoService, EchoService> again = registry.DecorateEchoService();
-                return new DecorateOutcome(decorator is EchoServiceDecorator, ReferenceEquals(decorator, again), ReferenceEquals(registry.Get<IEchoService>(), decorator));
+                DecoratorRegistration<IEchoService, EchoService> registration = registry.DecorateEchoService(logger);
+                DecoratorRegistration<IEchoService, EchoService> again = registry.DecorateEchoService();
+                return new DecorateOutcome(
+                    registration.DecoratorType == typeof(EchoServiceDecorator) && ReferenceEquals(registration.Logger, logger),
+                    ReferenceEquals(registration, again),
+                    registry.Get<IEchoService>() is EchoServiceDecorator);
             })
             .TheTest
             .ShouldPass<DecorateOutcome>((because, outcome) =>
             {
-                because.ItsTrue("the generated decorator type is used", outcome.IsGeneratedDecorator);
-                because.ItsTrue("decorating again returns the same decorator", outcome.Idempotent);
-                because.ItsTrue("the interface resolves to the decorator", outcome.Registered);
+                because.ItsTrue("the generated decorator type and the given logger are used", outcome.IsGeneratedDecorator);
+                because.ItsTrue("decorating again returns the same registration", outcome.Idempotent);
+                because.ItsTrue("the interface resolves to the generated decorator", outcome.Registered);
             })
             .SoBeHappy()
             .UnlessItFailed();

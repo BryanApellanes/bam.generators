@@ -27,6 +27,7 @@ namespace Bam.Generators.Decorators
         {
             get
             {
+                yield return DeclaringInterface;
                 yield return Event.EventHandlerType ?? typeof(EventHandler);
             }
         }
@@ -38,10 +39,10 @@ namespace Bam.Generators.Decorators
             {
                 StringBuilder source = new StringBuilder();
                 source.AppendLine($"{Indent}/// <inheritdoc />");
-                source.AppendLine($"{Indent}{Modifier}event {CSharpTypeName.Of(Event)} {Qualify(Event.Name)}");
+                source.AppendLine($"{Indent}{Modifier}event {CSharpTypeName.Of(Event)} {Qualify(IdentifierName)}");
                 source.AppendLine($"{Indent}{{");
-                source.AppendLine($"{Indent}    add => {Target}.{Event.Name} += value;");
-                source.AppendLine($"{Indent}    remove => {Target}.{Event.Name} -= value;");
+                source.AppendLine($"{Indent}    add => {Target}.{IdentifierName} += value;");
+                source.AppendLine($"{Indent}    remove => {Target}.{IdentifierName} -= value;");
                 source.AppendLine($"{Indent}}}");
                 return source.ToString().TrimEnd();
             }

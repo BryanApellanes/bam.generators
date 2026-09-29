@@ -10,6 +10,8 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
     /// </summary>
     public partial class EchoServiceDecorator : global::Bam.Generators.Decorators.Decorator<global::Bam.Generators.Decorators.Tests.Fixtures.IEchoService, global::Bam.Generators.Decorators.Tests.Fixtures.EchoService>, global::Bam.Generators.Decorators.Tests.Fixtures.IEchoService
     {
+        private static readonly global::System.Reflection.MethodInfo? __method0 = global::Bam.Generators.Decorators.DecoratedMethod.Find(typeof(global::Bam.Generators.Decorators.Tests.Fixtures.IEchoService), "Message", 0, "System.String");
+
         /// <summary>Initializes a decorator around <paramref name="instance"/>.</summary>
         /// <param name="instance">The instance to decorate.</param>
         /// <param name="logger">Receives handler failures. Defaults to the framework's default logger.</param>
@@ -20,7 +22,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <inheritdoc />
         public global::System.String Message(global::System.String message)
         {
-            return base.Intercept<global::System.String>("Message", new object?[] { message }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IEchoService)base.Instance).Message(message)).GetValue()!;
+            return base.Intercept<global::System.String>(__method0, "Message", new object?[] { message }, () => ((global::Bam.Generators.Decorators.Tests.Fixtures.IEchoService)base.Instance).Message(message)).GetValue()!;
         }
     }
 
@@ -32,12 +34,12 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
     {
         /// <summary>
         /// Decorates the IEchoService registered in <paramref name="registry"/> so that resolving it yields a
-        /// EchoServiceDecorator wrapping the previous registration. Returns the existing decorator when the service is
-        /// already decorated.
+        /// EchoServiceDecorator wrapping what the previous registration resolves. The service keeps its lifetime.
+        /// Returns the existing registration when the service is already decorated.
         /// </summary>
         /// <param name="registry">The registry holding the registration.</param>
         /// <param name="logger">Receives handler failures. Defaults to the registry's logger.</param>
-        public static global::Bam.Generators.Decorators.Decorator<global::Bam.Generators.Decorators.Tests.Fixtures.IEchoService, global::Bam.Generators.Decorators.Tests.Fixtures.EchoService> DecorateEchoService(this global::Bam.DependencyInjection.ServiceRegistry registry, global::Bam.Logging.ILogger? logger = null)
+        public static global::Bam.Generators.Decorators.DecoratorRegistration<global::Bam.Generators.Decorators.Tests.Fixtures.IEchoService, global::Bam.Generators.Decorators.Tests.Fixtures.EchoService> DecorateEchoService(this global::Bam.DependencyInjection.ServiceRegistry registry, global::Bam.Logging.ILogger? logger = null)
         {
             return global::Bam.Generators.Decorators.ServiceRegistryExtensions.Decorate<global::Bam.Generators.Decorators.Tests.Fixtures.IEchoService, global::Bam.Generators.Decorators.Tests.Fixtures.EchoService, EchoServiceDecorator>(registry, logger);
         }

@@ -10,6 +10,12 @@ namespace {{{Namespace}}}
     /// </summary>
     public partial class {{{DecoratorTypeName}}} : {{{BaseTypeName}}}, {{{InterfaceName}}}
     {
+{{#each InterceptedMethods}}
+{{{RenderedField}}}
+{{/each}}
+{{#if InterceptedMethods}}
+
+{{/if}}
         /// <summary>Initializes a decorator around <paramref name="instance"/>.</summary>
         /// <param name="instance">The instance to decorate.</param>
         /// <param name="logger">Receives handler failures. Defaults to the framework's default logger.</param>
@@ -38,12 +44,12 @@ namespace {{{Namespace}}}
     {
         /// <summary>
         /// Decorates the {{{InterfaceType.Name}}} registered in <paramref name="registry"/> so that resolving it yields a
-        /// {{{DecoratorTypeName}}} wrapping the previous registration. Returns the existing decorator when the service is
-        /// already decorated.
+        /// {{{DecoratorTypeName}}} wrapping what the previous registration resolves. The service keeps its lifetime.
+        /// Returns the existing registration when the service is already decorated.
         /// </summary>
         /// <param name="registry">The registry holding the registration.</param>
         /// <param name="logger">Receives handler failures. Defaults to the registry's logger.</param>
-        public static {{{BaseTypeName}}} {{{DecorateMethodName}}}(this global::Bam.DependencyInjection.ServiceRegistry registry, global::Bam.Logging.ILogger? logger = null)
+        public static {{{RegistrationTypeName}}} {{{DecorateMethodName}}}(this global::Bam.DependencyInjection.ServiceRegistry registry, global::Bam.Logging.ILogger? logger = null)
         {
             return global::Bam.Generators.Decorators.ServiceRegistryExtensions.Decorate<{{{InterfaceName}}}, {{{ImplementationName}}}, {{{DecoratorTypeName}}}>(registry, logger);
         }

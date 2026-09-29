@@ -12,7 +12,8 @@ namespace Bam.Generators.Decorators
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Handlers run in subscription order, registry-wide handlers (<see cref="SharedSubscriptions"/>) first.
+    /// Handlers run in subscription order: registry-wide handlers (<see cref="SharedSubscriptions"/>) first,
+    /// then those subscribed to the registration (<see cref="RegistrationHandlers"/>), then this instance's own.
     /// A handler overrides the outcome by returning a non-null value or by setting
     /// <see cref="DecoratorInvocationContext.Result"/>: at start the decorated method is skipped, at end the
     /// returned value is replaced, on error the exception is suppressed. When several handlers override, the
@@ -41,6 +42,7 @@ namespace Bam.Generators.Decorators
 
         private readonly DecoratorHandlerRegistry<DecoratorInvocationContext<T>> _handlers;
         private readonly ConcurrentDictionary<MethodCacheKey, MethodInfo[]> _methods;
+        private readonly ConcurrentDictionary<ImplementationKey, MethodInfo> _implementations;
 
         ILogger? _logger;
 
@@ -55,11 +57,26 @@ namespace Bam.Generators.Decorators
             this.Instance = value;
             this._handlers = new DecoratorHandlerRegistry<DecoratorInvocationContext<T>>();
             this._methods = new ConcurrentDictionary<MethodCacheKey, MethodInfo[]>();
+            this._implementations = new ConcurrentDictionary<ImplementationKey, MethodInfo>();
             this._logger = logger ?? Log.Default;
         }
 
         /// <inheritdoc />
         public T Instance { get; set; }
+
+        /// <summary>
+        /// Gets the store holding the handlers subscribed to this decorator instance. They run for calls made
+        /// through this instance only.
+        /// </summary>
+        public DecoratorHandlerRegistry<DecoratorInvocationContext<T>> Handlers => _handlers;
+
+        /// <summary>
+        /// Gets or sets the handlers subscribed to the registration this decorator was created for. Every
+        /// decorator a <c>ServiceRegistry</c> creates for the same service shares them, which is what keeps a
+        /// handler subscribed through the registry running when the service is resolved again. Null when the
+        /// decorator was not created through a registry.
+        /// </summary>
+        public DecoratorHandlerRegistry<DecoratorInvocationContext<T>>? RegistrationHandlers { get; set; }
 
         /// <inheritdoc />
         public DecoratorSubscriptions? SharedSubscriptions { get; set; }
@@ -204,6 +221,102 @@ namespace Bam.Generators.Decorators
             {
                 await invocation().ConfigureAwait(false);
                 return null!;
+            });
+        }
+
+        /// <summary>
+        /// Runs <paramref name="invocation"/> as <paramref name="method"/>, with the subscribed handlers around
+        /// it. This is what generated decorators call: they know exactly which method each member implements,
+        /// so handlers are told the overload that ran rather than one guessed from the arguments.
+        /// </summary>
+        /// <typeparam name="R">The type of value the method returns.</typeparam>
+        /// <param name="method">The interface method being invoked; null falls back to finding it by name.</param>
+        /// <param name="methodName">The name of the method being invoked, used to select handlers.</param>
+        /// <param name="args">The arguments the method was called with, made available to handlers.</param>
+        /// <param name="invocation">The call to the decorated instance.</param>
+        public DecoratorInvocationResult<T, R> Intercept<R>(MethodInfo? method, string methodName, object?[] args, Func<R> invocation)
+        {
+            ArgumentNullException.ThrowIfNull(invocation);
+
+            object?[] arguments = args ?? Array.Empty<object?>();
+            return Run<R>(methodName, ImplementationOf(method) ?? ResolveMethod(methodName, arguments), arguments, invocation);
+        }
+
+        /// <summary>
+        /// Runs <paramref name="invocation"/> as <paramref name="method"/>, which returns no value, with the
+        /// subscribed handlers around it.
+        /// </summary>
+        /// <param name="method">The interface method being invoked; null falls back to finding it by name.</param>
+        /// <param name="methodName">The name of the method being invoked, used to select handlers.</param>
+        /// <param name="args">The arguments the method was called with, made available to handlers.</param>
+        /// <param name="invocation">The call to the decorated instance.</param>
+        public DecoratorInvocationResult<T, object> Intercept(MethodInfo? method, string methodName, object?[] args, Action invocation)
+        {
+            ArgumentNullException.ThrowIfNull(invocation);
+
+            return Intercept<object>(method, methodName, args, () =>
+            {
+                invocation();
+                return null!;
+            });
+        }
+
+        /// <summary>
+        /// Runs <paramref name="invocation"/> as the asynchronous <paramref name="method"/>. End and error
+        /// handlers run once the returned task completes.
+        /// </summary>
+        /// <typeparam name="R">The type of value the method's task produces.</typeparam>
+        /// <param name="method">The interface method being invoked; null falls back to finding it by name.</param>
+        /// <param name="methodName">The name of the method being invoked, used to select handlers.</param>
+        /// <param name="args">The arguments the method was called with, made available to handlers.</param>
+        /// <param name="invocation">The call to the decorated instance.</param>
+        public Task<DecoratorInvocationResult<T, R>> InterceptAsync<R>(MethodInfo? method, string methodName, object?[] args, Func<Task<R>> invocation)
+        {
+            ArgumentNullException.ThrowIfNull(invocation);
+
+            object?[] arguments = args ?? Array.Empty<object?>();
+            return RunAsync<R>(methodName, ImplementationOf(method) ?? ResolveMethod(methodName, arguments), arguments, invocation);
+        }
+
+        /// <summary>
+        /// Runs <paramref name="invocation"/> as the asynchronous <paramref name="method"/> whose task produces
+        /// no value.
+        /// </summary>
+        /// <param name="method">The interface method being invoked; null falls back to finding it by name.</param>
+        /// <param name="methodName">The name of the method being invoked, used to select handlers.</param>
+        /// <param name="args">The arguments the method was called with, made available to handlers.</param>
+        /// <param name="invocation">The call to the decorated instance.</param>
+        public Task<DecoratorInvocationResult<T, object>> InterceptAsync(MethodInfo? method, string methodName, object?[] args, Func<Task> invocation)
+        {
+            ArgumentNullException.ThrowIfNull(invocation);
+
+            return InterceptAsync<object>(method, methodName, args, async () =>
+            {
+                await invocation().ConfigureAwait(false);
+                return null!;
+            });
+        }
+
+        // Handlers are told about the method on the decorated instance, where its attributes are, so an
+        // interface method is mapped to the method that implements it.
+        private MethodInfo? ImplementationOf(MethodInfo? method)
+        {
+            if (method == null)
+            {
+                return null;
+            }
+
+            return _implementations.GetOrAdd(new ImplementationKey(Instance.GetType(), method), key =>
+            {
+                Type? declaringType = key.Method.DeclaringType;
+                if (declaringType == null || !declaringType.IsInterface || !declaringType.IsAssignableFrom(key.Type))
+                {
+                    return key.Method;
+                }
+
+                InterfaceMapping mapping = key.Type.GetInterfaceMap(declaringType);
+                int index = Array.IndexOf(mapping.InterfaceMethods, key.Method);
+                return index >= 0 ? mapping.TargetMethods[index] : key.Method;
             });
         }
 
@@ -547,6 +660,20 @@ namespace Bam.Generators.Decorators
                 }
             }
 
+            DecoratorHandlerRegistry<DecoratorInvocationContext<T>>? registration = RegistrationHandlers;
+            if (registration != null)
+            {
+                foreach (Func<DecoratorInvocationContext<T>, object?> handler in registration.Get(context.Phase, context.MethodName))
+                {
+                    if (context.Rejected)
+                    {
+                        return;
+                    }
+
+                    RunHandler(context, () => handler(context));
+                }
+            }
+
             foreach (Func<DecoratorInvocationContext<T>, object?> handler in _handlers.Get(context.Phase, context.MethodName))
             {
                 if (context.Rejected)
@@ -575,7 +702,7 @@ namespace Bam.Generators.Decorators
             }
             catch (Exception ex)
             {
-                this._logger?.Error("Exception invoking {0} handler for method {1} on type of Decorator<{2}>: {3}", context.Phase.ToString().ToUpperInvariant(), context.MethodName, typeof(T).Name, ex.Message);
+                this._logger?.Error("Exception invoking {0} handler for method {1} on type of Decorator<{2}>: {3}", ex, context.Phase.ToString().ToUpperInvariant(), context.MethodName, typeof(T).Name, ex.Message);
             }
         }
 
@@ -617,10 +744,12 @@ namespace Bam.Generators.Decorators
             }
             catch (Exception ex)
             {
-                this._logger?.Error("Exception raising {0} event for method {1} on type of Decorator<{2}>: {3}", context.Phase.ToString().ToUpperInvariant(), context.MethodName, typeof(T).Name, ex.Message);
+                this._logger?.Error("Exception raising {0} event for method {1} on type of Decorator<{2}>: {3}", ex, context.Phase.ToString().ToUpperInvariant(), context.MethodName, typeof(T).Name, ex.Message);
             }
         }
 
         private readonly record struct MethodCacheKey(Type Type, string MethodName);
+
+        private readonly record struct ImplementationKey(Type Type, MethodInfo Method);
     }
 }

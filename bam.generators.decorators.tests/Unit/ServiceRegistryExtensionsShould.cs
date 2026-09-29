@@ -66,25 +66,26 @@ namespace Bam.Generators.Decorators.Tests.Unit
             })
             .When<ServiceRegistry>("decorates a registered service", registry =>
             {
-                Decorator<IEchoService, EchoService> decorator = registry.Decorate<IEchoService, EchoService>();
-                Decorator<IEchoService, EchoService> again = registry.Decorate<IEchoService, EchoService>();
+                DecoratorRegistration<IEchoService, EchoService> registration = registry.Decorate<IEchoService, EchoService>();
+                DecoratorRegistration<IEchoService, EchoService> again = registry.Decorate<IEchoService, EchoService>();
                 IEchoService resolved = registry.Get<IEchoService>();
+                Decorator<IEchoService, EchoService>? decorator = resolved as Decorator<IEchoService, EchoService>;
                 return new RegistrationOutcome(
-                    ReferenceEquals(resolved, decorator),
-                    ReferenceEquals(decorator, again),
+                    decorator is EchoServiceDecorator && registration.DecoratorType == typeof(EchoServiceDecorator),
+                    ReferenceEquals(registration, again),
                     resolved.Message("hello"),
-                    decorator.Instance.Calls,
-                    ReferenceEquals(decorator.SharedSubscriptions, registry.GetDecoratorSubscriptions()),
-                    decorator.InterfaceType == typeof(IEchoService) && decorator.ImplementationType == typeof(EchoService));
+                    decorator?.Instance.Calls ?? -1,
+                    ReferenceEquals(decorator?.SharedSubscriptions, registry.GetDecoratorSubscriptions()) && ReferenceEquals(decorator?.RegistrationHandlers, registration.Handlers),
+                    registration.InterfaceType == typeof(IEchoService) && registration.ImplementationType == typeof(EchoService) && decorator?.InterfaceType == typeof(IEchoService));
             })
             .TheTest
             .ShouldPass<RegistrationOutcome>((because, outcome) =>
             {
                 because.ItsTrue("resolving the interface yields the decorator", outcome.ResolvesToDecorator);
-                because.ItsTrue("decorating again returns the same decorator", outcome.Idempotent);
+                because.ItsTrue("decorating again returns the same registration", outcome.Idempotent);
                 because.ItsTrue("calls reach the wrapped service", outcome.Message == "hello" && outcome.Calls == 1);
-                because.ItsTrue("the decorator shares the registry's subscriptions", outcome.SharesSubscriptions);
-                because.ItsTrue("the decorator knows its interface and implementation", outcome.KnowsItsTypes);
+                because.ItsTrue("the decorator shares the registry's and the registration's handlers", outcome.SharesSubscriptions);
+                because.ItsTrue("the registration and decorator know their interface and implementation", outcome.KnowsItsTypes);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -246,16 +247,16 @@ namespace Bam.Generators.Decorators.Tests.Unit
             })
             .When<ServiceRegistry>("decorates an unregistered service and a mismatched implementation", registry =>
             {
-                return new RefusalOutcome(
-                    Refuses(() => registry.Decorate<IGreeterService, GreeterService>()),
-                    Refuses(() => registry.Decorate<IEchoService, EchoService>()),
-                    Refuses(() => registry.OnMethodStart<IGreeterService, GreeterService>("Greet", context => { })));
+                string? unregistered = Refuses(() => registry.Decorate<IGreeterService, GreeterService>());
+                string? subscribeUnregistered = Refuses(() => registry.OnMethodStart<IGreeterService, GreeterService>("Greet", context => { }));
+                registry.Decorate<IEchoService, EchoService>();
+                return new RefusalOutcome(unregistered, Refuses(() => registry.Get<IEchoService>()), subscribeUnregistered);
             })
             .TheTest
             .ShouldPass<RefusalOutcome>((because, outcome) =>
             {
                 because.ItsTrue("an unregistered service is refused", outcome.Unregistered?.Contains("Register it before decorating it") == true, outcome.Unregistered);
-                because.ItsTrue("a registration of another implementation is refused", outcome.Mismatched?.Contains("cannot be decorated as a EchoService") == true, outcome.Mismatched);
+                because.ItsTrue("a registration of another implementation is refused when it is resolved", outcome.Mismatched?.Contains("cannot be decorated as a EchoService") == true, outcome.Mismatched);
                 because.ItsTrue("subscribing to an unregistered service is refused", outcome.SubscribeUnregistered != null);
             })
             .SoBeHappy()
