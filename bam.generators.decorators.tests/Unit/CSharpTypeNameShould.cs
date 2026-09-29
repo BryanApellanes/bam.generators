@@ -71,6 +71,69 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
+        public void NameTypesNestedInGenericTypes()
+        {
+            When.A<CSharpTypeNameShould>("names nested types", this, test =>
+            {
+                return new NestedOutcome(
+                    CSharpTypeName.Of(typeof(Dictionary<string, int>.KeyCollection)),
+                    CSharpTypeName.Of(typeof(Wrapper<int>.Item)),
+                    CSharpTypeName.Of(typeof(Wrapper<string>.Pair<bool>)),
+                    CSharpTypeName.Of(typeof(List<Wrapper<string>.Pair<int[]>>)),
+                    CSharpTypeName.Of(typeof(Dictionary<string, int>.Enumerator)));
+            })
+            .TheTest
+            .ShouldPass<NestedOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a type nested in a generic BCL type keeps its own name", outcome.KeyCollection == "global::System.Collections.Generic.Dictionary<global::System.String, global::System.Int32>.KeyCollection", outcome.KeyCollection);
+                because.ItsTrue("a type nested in a generic user type keeps its own name", outcome.Item == "global::Bam.Generators.Decorators.Tests.Fixtures.Wrapper<global::System.Int32>.Item", outcome.Item);
+                because.ItsTrue("each level gets the arguments it declares", outcome.Pair == "global::Bam.Generators.Decorators.Tests.Fixtures.Wrapper<global::System.String>.Pair<global::System.Boolean>", outcome.Pair);
+                because.ItsTrue("nested types are named inside other types' arguments", outcome.ListOfPair == "global::System.Collections.Generic.List<global::Bam.Generators.Decorators.Tests.Fixtures.Wrapper<global::System.String>.Pair<global::System.Int32[]>>", outcome.ListOfPair);
+                because.ItsTrue("a nested struct is named the same way", outcome.Enumerator == "global::System.Collections.Generic.Dictionary<global::System.String, global::System.Int32>.Enumerator", outcome.Enumerator);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void RestateGenericConstraints()
+        {
+            When.A<CSharpTypeNameShould>("names the constraints of generic methods", this, test =>
+            {
+                MethodInfo Method(string name)
+                {
+                    return typeof(IEdgeCaseService).GetMethod(name)!;
+                }
+
+                return new ConstraintOutcome(
+                    CSharpTypeName.GenericConstraintsOf(Method(nameof(IEdgeCaseService.Locate))),
+                    CSharpTypeName.GenericConstraintsOf(Method(nameof(IEdgeCaseService.Maybe))),
+                    CSharpTypeName.GenericConstraintsOf(Method(nameof(IEdgeCaseService.Twice))),
+                    CSharpTypeName.GenericConstraintsOf(Method(nameof(IEdgeCaseService.Same))),
+                    CSharpTypeName.GenericConstraintsOf(Method(nameof(IEdgeCaseService.Keys))),
+                    CSharpTypeName.OfReturn(Method(nameof(IEdgeCaseService.Locate))),
+                    CSharpTypeName.Of(Method(nameof(IEdgeCaseService.Maybe)).GetParameters()[0]),
+                    CSharpTypeName.OfReturn(Method(nameof(IEdgeCaseService.Twice))),
+                    CSharpTypeName.Literal("a \"quoted\" \\ name"));
+            })
+            .TheTest
+            .ShouldPass<ConstraintOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a class constraint is restated", outcome.Class == " where TItem : class", outcome.Class);
+                because.ItsTrue("no constraint becomes default", outcome.Unconstrained == " where TValue : default", outcome.Unconstrained);
+                because.ItsTrue("a struct constraint is restated", outcome.Struct == " where TNumber : struct", outcome.Struct);
+                because.ItsTrue("a base-class constraint becomes class", outcome.BaseClass == " where TBase : class", outcome.BaseClass);
+                because.ItsTrue("a method that is not generic has none", outcome.NotGeneric == string.Empty);
+                because.ItsTrue("an annotated generic return is annotated", outcome.NullableReturn == "TItem?");
+                because.ItsTrue("an annotated generic parameter is annotated", outcome.NullableParameter == "TValue?");
+                because.ItsTrue("an unannotated one is not", outcome.PlainReturn == "TNumber");
+                because.ItsTrue("text is escaped into a literal", outcome.Literal == "\"a \\\"quoted\\\" \\\\ name\"", outcome.Literal);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
         public void KeepNullableAnnotations()
         {
             When.A<CSharpTypeNameShould>("names annotated members", this, test =>
@@ -133,6 +196,10 @@ namespace Bam.Generators.Decorators.Tests.Unit
             .SoBeHappy()
             .UnlessItFailed();
         }
+
+        private sealed record NestedOutcome(string KeyCollection, string Item, string Pair, string ListOfPair, string Enumerator);
+
+        private sealed record ConstraintOutcome(string Class, string Unconstrained, string Struct, string BaseClass, string NotGeneric, string NullableReturn, string NullableParameter, string PlainReturn, string Literal);
 
         private sealed record NameOutcome(string Void, string Simple, string Array, string Matrix, string Generic, string NullableValue, string Nested, string ClosedGeneric, string ByRef);
 
