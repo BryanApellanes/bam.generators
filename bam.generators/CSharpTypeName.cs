@@ -11,15 +11,15 @@ namespace Bam.Generators;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Nullable annotations are read from the member's declaration. For a member of a closed generic type that
-/// means the member of the open type: <c>IBox&lt;string&gt;.Unbox()</c> is annotated the way
-/// <c>IBox&lt;T&gt;.Unbox()</c> was written, because the closed type carries no annotations of its own.
+/// Nullable annotations are read from what the compiler wrote: the <c>NullableAttribute</c> on the member,
+/// or the <c>NullableContextAttribute</c> that applies to it, laid out one flag per type in declaration
+/// order. Reflection's own nullability API is not used, because it cannot tell <c>T</c> from <c>T?</c> when
+/// nothing constrains <c>T</c>.
 /// </para>
 /// <para>
-/// A generic parameter with nothing constraining it is the one case reflection's nullability API cannot
-/// settle: it reports <c>T</c> and <c>T?</c> alike as nullable. Where such a parameter is the whole type of
-/// a parameter, a return or a task's result, the compiler's own annotation is read instead. Where it sits
-/// deeper (<c>List&lt;T?&gt;</c>) it is rendered unannotated.
+/// Annotations belong to the member's declaration, so for a member of a closed generic type they are read
+/// from the open type: <c>IBox&lt;string&gt;.Unbox()</c> is annotated the way <c>IBox&lt;T&gt;.Unbox()</c>
+/// was written, and a <c>T?</c> there renders as <c>string?</c>.
 /// </para>
 /// </remarks>
 public static class CSharpTypeName
@@ -33,36 +33,81 @@ public static class CSharpTypeName
     /// <param name="type">The type to name. By-ref types (<c>ref</c>/<c>out</c>/<c>in</c>) name their element type.</param>
     public static string Of(Type type)
     {
-        return Of(type, null);
+        ArgumentNullException.ThrowIfNull(type);
+
+        return Render(type, type, NullableFlags.None);
     }
 
     /// <summary>
-    /// Gets the fully-qualified C# name for <paramref name="type"/>, appending <c>?</c> to reference types that
-    /// <paramref name="nullability"/> reports as nullable (recursing into generic arguments and array elements).
+    /// Gets the nullable-annotated C# name of <paramref name="parameter"/>'s type. Modifiers
+    /// (<c>ref</c>/<c>out</c>/<c>in</c>) are not included.
     /// </summary>
-    /// <param name="type">The type to name. By-ref types name their element type.</param>
-    /// <param name="nullability">
-    /// Nullable-annotation information for the type; null renders no annotations. It may describe the open
-    /// form of <paramref name="type"/>, with a generic parameter where <paramref name="type"/> has an argument.
-    /// </param>
-    public static string Of(Type type, NullabilityInfo? nullability)
+    public static string Of(ParameterInfo parameter)
     {
-        if (type.IsByRef)
+        ArgumentNullException.ThrowIfNull(parameter);
+
+        ParameterInfo declared = DeclarationOf(parameter);
+        return Render(parameter.ParameterType, declared.ParameterType, NullableFlags.For(declared.GetCustomAttributesData(), declared.Member));
+    }
+
+    /// <summary>Gets the nullable-annotated C# name of <paramref name="property"/>'s type.</summary>
+    public static string Of(PropertyInfo property)
+    {
+        ArgumentNullException.ThrowIfNull(property);
+
+        PropertyInfo declared = DeclarationOf(property);
+        MemberInfo scope = declared.GetMethod ?? declared.SetMethod ?? (MemberInfo)declared;
+        return Render(property.PropertyType, declared.PropertyType, NullableFlags.For(declared.GetCustomAttributesData(), scope));
+    }
+
+    /// <summary>Gets the nullable-annotated C# name of <paramref name="eventInfo"/>'s handler type.</summary>
+    public static string Of(EventInfo eventInfo)
+    {
+        ArgumentNullException.ThrowIfNull(eventInfo);
+
+        EventInfo declared = DeclarationOf(eventInfo);
+        Type handlerType = eventInfo.EventHandlerType ?? typeof(EventHandler);
+        return Render(handlerType, declared.EventHandlerType ?? handlerType, NullableFlags.For(declared.GetCustomAttributesData(), declared));
+    }
+
+    /// <summary>Gets the nullable-annotated C# name of <paramref name="method"/>'s return type.</summary>
+    public static string OfReturn(MethodInfo method)
+    {
+        ArgumentNullException.ThrowIfNull(method);
+
+        if (method.ReturnType == typeof(void))
         {
-            return Of(type.GetElementType()!, nullability?.ElementType ?? nullability);
+            return "void";
         }
 
-        Type? described = nullability == null ? null : ElementOf(nullability.Type);
-        bool substituted = described != null && described.IsGenericParameter && !type.IsGenericParameter;
+        MethodInfo declared = DeclarationOf(method);
+        return Render(method.ReturnType, declared.ReturnType, NullableFlags.For(declared.ReturnParameter.GetCustomAttributesData(), declared));
+    }
 
-        // What was substituted for a generic parameter has no annotations of its own to descend into.
-        string name = NameOf(type, substituted ? null : nullability);
-        if (nullability != null && !type.IsValueType && IsNullable(nullability) && CanBeTrusted(described))
+    /// <summary>
+    /// Gets the nullable-annotated C# name of the value <paramref name="method"/> produces: the return type
+    /// itself, or the <c>T</c> of a <c>Task&lt;T&gt;</c> / <c>ValueTask&lt;T&gt;</c> when
+    /// <paramref name="resultType"/> is that generic argument.
+    /// </summary>
+    /// <param name="method">The method whose result is being named.</param>
+    /// <param name="resultType">The result type — either the return type or its single generic argument.</param>
+    public static string OfResult(MethodInfo method, Type resultType)
+    {
+        ArgumentNullException.ThrowIfNull(method);
+        ArgumentNullException.ThrowIfNull(resultType);
+
+        if (resultType == method.ReturnType)
         {
-            name += "?";
+            return OfReturn(method);
         }
 
-        return name;
+        MethodInfo declared = DeclarationOf(method);
+        Type[] declaredArguments = declared.ReturnType.IsGenericType ? declared.ReturnType.GetGenericArguments() : Type.EmptyTypes;
+        NullableFlags flags = NullableFlags.For(declared.ReturnParameter.GetCustomAttributesData(), declared);
+
+        // The task's own flag comes first; the argument's follow it.
+        flags.Next();
+        return Render(resultType, declaredArguments.Length == 1 ? declaredArguments[0] : resultType, flags);
     }
 
     /// <summary>
@@ -73,6 +118,8 @@ public static class CSharpTypeName
     /// </summary>
     public static string GenericConstraintsOf(MethodInfo method)
     {
+        ArgumentNullException.ThrowIfNull(method);
+
         if (!method.IsGenericMethodDefinition)
         {
             return string.Empty;
@@ -99,91 +146,6 @@ public static class CSharpTypeName
     }
 
     /// <summary>
-    /// Gets the nullable-annotated C# name of <paramref name="parameter"/>'s type. Modifiers
-    /// (<c>ref</c>/<c>out</c>/<c>in</c>) are not included.
-    /// </summary>
-    public static string Of(ParameterInfo parameter)
-    {
-        ParameterInfo declared = DeclarationOf(parameter);
-        return Annotate(
-            parameter.ParameterType,
-            CreateNullability(context => context.Create(declared)),
-            declared.ParameterType,
-            declared.GetCustomAttributesData(),
-            declared.Member,
-            0);
-    }
-
-    /// <summary>Gets the nullable-annotated C# name of <paramref name="property"/>'s type.</summary>
-    public static string Of(PropertyInfo property)
-    {
-        PropertyInfo declared = DeclarationOf(property);
-        return Annotate(
-            property.PropertyType,
-            CreateNullability(context => context.Create(declared)),
-            declared.PropertyType,
-            declared.GetCustomAttributesData(),
-            declared.GetMethod ?? declared.SetMethod ?? (MemberInfo)declared,
-            0);
-    }
-
-    /// <summary>Gets the nullable-annotated C# name of <paramref name="eventInfo"/>'s handler type.</summary>
-    public static string Of(EventInfo eventInfo)
-    {
-        EventInfo declared = DeclarationOf(eventInfo);
-        Type handlerType = eventInfo.EventHandlerType ?? typeof(EventHandler);
-        return Annotate(
-            handlerType,
-            CreateNullability(context => context.Create(declared)),
-            declared.EventHandlerType ?? handlerType,
-            declared.GetCustomAttributesData(),
-            declared,
-            0);
-    }
-
-    /// <summary>Gets the nullable-annotated C# name of <paramref name="method"/>'s return type.</summary>
-    public static string OfReturn(MethodInfo method)
-    {
-        MethodInfo declared = DeclarationOf(method);
-        return Annotate(
-            method.ReturnType,
-            ReturnNullability(declared),
-            declared.ReturnType,
-            declared.ReturnParameter.GetCustomAttributesData(),
-            declared,
-            0);
-    }
-
-    /// <summary>
-    /// Gets the nullable-annotated C# name of the value <paramref name="method"/> produces: the return type
-    /// itself, or the <c>T</c> of a <c>Task&lt;T&gt;</c> / <c>ValueTask&lt;T&gt;</c> when
-    /// <paramref name="resultType"/> is that generic argument.
-    /// </summary>
-    /// <param name="method">The method whose result is being named.</param>
-    /// <param name="resultType">The result type — either the return type or its single generic argument.</param>
-    public static string OfResult(MethodInfo method, Type resultType)
-    {
-        if (resultType == method.ReturnType)
-        {
-            return OfReturn(method);
-        }
-
-        MethodInfo declared = DeclarationOf(method);
-        NullabilityInfo? nullability = ReturnNullability(declared);
-        nullability = nullability != null && nullability.GenericTypeArguments.Length == 1 ? nullability.GenericTypeArguments[0] : null;
-        Type[] declaredArguments = declared.ReturnType.IsGenericType ? declared.ReturnType.GetGenericArguments() : Type.EmptyTypes;
-
-        // The compiler lists annotations outermost first: the task's own, then its argument's.
-        return Annotate(
-            resultType,
-            nullability,
-            declaredArguments.Length == 1 ? declaredArguments[0] : resultType,
-            declared.ReturnParameter.GetCustomAttributesData(),
-            declared,
-            1);
-    }
-
-    /// <summary>
     /// Renders <paramref name="value"/> as a C# string literal, quoted and escaped, for writing text taken
     /// from metadata into generated source.
     /// </summary>
@@ -201,38 +163,105 @@ public static class CSharpTypeName
         return SyntaxFacts.GetKeywordKind(name) != SyntaxKind.None ? "@" + name : name;
     }
 
-    // Names the type, then settles the one case Of(Type, NullabilityInfo) leaves open: a generic parameter
-    // with nothing constraining it, standing as the whole type.
-    private static string Annotate(Type type, NullabilityInfo? nullability, Type declaredType, IList<CustomAttributeData> attributes, MemberInfo member, int position)
+    // Names `actual` while walking `declared` — the same type as the member declared it, which differs from
+    // `actual` only where the declaring type's generic parameters were substituted — consuming the compiler's
+    // nullable flags in the order it wrote them: one per reference type, array and generic parameter, none
+    // for a plain value type, in declaration order with generic arguments after their type.
+    private static string Render(Type actual, Type declared, NullableFlags flags)
     {
-        string name = Of(type, nullability);
-        Type declared = ElementOf(declaredType);
-        Type actual = ElementOf(type);
-        if (!declared.IsGenericParameter || CanBeTrusted(declared) || actual.IsValueType || name.EndsWith('?'))
+        if (actual.IsByRef)
         {
-            return name;
+            return Render(actual.GetElementType()!, declared.IsByRef ? declared.GetElementType()! : declared, flags);
         }
 
-        byte? flag = NullableFlag(attributes, position) ?? NullableContext(member);
-        return flag == Annotated ? name + "?" : name;
-    }
-
-    // Reflection reports whether null is allowed for a generic parameter from its constraints as well as
-    // its annotation. With nothing constraining it the answer is always "allowed", annotated or not.
-    private static bool CanBeTrusted(Type? described)
-    {
-        if (described == null || !described.IsGenericParameter)
+        if (actual == typeof(void))
         {
-            return true;
+            return "void";
         }
 
-        return (described.GenericParameterAttributes & GenericParameterAttributes.ReferenceTypeConstraint) != 0
-            || described.GetGenericParameterConstraints().Length > 0;
+        if (declared.IsGenericParameter)
+        {
+            // A parameter of the declaring type stands for whatever was substituted; what was substituted
+            // carries no flags of its own. A parameter of the method is named as itself.
+            byte flag = flags.Next();
+            string name = actual.IsGenericParameter ? actual.Name : Render(actual, actual, NullableFlags.None);
+            return flag == Annotated && !actual.IsValueType ? name + "?" : name;
+        }
+
+        if (actual.IsArray)
+        {
+            byte flag = flags.Next();
+            string rank = new string(',', actual.GetArrayRank() - 1);
+            string element = Render(actual.GetElementType()!, declared.IsArray ? declared.GetElementType()! : actual.GetElementType()!, flags);
+            return flag == Annotated ? $"{element}[{rank}]?" : $"{element}[{rank}]";
+        }
+
+        if (actual.IsPointer)
+        {
+            return Render(actual.GetElementType()!, declared.IsPointer ? declared.GetElementType()! : actual.GetElementType()!, flags) + "*";
+        }
+
+        Type[] arguments = actual.IsGenericType ? actual.GetGenericArguments() : Type.EmptyTypes;
+        Type[] declaredArguments = declared.IsGenericType && declared.GetGenericArguments().Length == arguments.Length ? declared.GetGenericArguments() : arguments;
+
+        bool annotated = false;
+        if (!actual.IsValueType)
+        {
+            annotated = flags.Next() == Annotated;
+        }
+        else if (actual.IsGenericType && actual.GetGenericTypeDefinition() != typeof(Nullable<>))
+        {
+            flags.Next(); // a generic value type takes a flag of its own, always 0
+        }
+
+        string[] renderedArguments = new string[arguments.Length];
+        for (int i = 0; i < arguments.Length; i++)
+        {
+            renderedArguments[i] = Render(arguments[i], declaredArguments[i], flags);
+        }
+
+        string qualified = QualifiedNameOf(actual, renderedArguments);
+        return annotated ? qualified + "?" : qualified;
     }
 
-    private static Type ElementOf(Type type)
+    // Names a type level by level, outermost first, handing each level the generic arguments it declares.
+    // A nested type carries its outer types' arguments as well as its own, so Outer<int>.Inner<string> has
+    // two arguments: the first belongs to Outer, the second to Inner.
+    private static string QualifiedNameOf(Type type, string[] renderedArguments)
     {
-        return type.IsByRef ? type.GetElementType()! : type;
+        List<Type> levels = new List<Type>();
+        for (Type? level = type; level != null; level = level.DeclaringType)
+        {
+            levels.Insert(0, level);
+        }
+
+        StringBuilder name = new StringBuilder("global::");
+        if (!string.IsNullOrEmpty(levels[0].Namespace))
+        {
+            name.Append(levels[0].Namespace).Append('.');
+        }
+
+        int named = 0;
+        for (int i = 0; i < levels.Count; i++)
+        {
+            if (i > 0)
+            {
+                name.Append('.');
+            }
+
+            string simpleName = levels[i].Name;
+            int tick = simpleName.IndexOf('`');
+            name.Append(tick >= 0 ? simpleName.Substring(0, tick) : simpleName);
+
+            int declaredSoFar = Math.Min(levels[i].IsGenericType ? levels[i].GetGenericArguments().Length : 0, renderedArguments.Length);
+            if (declaredSoFar > named)
+            {
+                name.Append('<').Append(string.Join(", ", renderedArguments, named, declaredSoFar - named)).Append('>');
+                named = declaredSoFar;
+            }
+        }
+
+        return name.ToString();
     }
 
     // A base-class constraint makes T a reference type. Enum and ValueType are classes themselves but
@@ -240,43 +269,6 @@ public static class CSharpTypeName
     private static bool IsReferenceTypeConstraint(Type constraint)
     {
         return constraint.IsClass && constraint != typeof(Enum) && constraint != typeof(ValueType);
-    }
-
-    private static byte? NullableFlag(IList<CustomAttributeData> attributes, int position)
-    {
-        CustomAttributeData? attribute = attributes.FirstOrDefault(candidate => candidate.AttributeType.FullName == NullableAttributeName);
-        if (attribute == null || attribute.ConstructorArguments.Count != 1)
-        {
-            return null;
-        }
-
-        object? value = attribute.ConstructorArguments[0].Value;
-        if (value is byte everyPosition)
-        {
-            return everyPosition;
-        }
-
-        if (value is IReadOnlyList<CustomAttributeTypedArgument> byPosition && position < byPosition.Count)
-        {
-            return byPosition[position].Value as byte?;
-        }
-
-        return null;
-    }
-
-    // The annotation that applies where a member states none: its own context, else its type's, outward.
-    private static byte? NullableContext(MemberInfo? member)
-    {
-        for (MemberInfo? scope = member; scope != null; scope = scope.DeclaringType)
-        {
-            CustomAttributeData? attribute = scope.GetCustomAttributesData().FirstOrDefault(candidate => candidate.AttributeType.FullName == NullableContextAttributeName);
-            if (attribute != null && attribute.ConstructorArguments.Count == 1)
-            {
-                return attribute.ConstructorArguments[0].Value as byte?;
-            }
-        }
-
-        return null;
     }
 
     private static MethodInfo DeclarationOf(MethodInfo method)
@@ -316,100 +308,72 @@ public static class CSharpTypeName
         return declaringType != null && declaringType.IsConstructedGenericType ? declaringType.GetGenericTypeDefinition() : null;
     }
 
-    private static string NameOf(Type type, NullabilityInfo? nullability)
+    /// <summary>
+    /// The compiler's nullable flags for one type as written on a member: either one flag per type in the
+    /// type's structure, read in order, or a single flag that applies to all of them.
+    /// </summary>
+    private sealed class NullableFlags
     {
-        if (type == typeof(void))
+        private readonly byte[]? _flags;
+        private readonly byte _everywhere;
+        private int _index;
+
+        private NullableFlags(byte[]? flags, byte everywhere)
         {
-            return "void";
+            _flags = flags;
+            _everywhere = everywhere;
         }
 
-        if (type.IsGenericParameter)
+        /// <summary>Flags for a type with no member: nothing is annotated.</summary>
+        public static NullableFlags None => new NullableFlags(null, 0);
+
+        /// <summary>
+        /// Reads the flags from a member's <c>NullableAttribute</c>, falling back to the
+        /// <c>NullableContextAttribute</c> of the member or the nearest declaring type that has one.
+        /// </summary>
+        public static NullableFlags For(IList<CustomAttributeData> attributes, MemberInfo? scope)
         {
-            return type.Name; // a method/type parameter (T) is referenced by its bare name
-        }
-
-        if (type.IsArray)
-        {
-            string rank = new string(',', type.GetArrayRank() - 1);
-            return Of(type.GetElementType()!, nullability?.ElementType) + "[" + rank + "]";
-        }
-
-        return QualifiedNameOf(type, nullability);
-    }
-
-    // Names a type level by level, outermost first, handing each level the generic arguments it declares.
-    // A nested type carries its outer types' arguments as well as its own, so Outer<int>.Inner<string> has
-    // two arguments: the first belongs to Outer, the second to Inner.
-    private static string QualifiedNameOf(Type type, NullabilityInfo? nullability)
-    {
-        List<Type> levels = new List<Type>();
-        for (Type? level = type; level != null; level = level.DeclaringType)
-        {
-            levels.Insert(0, level);
-        }
-
-        Type[] arguments = type.GetGenericArguments();
-        NullabilityInfo[]? argumentNullability = nullability?.GenericTypeArguments;
-        bool annotated = argumentNullability != null && argumentNullability.Length == arguments.Length;
-
-        StringBuilder name = new StringBuilder("global::");
-        if (!string.IsNullOrEmpty(levels[0].Namespace))
-        {
-            name.Append(levels[0].Namespace).Append('.');
-        }
-
-        int named = 0;
-        for (int i = 0; i < levels.Count; i++)
-        {
-            if (i > 0)
+            CustomAttributeData? attribute = attributes.FirstOrDefault(candidate => candidate.AttributeType.FullName == NullableAttributeName);
+            if (attribute != null && attribute.ConstructorArguments.Count == 1)
             {
-                name.Append('.');
+                object? value = attribute.ConstructorArguments[0].Value;
+                if (value is byte everywhere)
+                {
+                    return new NullableFlags(null, everywhere);
+                }
+
+                if (value is IReadOnlyList<CustomAttributeTypedArgument> list)
+                {
+                    return new NullableFlags(list.Select(item => item.Value as byte? ?? 0).ToArray(), 0);
+                }
             }
 
-            string simpleName = levels[i].Name;
-            int tick = simpleName.IndexOf('`');
-            name.Append(tick >= 0 ? simpleName.Substring(0, tick) : simpleName);
+            return new NullableFlags(null, ContextOf(scope));
+        }
 
-            int declaredSoFar = Math.Min(levels[i].IsGenericType ? levels[i].GetGenericArguments().Length : 0, arguments.Length);
-            if (declaredSoFar > named)
+        /// <summary>Gets the next flag in declaration order.</summary>
+        public byte Next()
+        {
+            if (_flags == null)
             {
-                IEnumerable<string> own = Enumerable
-                    .Range(named, declaredSoFar - named)
-                    .Select(index => Of(arguments[index], annotated ? argumentNullability![index] : null));
-                name.Append('<').Append(string.Join(", ", own)).Append('>');
-                named = declaredSoFar;
+                return _everywhere;
             }
+
+            return _index < _flags.Length ? _flags[_index++] : _everywhere;
         }
 
-        return name.ToString();
-    }
-
-    private static bool IsNullable(NullabilityInfo nullability)
-    {
-        return nullability.ReadState == NullabilityState.Nullable || nullability.WriteState == NullabilityState.Nullable;
-    }
-
-    private static NullabilityInfo? ReturnNullability(MethodInfo method)
-    {
-        if (method.ReturnType == typeof(void))
+        private static byte ContextOf(MemberInfo? member)
         {
-            return null;
-        }
+            for (MemberInfo? scope = member; scope != null; scope = scope.DeclaringType)
+            {
+                CustomAttributeData? attribute = scope.GetCustomAttributesData().FirstOrDefault(candidate => candidate.AttributeType.FullName == NullableContextAttributeName);
+                if (attribute != null && attribute.ConstructorArguments.Count == 1 && attribute.ConstructorArguments[0].Value is byte context)
+                {
+                    return context;
+                }
+            }
 
-        return CreateNullability(context => context.Create(method.ReturnParameter));
-    }
-
-    // NullabilityInfoContext is not thread-safe and caches per instance, so each lookup gets its own.
-    // Metadata it cannot interpret renders without annotations rather than failing generation.
-    private static NullabilityInfo? CreateNullability(Func<NullabilityInfoContext, NullabilityInfo> create)
-    {
-        try
-        {
-            return create(new NullabilityInfoContext());
-        }
-        catch (Exception)
-        {
-            return null;
+            return 0;
         }
     }
 }

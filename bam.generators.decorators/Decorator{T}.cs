@@ -1,5 +1,6 @@
 using Bam.Logging;
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Reflection;
 
 namespace Bam.Generators.Decorators
@@ -41,8 +42,13 @@ namespace Bam.Generators.Decorators
         }
 
         private readonly DecoratorHandlerRegistry<DecoratorInvocationContext<T>> _handlers;
-        private readonly ConcurrentDictionary<MethodCacheKey, MethodInfo[]> _methods;
-        private readonly ConcurrentDictionary<ImplementationKey, MethodInfo> _implementations;
+        // Keyed by the decorated instance's runtime type, so one decorator's lookups serve every decorator
+        // of a transient service rather than starting cold per instance.
+        private static readonly ConcurrentDictionary<MethodCacheKey, MethodInfo[]> _methods = new ConcurrentDictionary<MethodCacheKey, MethodInfo[]>();
+        private static readonly ConcurrentDictionary<ImplementationKey, MethodInfo> _implementations = new ConcurrentDictionary<ImplementationKey, MethodInfo>();
+
+        private readonly object _attachLock = new object();
+        private ImmutableList<DecoratorHandlerRegistry<DecoratorInvocationContext<T>>> _registrationHandlers = ImmutableList<DecoratorHandlerRegistry<DecoratorInvocationContext<T>>>.Empty;
 
         ILogger? _logger;
 
@@ -56,8 +62,6 @@ namespace Bam.Generators.Decorators
 
             this.Instance = value;
             this._handlers = new DecoratorHandlerRegistry<DecoratorInvocationContext<T>>();
-            this._methods = new ConcurrentDictionary<MethodCacheKey, MethodInfo[]>();
-            this._implementations = new ConcurrentDictionary<ImplementationKey, MethodInfo>();
             this._logger = logger ?? Log.Default;
         }
 
@@ -71,12 +75,31 @@ namespace Bam.Generators.Decorators
         public DecoratorHandlerRegistry<DecoratorInvocationContext<T>> Handlers => _handlers;
 
         /// <summary>
-        /// Gets or sets the handlers subscribed to the registration this decorator was created for. Every
-        /// decorator a <c>ServiceRegistry</c> creates for the same service shares them, which is what keeps a
-        /// handler subscribed through the registry running when the service is resolved again. Null when the
-        /// decorator was not created through a registry.
+        /// Gets the handler stores of the registrations this decorator serves, in the order they attached.
+        /// Every decorator a <c>ServiceRegistry</c> creates for the same service shares that registration's
+        /// store, which is what keeps a handler subscribed through the registry running when the service is
+        /// resolved again. A decorator that a second registry resolves through the first serves both
+        /// registrations, and runs both stores. Empty when the decorator was not created through a registry.
         /// </summary>
-        public DecoratorHandlerRegistry<DecoratorInvocationContext<T>>? RegistrationHandlers { get; set; }
+        public IReadOnlyList<DecoratorHandlerRegistry<DecoratorInvocationContext<T>>> RegistrationHandlers => _registrationHandlers;
+
+        /// <summary>
+        /// Adds a registration's handler store to those this decorator runs. Attaching the same store twice
+        /// has no effect, and attaching a second store never displaces the first.
+        /// </summary>
+        /// <param name="handlers">The registration's store.</param>
+        public void AttachRegistrationHandlers(DecoratorHandlerRegistry<DecoratorInvocationContext<T>> handlers)
+        {
+            ArgumentNullException.ThrowIfNull(handlers);
+
+            lock (_attachLock)
+            {
+                if (!_registrationHandlers.Contains(handlers))
+                {
+                    _registrationHandlers = _registrationHandlers.Add(handlers);
+                }
+            }
+        }
 
         /// <inheritdoc />
         public DecoratorSubscriptions? SharedSubscriptions { get; set; }
@@ -660,8 +683,7 @@ namespace Bam.Generators.Decorators
                 }
             }
 
-            DecoratorHandlerRegistry<DecoratorInvocationContext<T>>? registration = RegistrationHandlers;
-            if (registration != null)
+            foreach (DecoratorHandlerRegistry<DecoratorInvocationContext<T>> registration in _registrationHandlers)
             {
                 foreach (Func<DecoratorInvocationContext<T>, object?> handler in registration.Get(context.Phase, context.MethodName))
                 {

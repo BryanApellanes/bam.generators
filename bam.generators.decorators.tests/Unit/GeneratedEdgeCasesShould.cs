@@ -115,7 +115,9 @@ namespace Bam.Generators.Decorators.Tests.Unit
                     Diagnose(generator, typeof(IClashService), typeof(ClashService)),
                     Diagnose(generator, typeof(IElsewhereService), typeof(ElsewhereService)),
                     Diagnose(generator, typeof(IObservedService), typeof(ObservedService)),
-                    Diagnose(generator, typeof(IBoxService<string>), typeof(BoxService<string>))
+                    Diagnose(generator, typeof(IBoxService<string>), typeof(BoxService<string>)),
+                    Diagnose(generator, typeof(IBoxService<int>), typeof(BoxService<int>)),
+                    Diagnose(generator, typeof(INullableShapesService), typeof(NullableShapesService))
                 }.Where(problems => problems.Length > 0)));
             })
             .TheTest

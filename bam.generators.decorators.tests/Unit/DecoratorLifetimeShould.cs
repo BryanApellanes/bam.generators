@@ -237,6 +237,90 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
+        public void ServeBothRegistrationsWhenOneRegistryResolvesThroughAnother()
+        {
+            // Registry 2 delegates ICounterService to registry 1, and both decorate it. The decorator registry 1
+            // hands out serves registry 2's registration too; neither registration's handlers displace the other's.
+            CounterService instance = new CounterService();
+            ServiceRegistry first = new ServiceRegistry();
+            first.For<ILogger>().Use(Substitute.For<ILogger>());
+            first.For<IDecoratorTypeResolver>().Use(DecoratorTypeResolverShould.NewResolver());
+            first.For<ICounterService>().Use(instance);
+
+            After.Setup(reg =>
+            {
+                Prepare(reg);
+                reg.For<ICounterService>().Use<ICounterService>(() => first.Get<ICounterService>());
+                reg.For<ServiceRegistry>().Use(reg);
+            })
+            .When<ServiceRegistry>("subscribes in both registries", second =>
+            {
+                List<string> observed = new List<string>();
+                first.OnMethodStart<ICounterService, CounterService>(nameof(ICounterService.Next), context => { observed.Add("first"); });
+                second.OnMethodStart<ICounterService, CounterService>(nameof(ICounterService.Next), context => { observed.Add("second"); });
+
+                ICounterService fromFirst = first.Get<ICounterService>();
+                ICounterService fromSecond = second.Get<ICounterService>();
+                fromFirst.Next();
+                string afterFirst = string.Join("|", observed);
+                observed.Clear();
+                fromSecond.Next();
+                Decorator<ICounterService, CounterService>? decorator = fromSecond as Decorator<ICounterService, CounterService>;
+                return new CompositionOutcome(ReferenceEquals(fromFirst, fromSecond), afterFirst, string.Join("|", observed), decorator?.RegistrationHandlers.Count ?? 0);
+            })
+            .TheTest
+            .ShouldPass<CompositionOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("both registries hand out the one decorator", outcome.SameDecorator);
+                because.ItsTrue("a call through the first registry runs both registrations' handlers", outcome.ThroughFirst == "first|second", $"observed: {outcome.ThroughFirst}");
+                because.ItsTrue("so does a call through the second", outcome.ThroughSecond == "first|second", $"observed: {outcome.ThroughSecond}");
+                because.ItsTrue("the decorator serves two registrations", outcome.Registrations == 2);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void RefuseToDecorateAsASecondImplementationType()
+        {
+            After.Setup(reg =>
+            {
+                Prepare(reg);
+                reg.For<IEchoService>().Use<EchoService>();
+                reg.For<ServiceRegistry>().Use(reg);
+            })
+            .When<ServiceRegistry>("decorates the same interface as two implementation types", registry =>
+            {
+                registry.Decorate<IEchoService, EchoService>();
+                string? refused = null;
+                try
+                {
+                    registry.Decorate<IEchoService, LoudEchoService>();
+                }
+                catch (DecoratorException ex)
+                {
+                    refused = ex.Message;
+                }
+
+                string stillWorks = registry.Get<IEchoService>().Message("hello");
+
+                // Once the service is registered again as the other type, decorating as that type is fine.
+                registry.For<IEchoService>().Use<LoudEchoService>();
+                registry.Decorate<IEchoService, LoudEchoService>();
+                return new SecondTypeOutcome(refused, stillWorks, registry.Get<IEchoService>().Message("hello"));
+            })
+            .TheTest
+            .ShouldPass<SecondTypeOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the second decoration is refused, naming both types", outcome.Refused?.Contains("EchoService") == true && outcome.Refused.Contains("LoudEchoService"), outcome.Refused);
+                because.ItsTrue("the first decoration still resolves", outcome.StillWorks == "hello");
+                because.ItsTrue("after re-registering as the other type, decorating as it works", outcome.AfterReregistering == "HELLO!");
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
         public void FailOnResolveWhenTheServiceIsNotWhatWasDecorated()
         {
             After.Setup(reg =>
@@ -274,6 +358,10 @@ namespace Bam.Generators.Decorators.Tests.Unit
         private sealed record ReregistrationOutcome(bool SameWhenDecoratedTwice, bool RegisteredBefore, bool RegisteredAfter, bool DecoratedAfterReregistering, bool SameAfterReregistering, bool NewIsRegistered, string Observed, bool Recorded);
 
         private sealed record OrderOutcome(string Order);
+
+        private sealed record CompositionOutcome(bool SameDecorator, string ThroughFirst, string ThroughSecond, int Registrations);
+
+        private sealed record SecondTypeOutcome(string? Refused, string StillWorks, string AfterReregistering);
 
         private sealed record AdoptionOutcome(bool SameDecorator, string Observed);
     }

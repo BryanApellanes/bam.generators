@@ -134,6 +134,55 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
+        public void CarryNullableGenericParametersEverywhere()
+        {
+            When.A<CSharpTypeNameShould>("names T? in every position and on a closed generic interface", this, test =>
+            {
+                MethodInfo Shape(string name)
+                {
+                    return typeof(INullableShapesService).GetMethod(name)!;
+                }
+
+                MethodInfo Box(string name)
+                {
+                    return typeof(IBoxService<string>).GetMethod(name)!;
+                }
+
+                return new EverywhereOutcome(
+                    CSharpTypeName.OfReturn(Shape(nameof(INullableShapesService.FindAsync))),
+                    CSharpTypeName.OfResult(Shape(nameof(INullableShapesService.FindAsync)), Shape(nameof(INullableShapesService.FindAsync)).ReturnType.GetGenericArguments()[0]),
+                    CSharpTypeName.OfReturn(Shape(nameof(INullableShapesService.PeekAsync))),
+                    CSharpTypeName.OfReturn(Shape(nameof(INullableShapesService.AllAsync))),
+                    CSharpTypeName.OfReturn(Shape(nameof(INullableShapesService.Some))),
+                    CSharpTypeName.OfReturn(Shape(nameof(INullableShapesService.Finder))),
+                    CSharpTypeName.OfReturn(Shape(nameof(INullableShapesService.NameAsync))),
+                    CSharpTypeName.OfReturn(Box(nameof(IBoxService<string>.Unbox))),
+                    CSharpTypeName.OfReturn(Box(nameof(IBoxService<string>.Peek))),
+                    CSharpTypeName.OfReturn(Box(nameof(IBoxService<string>.UnboxAsync))),
+                    CSharpTypeName.OfReturn(Box(nameof(IBoxService<string>.All))),
+                    CSharpTypeName.OfReturn(typeof(IBoxService<int>).GetMethod(nameof(IBoxService<int>.Peek))!));
+            })
+            .TheTest
+            .ShouldPass<EverywhereOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("T? inside Task with a new() constraint", outcome.TaskOfT == "global::System.Threading.Tasks.Task<T?>", outcome.TaskOfT);
+                because.ItsTrue("the task's result is T?", outcome.TaskResult == "T?", outcome.TaskResult);
+                because.ItsTrue("T? inside ValueTask", outcome.ValueTaskOfT == "global::System.Threading.Tasks.ValueTask<T?>", outcome.ValueTaskOfT);
+                because.ItsTrue("T? two levels down with a notnull constraint", outcome.TaskOfListOfT == "global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<T?>>", outcome.TaskOfListOfT);
+                because.ItsTrue("T? as an array element", outcome.ArrayOfT == "T?[]", outcome.ArrayOfT);
+                because.ItsTrue("T? and string? inside a delegate", outcome.FuncOfT == "global::System.Func<global::System.String?, T?>", outcome.FuncOfT);
+                because.ItsTrue("string? inside Task", outcome.TaskOfString == "global::System.Threading.Tasks.Task<global::System.String?>", outcome.TaskOfString);
+                because.ItsTrue("an unannotated T on a closed generic interface is not nullable", outcome.ClosedPlain == "global::System.String", outcome.ClosedPlain);
+                because.ItsTrue("T? on a closed generic interface is", outcome.ClosedNullable == "global::System.String?", outcome.ClosedNullable);
+                because.ItsTrue("Task<T?> on a closed generic interface is", outcome.ClosedTaskNullable == "global::System.Threading.Tasks.Task<global::System.String?>", outcome.ClosedTaskNullable);
+                because.ItsTrue("List<T?> on a closed generic interface is", outcome.ClosedListNullable == "global::System.Collections.Generic.List<global::System.String?>", outcome.ClosedListNullable);
+                because.ItsTrue("T? closed over a value type gets no annotation", outcome.ClosedValueType == "global::System.Int32", outcome.ClosedValueType);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
         public void KeepNullableAnnotations()
         {
             When.A<CSharpTypeNameShould>("names annotated members", this, test =>
@@ -196,6 +245,8 @@ namespace Bam.Generators.Decorators.Tests.Unit
             .SoBeHappy()
             .UnlessItFailed();
         }
+
+        private sealed record EverywhereOutcome(string TaskOfT, string TaskResult, string ValueTaskOfT, string TaskOfListOfT, string ArrayOfT, string FuncOfT, string TaskOfString, string ClosedPlain, string ClosedNullable, string ClosedTaskNullable, string ClosedListNullable, string ClosedValueType);
 
         private sealed record NestedOutcome(string KeyCollection, string Item, string Pair, string ListOfPair, string Enumerator);
 

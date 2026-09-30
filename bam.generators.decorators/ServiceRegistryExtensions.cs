@@ -12,7 +12,8 @@ namespace Bam.Generators.Decorators
     /// <para>
     /// Decorating keeps the service's lifetime. The previous registration is resolved each time the service
     /// is, so a transient service is still constructed per resolve and a single instance is still one
-    /// instance. Nothing is constructed when a service is decorated or a handler subscribed.
+    /// instance. Nothing is constructed when a service is decorated or a handler subscribed, except that a
+    /// service registered again after being decorated is resolved once, to find out that it was.
     /// </para>
     /// <para>
     /// The service has to be registered before it is decorated or a typed handler is subscribed to it; only
@@ -273,33 +274,47 @@ namespace Bam.Generators.Decorators
         private static DecoratorRegistration<I, T> Decorate<I, T>(ServiceRegistry registry, ILogger? logger, Func<Type> decoratorTypeProvider) where I : class where T : class, I
         {
             DecoratorRegistrations registrations = registry.GetDecoratorRegistrations();
-            bool decoratedBefore = registrations.TryGet(out DecoratorRegistration<I, T>? existing);
-            if (decoratedBefore && existing!.IsRegisteredIn(registry))
+
+            // Registering is not something ServiceRegistry synchronizes, but two callers decorating the same
+            // service at once must not end up with one wrapping the other.
+            lock (registrations)
             {
-                return existing;
+                bool decoratedBefore = registrations.TryGet(out DecoratorRegistration<I, T>? existing);
+                if (decoratedBefore && existing!.IsRegisteredIn(registry))
+                {
+                    return existing;
+                }
+
+                if (!decoratedBefore && registrations.TryGet(typeof(I), out IDecoratorRegistration? other) && other != null && other.IsRegisteredIn(registry))
+                {
+                    // Decorated already, as another implementation. Wrapping that would leave every resolve
+                    // failing with a type mismatch, so refuse here instead.
+                    throw new DecoratorException(
+                        $"{typeof(I).FullName} is already decorated as {other.ImplementationType.FullName}; it cannot also be decorated as {typeof(T).FullName}.");
+                }
+
+                if (!registry.MappedTypes.Contains(typeof(I)))
+                {
+                    throw new DecoratorException(
+                        $"{typeof(I).FullName} is not registered. Register it before decorating it.");
+                }
+
+                // Keep hold of the registration as it stands, without resolving it, so it can be resolved each
+                // time the service is. Decorating must not construct the service or change how often it is.
+                DependencyProvider previous = new DependencyProvider();
+                previous.CopyTypeFrom(typeof(I), registry);
+
+                DecoratorRegistration<I, T> registration = new DecoratorRegistration<I, T>(
+                    () => previous[typeof(I)] as I,
+                    decoratorTypeProvider(),
+                    logger ?? ResolveLogger(registry),
+                    registry.GetDecoratorSubscriptions(),
+                    decoratedBefore ? existing!.Handlers : null);
+
+                registry.Set(typeof(I), new Func<object>(registration.Resolve));
+                registrations.Set(registration);
+                return registration;
             }
-
-            if (!registry.MappedTypes.Contains(typeof(I)))
-            {
-                throw new DecoratorException(
-                    $"{typeof(I).FullName} is not registered. Register it before decorating it.");
-            }
-
-            // Keep hold of the registration as it stands, without resolving it, so it can be resolved each time
-            // the service is. Decorating must not construct the service or change how often it is constructed.
-            DependencyProvider previous = new DependencyProvider();
-            previous.CopyTypeFrom(typeof(I), registry);
-
-            DecoratorRegistration<I, T> registration = new DecoratorRegistration<I, T>(
-                () => previous[typeof(I)] as I,
-                decoratorTypeProvider(),
-                logger ?? ResolveLogger(registry),
-                registry.GetDecoratorSubscriptions(),
-                decoratedBefore ? existing!.Handlers : null);
-
-            registry.Set(typeof(I), new Func<object>(registration.Resolve));
-            registrations.Set(registration);
-            return registration;
         }
 
         private static ILogger? ResolveLogger(ServiceRegistry registry)

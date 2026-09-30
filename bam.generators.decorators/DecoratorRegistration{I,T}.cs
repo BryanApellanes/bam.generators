@@ -171,9 +171,11 @@ namespace Bam.Generators.Decorators
             return Attach((Decorator<I, T>)_constructor.Invoke(new object?[] { instance, Logger }));
         }
 
+        // A decorator that already serves another registration (a second registry resolving through the
+        // first) keeps that registration's handlers and gains this one's.
         private Decorator<I, T> Attach(Decorator<I, T> decorator)
         {
-            decorator.RegistrationHandlers = Handlers;
+            decorator.AttachRegistrationHandlers(Handlers);
             decorator.SharedSubscriptions ??= SharedSubscriptions;
             return decorator;
         }

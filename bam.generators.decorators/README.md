@@ -35,20 +35,20 @@ A registry-wide handler decorates nothing by itself. It only fires for services 
 
 Decorating keeps the service's lifetime. `Decorate` puts a `DecoratorRegistration<I, T>` between the registry and the registration it replaces, and that resolves the previous registration each time the service is resolved. A transient service is still constructed per resolve, each instance wrapped in its own decorator. A single instance gets the same decorator every time.
 
-Nothing is constructed when a service is decorated or a handler is subscribed. The service is first resolved when you resolve it.
+Nothing is constructed when a service is decorated or a handler is subscribed; the service is first resolved when you resolve it. The one exception: a service that was registered again after being decorated is resolved once when you next decorate it, to find out that it was replaced.
 
 Handlers live in three places, and run in this order:
 
 | Subscribed through | Runs for |
 |---|---|
 | `registry.OnMethodStart(name, ...)` | every decorated service in the registry |
-| `registry.OnMethodStart<I, T>(...)`, `registry.OnMessageStart(...)`, `registry.Decorate<I, T>().Subscribe(...)` | every instance of that service the registry resolves |
+| `registry.OnMethodStart<I, T>(...)`, `registry.OnMessageStart(...)`, `registry.Decorate<I, T>().Subscribe(...)` | every instance of that service the registry resolves; a decorator that a second registry resolves through the first serves both registrations and runs both |
 | `echo.OnMessageStart(...)`, `decorator.Subscribe(...)` | that instance only |
 
 Two things to know about ordering:
 
 - Register the service before you decorate it or subscribe a typed handler to it. Only the registry-wide form can come first.
-- Registering the service again after decorating it replaces the decorator, and nothing tells you. Decorate it again, or subscribe another typed handler, and the handlers subscribed before are applied to the new registration.
+- Registering the service again after decorating it replaces the decorator, and nothing tells you. Decorate it again, or subscribe another typed handler, and the handlers subscribed before are applied to the new registration. Decorating it as a different implementation type while the first decoration is still in place throws.
 
 If the service is registered as something other than a `T`, decorating succeeds and resolving throws a `DecoratorException`. Checking sooner would mean constructing the service.
 
@@ -121,7 +121,7 @@ Members that would clash are implemented explicitly, so they're reachable throug
 
 Each intercepted method gets a static field holding its `MethodInfo`, looked up once by exact parameter types. Handlers are told the overload that ran, as `ctx.Method`, mapped to the method on the decorated class so its attributes are there to read.
 
-Generated source compiles without warnings under `#nullable enable`. Nullable annotations are carried over, including `T?` on generic methods, and names that are C# keywords are escaped.
+Generated source compiles without warnings under `#nullable enable`. Nullable annotations are read from what the compiler wrote on the interface and carried over wherever they appear, including `T?` on generic methods, inside generic arguments and arrays (`Task<T?>`, `List<T?>`, `T?[]`), and on members of a closed generic interface. Nullability attributes such as `[MaybeNullWhen]` are not carried. Names that are C# keywords are escaped.
 
 Generation fails with a `DecoratorGenerationException` for an interface that isn't public, an open generic, an init-only property, a ref-returning member, a static abstract member, or a member whose name isn't a valid C# identifier.
 

@@ -14,5 +14,12 @@ namespace Bam.Generators.Decorators
 
         /// <summary>Gets the type of the decorators the registration creates.</summary>
         Type DecoratorType { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether <paramref name="registry"/> still resolves the service through this
+        /// registration.
+        /// </summary>
+        /// <param name="registry">The registry to ask.</param>
+        bool IsRegisteredIn(Bam.DependencyInjection.ServiceRegistry registry);
     }
 }

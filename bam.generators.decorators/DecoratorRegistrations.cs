@@ -31,6 +31,17 @@ namespace Bam.Generators.Decorators
             return registration != null;
         }
 
+        /// <summary>Gets the registration of <paramref name="interfaceType"/>, whatever it was decorated as.</summary>
+        /// <param name="interfaceType">The service interface.</param>
+        /// <param name="registration">The registration, or null when the service was not decorated.</param>
+        /// <returns>True when there is one.</returns>
+        public bool TryGet(Type interfaceType, out IDecoratorRegistration? registration)
+        {
+            ArgumentNullException.ThrowIfNull(interfaceType);
+
+            return _registrations.TryGetValue(interfaceType, out registration);
+        }
+
         /// <summary>Records <paramref name="registration"/> as the decoration of <typeparamref name="I"/>, replacing any before it.</summary>
         /// <typeparam name="I">The service interface.</typeparam>
         /// <typeparam name="T">The implementation type it is decorated as.</typeparam>
