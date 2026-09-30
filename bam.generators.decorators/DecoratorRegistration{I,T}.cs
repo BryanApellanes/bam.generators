@@ -126,7 +126,9 @@ namespace Bam.Generators.Decorators
         /// <summary>
         /// Gets a value indicating whether <paramref name="registry"/> still resolves
         /// <typeparamref name="I"/> through this registration. It stops doing so when
-        /// <typeparamref name="I"/> is registered again. Nothing is constructed to find out.
+        /// <typeparamref name="I"/> is registered again. While this registration is current nothing is
+        /// constructed to find out; once something else has been registered, that registration is resolved
+        /// once to see what it is.
         /// </summary>
         /// <param name="registry">The registry to ask.</param>
         public bool IsRegisteredIn(ServiceRegistry registry)

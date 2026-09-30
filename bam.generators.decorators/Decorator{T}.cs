@@ -690,6 +690,14 @@ namespace Bam.Generators.Decorators
             try
             {
                 object? returned = handler();
+                if (returned is Task)
+                {
+                    // A handler that hands back a Task did its work asynchronously, after this point. It is
+                    // not a result, and treating it as one would skip a void method's call without a word.
+                    this._logger?.Error("{0} handler for method {1} on type of Decorator<{2}> returned a Task; handlers run synchronously, so the task was ignored and the call went ahead", context.Phase.ToString().ToUpperInvariant(), context.MethodName, typeof(T).Name);
+                    return;
+                }
+
                 if (returned != null && !context.Rejected)
                 {
                     context.Result = returned;

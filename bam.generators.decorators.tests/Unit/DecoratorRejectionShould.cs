@@ -210,6 +210,82 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
+        public void RefuseAnAsyncHandler()
+        {
+            // An async guard binds as async void, returns at its first await, and the call goes ahead: a guard
+            // that never guards. Every way to subscribe one has to refuse it. An async lambda cannot convert to the
+            // Func overloads at all; a Func that returns a Task is handled at run time, in the next test.
+            After.Setup(reg =>
+            {
+                reg.For<ILogger>().Use(Substitute.For<ILogger>());
+                reg.For<IEchoService>().Use<EchoService>();
+                reg.For<ServiceRegistry>().Use(reg);
+            })
+            .When<ServiceRegistry>("is given async handlers through each subscription path", registry =>
+            {
+                Action<DecoratorInvocationContext<EchoService>> asyncAction = async context => { await Task.Yield(); context.Reject("too late"); };
+                Action<DecoratorInvocationContext> asyncRegistryWide = async context => { await Task.Yield(); context.Reject("too late"); };
+                IEchoService echo = new EchoServiceDecorator(new EchoService(), Substitute.For<ILogger>());
+                Decorator<EchoService> decorator = new Decorator<EchoService>(new EchoService(), Substitute.For<ILogger>());
+
+                return new RefusalOutcome(
+                    Refuses(() => registry.OnMethodStart<IEchoService, EchoService>("Message", asyncAction)),
+                    Refuses(() => registry.OnMethodStart("Message", asyncRegistryWide)),
+                    Refuses(() => registry.OnMessageStart(asyncAction)),
+                    Refuses(() => echo.OnMessageStart(asyncAction)),
+                    Refuses(() => decorator.Subscribe(DecoratorPhase.Start, "Message", asyncAction)),
+                    Refuses(() => registry.GetDecoratorSubscriptions().Add(DecoratorPhase.Start, "Message", asyncRegistryWide)),
+                    Refuses(() => decorator.Subscribe(DecoratorPhase.Start, "Message", context => { context.Reject("in time"); })) == null,
+                    echo.Message("still works"));
+            })
+            .TheTest
+            .ShouldPass<RefusalOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a typed registry subscription refuses it", outcome.TypedAction?.Contains("synchronously") == true, outcome.TypedAction);
+                because.ItsTrue("a registry-wide subscription refuses it", outcome.RegistryWide != null);
+                because.ItsTrue("a generated registry hook refuses it", outcome.GeneratedRegistry != null);
+                because.ItsTrue("a generated instance hook refuses it", outcome.GeneratedInstance != null);
+                because.ItsTrue("a decorator subscription refuses it", outcome.DecoratorAction != null);
+                because.ItsTrue("the handler store itself refuses it", outcome.Store != null);
+                because.ItsTrue("a synchronous handler is still accepted", outcome.SynchronousAccepted);
+                because.ItsTrue("nothing was subscribed, so the service still answers", outcome.Message == "still works");
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void NotTakeAReturnedTaskAsAResult()
+        {
+            ILogger logger = Substitute.For<ILogger>();
+
+            After.Setup(reg =>
+            {
+                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), logger));
+            })
+            .When<Decorator<KitchenSinkService>>("has handlers that hand back a Task without being async themselves", decorator =>
+            {
+                // A method-group or lambda that returns a Task is not marked async, so subscription can't refuse
+                // it. It still cannot stop the call; the task is ignored and the call goes ahead.
+                decorator.SubscribeStart("Add", context => Task.FromResult<object?>("never a result"));
+                decorator.SubscribeStart("Reset", context => Task.CompletedTask);
+                DecoratorInvocationResult<KitchenSinkService, int> sum = decorator.Invoke<int>("Add", 1, 2);
+                DecoratorInvocationResult<KitchenSinkService, object> reset = decorator.Invoke<object>("Reset");
+                int errors = logger.ReceivedCalls().Count(call => call.GetMethodInfo().Name == nameof(ILogger.Error));
+                return new TaskOutcome(sum.Value, sum.ShortCircuited, reset.Success && !reset.ShortCircuited, decorator.Instance.Count, errors);
+            })
+            .TheTest
+            .ShouldPass<TaskOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a task is not taken as the value of a method with a result", outcome.Sum == 3 && !outcome.SumShortCircuited);
+                because.ItsTrue("a task is not taken as the result of a void method, so the call is not skipped", outcome.ResetRan && outcome.Count == 0);
+                because.ItsTrue("each was logged", outcome.ErrorsLogged == 2, $"errors logged: {outcome.ErrorsLogged}");
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
         public void KeepTheFirstRejection()
         {
             When.A<DecoratorInvocationContext>("is rejected twice", new DecoratorInvocationContext(new object(), typeof(object)), context =>
@@ -259,6 +335,19 @@ namespace Bam.Generators.Decorators.Tests.Unit
             .UnlessItFailed();
         }
 
+        private static string? Refuses(Action action)
+        {
+            try
+            {
+                action();
+                return null;
+            }
+            catch (ArgumentException ex)
+            {
+                return ex.Message;
+            }
+        }
+
         private static Exception? Thrown(Action action)
         {
             try
@@ -281,6 +370,10 @@ namespace Bam.Generators.Decorators.Tests.Unit
         private sealed record CallerOutcome(Exception? Sync, Exception? Async, Exception? Thrown, int Count, string Unguarded);
 
         private sealed record FirstOutcome(bool RejectedInitially, bool Rejected, Exception? Rejection, Exception? NullRejection);
+
+        private sealed record RefusalOutcome(string? TypedAction, string? RegistryWide, string? GeneratedRegistry, string? GeneratedInstance, string? DecoratorAction, string? Store, bool SynchronousAccepted, string Message);
+
+        private sealed record TaskOutcome(int Sum, bool SumShortCircuited, bool ResetRan, int Count, int ErrorsLogged);
 
         private sealed record ArgumentOutcome(string? ByName, string? CallersArgument, string Generated);
     }

@@ -12,22 +12,26 @@ namespace Bam.Generators.Decorators
         /// A handler that throws does not stop the call: the exception is logged and the call goes ahead. To
         /// stop a call, call <see cref="DecoratorInvocationContext.Reject(string)"/> on the context or throw a
         /// <see cref="DecoratorRejectionException"/>. A handler subscribed to
-        /// <see cref="DecoratorPhase.Error"/> that returns a value suppresses the failure.
+        /// <see cref="DecoratorPhase.Error"/> that returns a value suppresses the failure. Handlers run
+        /// synchronously: an <c>async</c> handler is refused, and a returned <see cref="Task"/> is not a result.
         /// </remarks>
         /// <param name="phase">The phase the handler runs in.</param>
         /// <param name="methodName">The method to subscribe to, or <c>*</c> for every method.</param>
         /// <param name="handler">The handler. A non-null return value overrides the invocation's result.</param>
+        /// <exception cref="ArgumentException"><paramref name="handler"/> is an <c>async</c> method or lambda.</exception>
         void Subscribe(DecoratorPhase phase, string methodName, Func<DecoratorInvocationContext<T>, object?> handler);
 
         /// <summary>Subscribes an observe-only <paramref name="handler"/> to <paramref name="methodName"/> for <paramref name="phase"/>.</summary>
         /// <remarks>
         /// A handler that throws does not stop the call: the exception is logged and the call goes ahead. To
         /// stop a call, call <see cref="DecoratorInvocationContext.Reject(string)"/> on the context or throw a
-        /// <see cref="DecoratorRejectionException"/>.
+        /// <see cref="DecoratorRejectionException"/>. Handlers run synchronously: an <c>async</c> handler
+        /// would bind here as <c>async void</c> and return at its first <c>await</c>, so it is refused.
         /// </remarks>
         /// <param name="phase">The phase the handler runs in.</param>
         /// <param name="methodName">The method to subscribe to, or <c>*</c> for every method.</param>
         /// <param name="handler">The handler.</param>
+        /// <exception cref="ArgumentException"><paramref name="handler"/> is an <c>async</c> method or lambda.</exception>
         void Subscribe(DecoratorPhase phase, string methodName, Action<DecoratorInvocationContext<T>> handler);
     }
 }

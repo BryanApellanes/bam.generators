@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 
 namespace Bam.Generators.Decorators
 {
@@ -30,10 +31,16 @@ namespace Bam.Generators.Decorators
         /// <param name="phase">The phase the handler runs in.</param>
         /// <param name="methodName">The method to subscribe to, or <see cref="AnyMethod"/> for all of them.</param>
         /// <param name="handler">The handler. A non-null return value overrides the invocation's result.</param>
+        /// <exception cref="ArgumentException">
+        /// <paramref name="methodName"/> is blank, or <paramref name="handler"/> is an <c>async</c> method or
+        /// lambda. Handlers run synchronously: an async one returns at its first <c>await</c> and the call goes
+        /// ahead, so a guard written that way could never stop anything.
+        /// </exception>
         public void Add(DecoratorPhase phase, string methodName, Func<TContext, object?> handler)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(methodName);
             ArgumentNullException.ThrowIfNull(handler);
+            RequireSynchronous(handler);
 
             _handlers.AddOrUpdate(
                 new HandlerKey(phase, methodName),
@@ -48,15 +55,33 @@ namespace Bam.Generators.Decorators
         /// <param name="phase">The phase the handler runs in.</param>
         /// <param name="methodName">The method to subscribe to, or <see cref="AnyMethod"/> for all of them.</param>
         /// <param name="handler">The handler.</param>
+        /// <exception cref="ArgumentException">
+        /// <paramref name="methodName"/> is blank, or <paramref name="handler"/> is an <c>async</c> method or
+        /// lambda, which would bind here as <c>async void</c> and return at its first <c>await</c>.
+        /// </exception>
         public void Add(DecoratorPhase phase, string methodName, Action<TContext> handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
+            RequireSynchronous(handler);
 
             Add(phase, methodName, new Func<TContext, object?>(context =>
             {
                 handler(context);
                 return null;
             }));
+        }
+
+        // The compiler marks every async method and lambda with AsyncStateMachineAttribute. Such a handler
+        // returns at its first await, before it can reject anything, and the call goes ahead: a guard that
+        // never guards. Refusing it here covers every way to subscribe, since they all end up in Add.
+        private static void RequireSynchronous(Delegate handler)
+        {
+            if (handler.Method.IsDefined(typeof(AsyncStateMachineAttribute), false))
+            {
+                throw new ArgumentException(
+                    "Handlers run synchronously and an async handler returns at its first await, before it can stop the call. Do the asynchronous work elsewhere and reject from a synchronous handler.",
+                    nameof(handler));
+            }
         }
 
         /// <summary>

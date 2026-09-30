@@ -61,12 +61,15 @@ namespace Bam.Generators.Decorators
         /// <summary>
         /// Rejects the call: <paramref name="exception"/> is thrown to the caller. At start the decorated
         /// method is never invoked; at end its result is discarded; on error the rejection replaces the
-        /// failure. No further handlers run, and no error handler can suppress a rejection. The first
-        /// rejection wins.
+        /// failure. No further handlers run on that call, and no error handler on that call can suppress a
+        /// rejection. The first rejection wins.
         /// </summary>
         /// <remarks>
         /// Use this for anything that must stop a call, such as an authorization or validation check. A
-        /// handler that throws any other exception is logged and the call goes ahead.
+        /// handler that throws any other exception is logged and the call goes ahead. Handlers run
+        /// synchronously, so the rejection has to be made before the handler returns: an <c>async</c> handler
+        /// is refused when subscribed, and a handler that returns a <see cref="System.Threading.Tasks.Task"/>
+        /// is logged and the call goes ahead.
         /// </remarks>
         /// <param name="exception">The exception the caller receives.</param>
         public void Reject(Exception exception)

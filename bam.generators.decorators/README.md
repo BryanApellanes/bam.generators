@@ -84,7 +84,11 @@ registry.OnMethodStart<IAccountService, AccountService>(nameof(IAccountService.C
 });
 ```
 
-`ctx.Reject(exception)` throws that exception to the caller. `ctx.Reject("reason")` and throwing a `DecoratorRejectionException` from the handler both throw a `DecoratorRejectionException`. At start the decorated method never runs, at end its result is discarded, on error the rejection replaces the failure. No further handlers run and no error handler can suppress a rejection.
+`ctx.Reject(exception)` throws that exception to the caller. `ctx.Reject("reason")` and throwing a `DecoratorRejectionException` from the handler both throw a `DecoratorRejectionException`. At start the decorated method never runs, at end its result is discarded, on error the rejection replaces the failure. No further handlers run on that call, and no error handler on that call can suppress the rejection. (A service that made the rejected call from inside its own decorated method sees an ordinary exception; an error handler on *that* service can still replace what its caller sees. The guarded call didn't run either way.)
+
+Handlers run synchronously, so a rejection has to be made before the handler returns. An `async` handler would return at its first `await` and the call would go ahead, so subscribing one throws `ArgumentException`. A handler that returns a `Task` is logged and the call goes ahead too. Do the asynchronous work somewhere else and reject from a synchronous handler.
+
+A guard only covers what's intercepted. Properties, indexers, events and methods with `ref`/`out`/`in` parameters are forwarded without handlers (see the table below), and a subscription to a name no method has never fires. Check the table before guarding a service by `*`. The runtime doesn't log rejections; a guard that needs an audit trail writes its own.
 
 Two things to keep in mind when a decorated service makes decisions other code relies on. An error handler that returns a value turns a failure into a success, so don't subscribe one to a service that denies by throwing. And a registry-wide handler that returns a value changes the result of every matching method whose return type fits, so subscribe those by method name and keep `*` for handlers that only observe.
 
