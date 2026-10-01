@@ -278,13 +278,17 @@ namespace Bam.Generators.Decorators
             // Registering is not something ServiceRegistry synchronizes, but two callers decorating the same
             // service at once must not end up with one wrapping the other. The lock, like the stores, belongs
             // to the registry by identity, so it exists before anything it protects.
-            object decorating = DecoratorState.Of(registry).Lock;
-            lock (decorating)
+            DecoratorState state = DecoratorState.Of(registry);
+            DecoratorRegistrations registrations = state.Registrations;
+            IDecoratorRegistration? recordedBefore;
+            lock (state.Lock)
             {
                 if (TryGetCurrent(registry, out DecoratorRegistration<I, T>? current))
                 {
                     return current;
                 }
+
+                registrations.TryGet(typeof(I), out recordedBefore);
             }
 
             // Finding the decorator type may compile it. That happens outside the lock so one registry's
@@ -292,15 +296,23 @@ namespace Bam.Generators.Decorators
             // thread decorating in the same registry does not deadlock.
             Type decoratorType = decoratorTypeProvider();
 
-            lock (decorating)
+            lock (state.Lock)
             {
-                if (TryGetCurrent(registry, out DecoratorRegistration<I, T>? current))
+                // Another caller may have decorated it while the type was being resolved. That shows as a
+                // different recorded registration; only then is the service probed again, so a re-registered
+                // service is still resolved once per Decorate to find out it was replaced.
+                registrations.TryGet(typeof(I), out IDecoratorRegistration? recordedNow);
+                if (!ReferenceEquals(recordedNow, recordedBefore) && TryGetCurrent(registry, out DecoratorRegistration<I, T>? current))
                 {
-                    // Another caller decorated it while the type was being resolved.
                     return current;
                 }
 
-                DecoratorRegistrations registrations = registry.GetDecoratorRegistrations();
+                if (!registry.MappedTypes.Contains(typeof(I)))
+                {
+                    throw new DecoratorException(
+                        $"{typeof(I).FullName} is not registered. Register it before decorating it.");
+                }
+
                 bool decoratedBefore = registrations.TryGet(out DecoratorRegistration<I, T>? existing);
 
                 // Keep hold of the registration as it stands, without resolving it, so it can be resolved each

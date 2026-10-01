@@ -134,17 +134,23 @@ namespace Bam.Generators.Decorators.Tests.Unit
             {
                 Func<DecoratorInvocationContext, object?> asyncByCovariance = AsyncByCovariance;
                 Func<DecoratorInvocationContext, int> typed = context => 42;
+                Func<DecoratorInvocationContext, Task<int>> taskTyped = context => Task.FromResult(42);
+                subscriptions.Add(DecoratorPhase.Start, "Add", typed);
                 subscriptions.Add(DecoratorPhase.Start, "Add", typed);
                 object? value = subscriptions.Get(DecoratorPhase.Start, "Add").Single()(NewContext());
                 return new TypedOutcome(
                     Throws<ArgumentException>(() => subscriptions.Add<object?>(DecoratorPhase.Start, "Add", asyncByCovariance)),
-                    value is int boxed && boxed == 42);
+                    value is int boxed && boxed == 42,
+                    subscriptions.Count(DecoratorPhase.Start, "Add") == 1,
+                    Throws<ArgumentException>(() => subscriptions.Add(DecoratorPhase.Start, "Add", taskTyped)));
             })
             .TheTest
             .ShouldPass<TypedOutcome>((because, outcome) =>
             {
                 because.ItsTrue("an async method group bound through return-type covariance is refused", outcome.AsyncRefused);
                 because.ItsTrue("a typed handler's value comes through the wrapper boxed", outcome.ValueBoxed);
+                because.ItsTrue("the same typed delegate subscribed twice is stored once", outcome.Deduplicated);
+                because.ItsTrue("a typed handler declared to return a task is refused when subscribed", outcome.TaskTypedRefused);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -194,7 +200,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
         private sealed record RejectionOutcome(bool BlankNameRejected, bool NullFuncRejected, bool NullActionRejected);
 
-        private sealed record TypedOutcome(bool AsyncRefused, bool ValueBoxed);
+        private sealed record TypedOutcome(bool AsyncRefused, bool ValueBoxed, bool Deduplicated, bool TaskTypedRefused);
 
         private sealed record ContextOutcome(bool OverriddenInitially, object? InitialResult, bool OverriddenAfterSet, object? ResultAfterSet, string MethodName);
     }

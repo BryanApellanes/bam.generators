@@ -517,29 +517,6 @@ namespace Bam.Generators.Decorators
             return Cast<R>(returned);
         }
 
-        // Task, Task<X>, ValueTask and ValueTask<X>, plus anything else `await` would accept: a type with a
-        // public parameterless GetAwaiter(), which is what ConfigureAwait, Task.Yield and custom awaitables
-        // return. Cached per type; a result type is asked once.
-        private static bool IsAwaitable(Type type)
-        {
-            return _awaitable.GetOrAdd(type, static candidate =>
-            {
-                if (typeof(Task).IsAssignableFrom(candidate) || candidate == typeof(ValueTask))
-                {
-                    return true;
-                }
-
-                if (candidate.IsGenericType && candidate.GetGenericTypeDefinition() == typeof(ValueTask<>))
-                {
-                    return true;
-                }
-
-                return candidate.GetMethod("GetAwaiter", BindingFlags.Public | BindingFlags.Instance, Type.EmptyTypes) != null;
-            });
-        }
-
-        private static readonly ConcurrentDictionary<Type, bool> _awaitable = new ConcurrentDictionary<Type, bool>();
-
         // Null (a void method, or a null return) becomes default; anything else must actually be an R.
         private static R Cast<R>(object? returned)
         {
@@ -756,7 +733,7 @@ namespace Bam.Generators.Decorators
             try
             {
                 object? returned = handler();
-                if (returned != null && IsAwaitable(returned.GetType()))
+                if (returned != null && Awaitable.Is(returned.GetType()))
                 {
                     // A handler that hands back something awaitable does its work asynchronously, after this
                     // point. It is not a result, and treating it as one would skip a void method's call without
@@ -772,7 +749,7 @@ namespace Bam.Generators.Decorators
                 }
 
                 // The same thing put on the context by hand.
-                if (!context.Rejected && context.ResultOverridden && context.Result != null && IsAwaitable(context.Result.GetType()))
+                if (!context.Rejected && context.ResultOverridden && context.Result != null && Awaitable.Is(context.Result.GetType()))
                 {
                     RejectAwaitable(context, "set Result to", context.Result);
                 }
@@ -792,7 +769,13 @@ namespace Bam.Generators.Decorators
         // service's own exception rides along as the inner one rather than being dropped.
         private void RejectAwaitable(DecoratorInvocationContext<T> context, string how, object awaitable)
         {
-            string message = $"{context.Phase.ToString().ToUpperInvariant()} handler for method {context.MethodName} on type of Decorator<{typeof(T).Name}> {how} a {awaitable.GetType().Name}; handlers run synchronously, so the call was rejected";
+            string outcome = context.Phase switch
+            {
+                DecoratorPhase.Start => "the call was rejected and the method did not run",
+                DecoratorPhase.End => "the method's result was discarded and the call rejected",
+                _ => "the call was rejected; the method's own exception is the inner exception"
+            };
+            string message = $"{context.Phase.ToString().ToUpperInvariant()} handler for method {context.MethodName} on type of Decorator<{typeof(T).Name}> {how} a {Awaitable.Describe(awaitable.GetType())}; handlers run synchronously, so {outcome}";
             context.Reject(context.Exception == null ? new DecoratorException(message) : new DecoratorException(message, context.Exception));
             this._logger?.Error(message);
         }

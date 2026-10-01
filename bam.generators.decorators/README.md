@@ -58,11 +58,11 @@ Two things to know about ordering:
 
 If the service is registered as something other than a `T`, decorating succeeds and resolving throws a `DecoratorException`. Checking sooner would mean constructing the service.
 
-`ServiceRegistry` currently invokes a factory registration four times per resolve (BryanApellanes/bam.base#7), so a decorated transient service is wrapped four times per resolve and the last one is returned. That's the registry's behavior with any transient registration, not something decorating adds.
+`ServiceRegistry` reads a registration once per resolve (bam.base#8), so a decorated transient service is constructed and wrapped once per resolve. Decorating adds nothing to that.
 
 ## What a handler's return value does
 
-A handler given as an `Action` only observes. A handler given as a `Func` overrides the outcome when it returns a non-null value.
+A handler given as an `Action` only observes. A handler given as a `Func` overrides the outcome when it returns a non-null value. Mind how C# binds a lambda: an expression-bodied lambda whose expression has a value, `ctx => seen.Add(ctx.MethodName)` say, is a `Func` returning that value, and on a `void` method any non-null value short-circuits the call. To observe, write a block, `ctx => { seen.Add(ctx.MethodName); }`, which binds to the `Action` overload.
 
 | Phase | A returned value |
 |---|---|
@@ -92,7 +92,7 @@ registry.OnMethodStart<IAccountService, AccountService>(nameof(IAccountService.C
 
 `ctx.Reject(exception)` throws that exception to the caller. `ctx.Reject("reason")` and throwing a `DecoratorRejectionException` from the handler both throw a `DecoratorRejectionException`. At start the decorated method never runs, at end its result is discarded, on error the rejection replaces the failure. No further handlers run on that call, and no error handler on that call can suppress the rejection. (A service that made the rejected call from inside its own decorated method sees an ordinary exception; an error handler on *that* service can still replace what its caller sees. The guarded call didn't run either way.)
 
-Handlers run synchronously, so a rejection has to be made before the handler returns. An `async` handler would return at its first `await` and the call would go ahead, so subscribing one throws `ArgumentException`; every target of a combined delegate is checked. A handler that isn't marked `async` but hands back a `Task`, `ValueTask` or `ValueTask<T>` (`ctx => writer.WriteAsync(...)`, say) is caught on the call instead: the task is not a result, it's logged, and the call is rejected with a `DecoratorException`, so the author finds out on the first call rather than in a log. Do the asynchronous work somewhere else and reject from a synchronous handler. A synchronous wrapper around an async delegate passes the subscription check, and whatever it awaits happens after the call went ahead.
+Handlers run synchronously, so a rejection has to be made before the handler returns. An `async` handler would return at its first `await` and the call would go ahead, so subscribing one throws `ArgumentException`; every target of a combined delegate is checked. A handler that isn't marked `async` but hands back a `Task`, `ValueTask` or `ValueTask<T>` (`ctx => writer.WriteAsync(...)`, say) is caught on the call instead: the task is not a result, the call is rejected with a `DecoratorException`, and it's logged, so the author finds out on the first call rather than in a log. At start the method never runs; at end its result is discarded; on error the method's own exception is the `InnerException`. Anything else `await` would accept (`ConfigureAwait`, `Task.Yield`, a custom awaitable), and a task put on `ctx.Result` by hand, are treated the same way. A typed handler whose declared return type is awaitable (`Subscribe<Task<int>>`) is refused when subscribed, and a method whose result type is itself awaitable (`Task<Task<int>>`) gets no typed `Func` hook. Do the asynchronous work somewhere else and reject from a synchronous handler. A synchronous wrapper around an async delegate passes the subscription check, and whatever it awaits happens after the call went ahead.
 
 A guard only covers what's intercepted. Properties, indexers, events and methods with `ref`/`out`/`in` parameters are forwarded without handlers (see the table below), and a subscription to a name no method has never fires. Check the table before guarding a service by `*`. The runtime doesn't log rejections; a guard that needs an audit trail writes its own.
 
@@ -129,7 +129,7 @@ Each intercepted method gets a static field holding its `MethodInfo`, looked up 
 
 Generated source compiles without warnings under `#nullable enable`. Nullable annotations are read from what the compiler wrote on the interface and carried over wherever they appear, including `T?` on generic methods, inside generic arguments and arrays (`Task<T?>`, `List<T?>`, `T?[]`), and on members of a closed generic interface. Nullability attributes such as `[MaybeNullWhen]` are not carried. Names that are C# keywords are escaped.
 
-Generation fails with a `DecoratorGenerationException` for an interface that isn't public, an open generic, an init-only property, a ref-returning member, a static abstract member, or a member whose name isn't a valid C# identifier.
+Generation fails with a `DecoratorGenerationException` for an interface that isn't public, an open generic, an init-only property, a ref-returning member, a pointer-typed member (including function pointers and pointers inside arrays or generic arguments; generated code isn't `unsafe`), a static abstract member, or a member whose name isn't a valid C# identifier.
 
 Overloads share their hooks, since handlers are selected by method name. Two generated decorators whose services share a method name both declare `registry.OnMessageStart(...)`; if both namespaces are imported, give the lambda parameter an explicit type to pick one.
 

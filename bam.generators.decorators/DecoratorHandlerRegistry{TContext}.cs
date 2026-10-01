@@ -50,16 +50,17 @@ namespace Bam.Generators.Decorators
 
         /// <summary>
         /// Subscribes a <paramref name="handler"/> whose return type is the decorated method's result type, as
-        /// the generated typed hooks do. Checked and stored like any other handler; a non-null return value
-        /// overrides the invocation's result.
+        /// the generated typed hooks do. Checked and stored like any other handler: the same delegate
+        /// subscribed twice is stored once, and a non-null return value overrides the invocation's result.
         /// </summary>
         /// <typeparam name="R">The handler's return type.</typeparam>
         /// <param name="phase">The phase the handler runs in.</param>
         /// <param name="methodName">The method to subscribe to, or <see cref="AnyMethod"/> for all of them.</param>
         /// <param name="handler">The handler.</param>
         /// <exception cref="ArgumentException">
-        /// <paramref name="methodName"/> is blank, or <paramref name="handler"/> is an <c>async</c> method or
-        /// lambda.
+        /// <paramref name="methodName"/> is blank, <paramref name="handler"/> is an <c>async</c> method or
+        /// lambda, or <typeparamref name="R"/> is a <c>Task</c>, <c>ValueTask</c> or other awaitable, which a
+        /// handler can never hand back as a result.
         /// </exception>
         public void Add<R>(DecoratorPhase phase, string methodName, Func<TContext, R> handler)
         {
@@ -67,9 +68,18 @@ namespace Bam.Generators.Decorators
             // Checked here, on the delegate the subscriber handed over, rather than on the wrapper below,
             // which is always synchronous.
             RequireSynchronous(handler);
+            if (Awaitable.Is(typeof(R)))
+            {
+                throw new ArgumentException(
+                    $"A handler returning {Awaitable.Describe(typeof(R))} can never supply a result: handlers run synchronously, and whatever it would decide comes too late. Do the asynchronous work elsewhere and decide from a synchronous handler.",
+                    nameof(handler));
+            }
 
-            Add(phase, methodName, new Func<TContext, object?>(context => handler(context)));
+            // One wrapper per subscriber delegate, so Add's de-duplication sees the same handler twice.
+            Add(phase, methodName, _wrappers.GetValue(handler, _ => new Func<TContext, object?>(context => handler(context))));
         }
+
+        private readonly ConditionalWeakTable<Delegate, Func<TContext, object?>> _wrappers = new ConditionalWeakTable<Delegate, Func<TContext, object?>>();
 
         /// <summary>
         /// Subscribes an observe-only <paramref name="handler"/>: it runs like any other handler but never

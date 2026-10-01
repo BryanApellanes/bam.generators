@@ -279,6 +279,13 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 DecoratorInvocationResult<KitchenSinkService, string?> find = decorator.Invoke<string?>("Find", "key");
                 DecoratorInvocationResult<KitchenSinkService, object> flush = decorator.InvokeAsync<object>("FlushAsync").GetAwaiter().GetResult();
                 DecoratorInvocationResult<KitchenSinkService, object> resetAsync = decorator.InvokeAsync<object>("ResetAsync").GetAwaiter().GetResult();
+
+                // At end the method has run; its result is discarded and the call rejected. On error the
+                // method's own exception must stay reachable: it becomes the inner exception.
+                decorator.SubscribeEnd("Invoke", context => Task.FromResult("never the result"));
+                decorator.SubscribeError("Fail", context => Task.CompletedTask);
+                DecoratorInvocationResult<KitchenSinkService, string> atEnd = decorator.Invoke<string>("Invoke", "event");
+                DecoratorInvocationResult<KitchenSinkService, string> fail = decorator.Invoke<string>("Fail", "the real cause");
                 int errors = logger.ReceivedCalls().Count(call => call.GetMethodInfo().Name == nameof(ILogger.Error));
                 return new TaskOutcome(
                     string.Join("|", new DecoratorInvocationResult<KitchenSinkService, object>[] { reset, flush, resetAsync }.Select(result => result.Exception?.GetType().Name ?? "none")),
@@ -286,7 +293,9 @@ namespace Bam.Generators.Decorators.Tests.Unit
                     find.Rejected && find.Value == null,
                     decorator.Instance.Count,
                     decorator.Instance.Flushes == 0,
-                    errors);
+                    errors,
+                    atEnd.Rejected && atEnd.Exception is DecoratorException && atEnd.Exception.Message.Contains("result was discarded"),
+                    fail.Rejected && fail.Exception is DecoratorException && fail.Exception.InnerException is InvalidOperationException inner && inner.Message == "the real cause");
             })
             .TheTest
             .ShouldPass<TaskOutcome>((because, outcome) =>
@@ -294,8 +303,10 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 because.ItsTrue("a task is not taken as the value of a method with a result; the call is rejected", outcome.ValueRejected);
                 because.ItsTrue("a ValueTask<T> is not taken as the value either", outcome.ReferenceRejected);
                 because.ItsTrue("void, Task and ValueTask methods are rejected rather than silently skipped", outcome.Rejections == "DecoratorException|DecoratorException|DecoratorException", outcome.Rejections);
-                because.ItsTrue("none of the calls ran", outcome.Count == 1 && outcome.NotFlushed, $"count: {outcome.Count}, not flushed: {outcome.NotFlushed}");
-                because.ItsTrue("each was logged", outcome.ErrorsLogged == 5, $"errors logged: {outcome.ErrorsLogged}");
+                because.ItsTrue("none of the start-phase calls ran", outcome.Count == 1 && outcome.NotFlushed, $"count: {outcome.Count}, not flushed: {outcome.NotFlushed}");
+                because.ItsTrue("at end the method ran, its result was discarded and the call rejected", outcome.EndRejected);
+                because.ItsTrue("on error the method's own exception is the inner exception", outcome.ErrorChained);
+                because.ItsTrue("each was logged", outcome.ErrorsLogged == 7, $"errors logged: {outcome.ErrorsLogged}");
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -464,7 +475,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
         private sealed record RefusalOutcome(string? TypedAction, string? RegistryWide, string? GeneratedRegistry, string? GeneratedInstance, string? DecoratorAction, string? Store, bool SynchronousAccepted, string Message);
 
-        private sealed record TaskOutcome(string Rejections, bool ValueRejected, bool ReferenceRejected, int Count, bool NotFlushed, int ErrorsLogged);
+        private sealed record TaskOutcome(string Rejections, bool ValueRejected, bool ReferenceRejected, int Count, bool NotFlushed, int ErrorsLogged, bool EndRejected, bool ErrorChained);
 
         private sealed record CombinedOutcome(string? AsyncFirst, string? AsyncLast, string? BothSync);
 

@@ -278,13 +278,13 @@ namespace Bam.Generators.Decorators
             }
         }
 
-        // A pointer anywhere in the type: int*, int*[], ref int*.
+        // A pointer anywhere in the type: int*, int*[], ref int*, delegate*<int, void>, List<int*[]>.
         private static bool IsPointer(Type type)
         {
             Type candidate = type;
             while (candidate.HasElementType)
             {
-                if (candidate.IsPointer)
+                if (candidate.IsPointer || candidate.IsFunctionPointer)
                 {
                     return true;
                 }
@@ -292,7 +292,12 @@ namespace Bam.Generators.Decorators
                 candidate = candidate.GetElementType()!;
             }
 
-            return candidate.IsPointer;
+            if (candidate.IsPointer || candidate.IsFunctionPointer)
+            {
+                return true;
+            }
+
+            return candidate.IsGenericType && candidate.GetGenericArguments().Any(IsPointer);
         }
 
         private void RequireNoStaticMembers(List<Type> interfaces)
@@ -330,6 +335,14 @@ namespace Bam.Generators.Decorators
         {
             Type? resultType = overloads[0].ResultType;
             if (resultType == null || ContainsGenericParameter(resultType) || overloads.Any(overload => overload.ResultType != resultType))
+            {
+                return null;
+            }
+
+            // A method whose result is itself awaitable (Task<Task<int>>, a custom awaitable) gets no typed
+            // Func hook: a handler can never hand an awaitable back as a result, so the hook would be refused
+            // the moment anything subscribed to it. The Action hook and the untyped API remain.
+            if (Awaitable.Is(resultType))
             {
                 return null;
             }

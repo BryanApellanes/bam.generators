@@ -289,77 +289,91 @@ namespace Bam.Generators.Decorators.Tests.Unit
         [UnitTest]
         public void RunEveryHandlerSubscribedFromParallelFirstDecorations()
         {
-            // Nothing has been decorated in this registry yet, so the stores don't exist either. Sixteen
+            // Nothing has been decorated in the registry yet, so the stores don't exist either. Sixteen
             // threads decorating and subscribing at once must end up with one registration and one
-            // registry-wide store, and every handler they subscribed must run on one call.
-            After.Setup(reg =>
+            // registry-wide store, and every handler they subscribed must run on one call. One round lets a
+            // broken lock through three times in four, so it runs 25 rounds, each on a fresh registry, and
+            // reports the first bad one.
+            When.A<DecoratorLifetimeShould>("decorates fresh registries from sixteen threads at once, 25 times", this, test =>
             {
-                Prepare(reg);
-                reg.For<ICounterService>().Use(new CounterService());
-                reg.For<ServiceRegistry>().Use(reg);
-            })
-            .When<ServiceRegistry>("is decorated from sixteen threads at once", registry =>
-            {
-                int ran = 0;
-                List<Exception> failures = new List<Exception>();
-                HashSet<DecoratorRegistration<ICounterService, CounterService>> registrations = new HashSet<DecoratorRegistration<ICounterService, CounterService>>();
-                HashSet<DecoratorSubscriptions> stores = new HashSet<DecoratorSubscriptions>();
-                using Barrier starting = new Barrier(16);
-                Thread[] threads = Enumerable.Range(0, 16).Select(index => new Thread(() =>
+                for (int round = 1; round <= 25; round++)
                 {
-                    try
+                    ServiceRegistry registry = new ServiceRegistry();
+                    Prepare(registry);
+                    registry.For<ICounterService>().Use(new CounterService());
+                    ParallelOutcome outcome = DecorateInParallel(registry, round);
+                    if (outcome.Failures != 0 || outcome.Registrations != 1 || outcome.Stores != 1 || outcome.Ran != 16 || outcome.Decorated != 1)
                     {
-                        starting.SignalAndWait();
-                        if (index % 2 == 0)
-                        {
-                            DecoratorRegistration<ICounterService, CounterService> registration = registry.Decorate<ICounterService, CounterService>();
-                            registration.Subscribe(DecoratorPhase.Start, nameof(ICounterService.Next), context => { Interlocked.Increment(ref ran); });
-                            lock (registrations)
-                            {
-                                registrations.Add(registration);
-                            }
-                        }
-                        else
-                        {
-                            registry.OnMethodStart(nameof(ICounterService.Next), context => { Interlocked.Increment(ref ran); });
-                            lock (stores)
-                            {
-                                stores.Add(registry.GetDecoratorSubscriptions());
-                            }
-                        }
+                        return outcome;
                     }
-                    catch (Exception ex)
-                    {
-                        lock (failures)
-                        {
-                            failures.Add(ex);
-                        }
-                    }
-                })).ToArray();
-                foreach (Thread thread in threads)
-                {
-                    thread.Start();
                 }
 
-                foreach (Thread thread in threads)
-                {
-                    thread.Join();
-                }
-
-                registry.Get<ICounterService>().Next();
-                return new ParallelOutcome(failures.Count, registrations.Count, stores.Count, ran, registry.GetDecoratorRegistrations().DecoratedTypes.Count());
+                return new ParallelOutcome(0, 1, 1, 16, 1, 25);
             })
             .TheTest
             .ShouldPass<ParallelOutcome>((because, outcome) =>
             {
-                because.ItsTrue("no thread failed", outcome.Failures == 0, $"failures: {outcome.Failures}");
-                because.ItsTrue("every decorating thread got the one registration", outcome.Registrations == 1, $"registrations: {outcome.Registrations}");
-                because.ItsTrue("every subscribing thread got the one registry-wide store", outcome.Stores == 1, $"stores: {outcome.Stores}");
-                because.ItsTrue("one call ran all sixteen handlers", outcome.Ran == 16, $"ran: {outcome.Ran}");
-                because.ItsTrue("one service is recorded as decorated", outcome.Decorated == 1);
+                because.ItsTrue("no thread failed", outcome.Failures == 0, $"round {outcome.Round}: failures: {outcome.Failures}");
+                because.ItsTrue("every decorating thread got the one registration", outcome.Registrations == 1, $"round {outcome.Round}: registrations: {outcome.Registrations}");
+                because.ItsTrue("every subscribing thread got the one registry-wide store", outcome.Stores == 1, $"round {outcome.Round}: stores: {outcome.Stores}");
+                because.ItsTrue("one call ran all sixteen handlers", outcome.Ran == 16, $"round {outcome.Round}: ran: {outcome.Ran}");
+                because.ItsTrue("one service is recorded as decorated", outcome.Decorated == 1, $"round {outcome.Round}");
+                because.ItsTrue("all 25 rounds were clean", outcome.Round == 25, $"stopped at round {outcome.Round}");
             })
             .SoBeHappy()
             .UnlessItFailed();
+        }
+
+        private static ParallelOutcome DecorateInParallel(ServiceRegistry registry, int round)
+        {
+            int ran = 0;
+            List<Exception> failures = new List<Exception>();
+            HashSet<DecoratorRegistration<ICounterService, CounterService>> registrations = new HashSet<DecoratorRegistration<ICounterService, CounterService>>();
+            HashSet<DecoratorSubscriptions> stores = new HashSet<DecoratorSubscriptions>();
+            using Barrier starting = new Barrier(16);
+            Thread[] threads = Enumerable.Range(0, 16).Select(index => new Thread(() =>
+            {
+                try
+                {
+                    starting.SignalAndWait();
+                    if (index % 2 == 0)
+                    {
+                        DecoratorRegistration<ICounterService, CounterService> registration = registry.Decorate<ICounterService, CounterService>();
+                        registration.Subscribe(DecoratorPhase.Start, nameof(ICounterService.Next), context => { Interlocked.Increment(ref ran); });
+                        lock (registrations)
+                        {
+                            registrations.Add(registration);
+                        }
+                    }
+                    else
+                    {
+                        registry.OnMethodStart(nameof(ICounterService.Next), context => { Interlocked.Increment(ref ran); });
+                        lock (stores)
+                        {
+                            stores.Add(registry.GetDecoratorSubscriptions());
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    lock (failures)
+                    {
+                        failures.Add(ex);
+                    }
+                }
+            })).ToArray();
+            foreach (Thread thread in threads)
+            {
+                thread.Start();
+            }
+
+            foreach (Thread thread in threads)
+            {
+                thread.Join();
+            }
+
+            registry.Get<ICounterService>().Next();
+            return new ParallelOutcome(failures.Count, registrations.Count, stores.Count, ran, registry.GetDecoratorRegistrations().DecoratedTypes.Count(), round);
         }
 
         [UnitTest]
@@ -539,7 +553,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
         private sealed record CompositionOutcome(bool SameDecorator, string ThroughFirst, string ThroughSecond, int Registrations, int SharedStores);
 
-        private sealed record ParallelOutcome(int Failures, int Registrations, int Stores, int Ran, int Decorated);
+        private sealed record ParallelOutcome(int Failures, int Registrations, int Stores, int Ran, int Decorated, int Round);
 
         private sealed record IncludeOutcome(bool StoreKept, bool EchoRecorded, string? Counter, string? EchoBefore, string? EchoAfter, string? LibraryOwn, int Guarded);
 
