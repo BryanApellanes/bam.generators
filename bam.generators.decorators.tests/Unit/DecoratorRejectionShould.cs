@@ -288,7 +288,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 DecoratorInvocationResult<KitchenSinkService, string> fail = decorator.Invoke<string>("Fail", "the real cause");
                 int errors = logger.ReceivedCalls().Count(call => call.GetMethodInfo().Name == nameof(ILogger.Error));
                 return new TaskOutcome(
-                    string.Join("|", new DecoratorInvocationResult<KitchenSinkService, object>[] { reset, flush, resetAsync }.Select(result => result.Exception?.GetType().Name ?? "none")),
+                    string.Join("|", new DecoratorInvocationResult<KitchenSinkService, object>[] { reset, flush, resetAsync }.Select(result => result.Exception?.GetType().Name ?? "none")) + (reset.Exception?.Message.Contains("returned a Task;") == true ? "" : " (Task not described as Task)"),
                     sum.Rejected && sum.Exception is DecoratorException && !sum.ShortCircuited,
                     find.Rejected && find.Value == null,
                     decorator.Instance.Count,

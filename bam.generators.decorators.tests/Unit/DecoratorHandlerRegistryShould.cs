@@ -105,10 +105,12 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 Func<DecoratorInvocationContext, object?> handler = context => null;
                 Func<DecoratorInvocationContext, object?>? noFunc = null;
                 Action<DecoratorInvocationContext>? noAction = null;
+                Func<DecoratorInvocationContext, int> typed = context => 1;
                 return new RejectionOutcome(
                     Throws<ArgumentException>(() => subscriptions.Add(DecoratorPhase.Start, " ", handler)),
                     Throws<ArgumentNullException>(() => subscriptions.Add(DecoratorPhase.Start, "Message", noFunc!)),
-                    Throws<ArgumentNullException>(() => subscriptions.Add(DecoratorPhase.Start, "Message", noAction!)));
+                    Throws<ArgumentNullException>(() => subscriptions.Add(DecoratorPhase.Start, "Message", noAction!)),
+                    Throws<ArgumentException>(() => subscriptions.Add(DecoratorPhase.Start, " ", typed)) && subscriptions.Count(DecoratorPhase.Start, " ") == 0);
             })
             .TheTest
             .ShouldPass<RejectionOutcome>((because, outcome) =>
@@ -116,6 +118,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 because.ItsTrue("a blank method name is rejected", outcome.BlankNameRejected);
                 because.ItsTrue("a null Func handler is rejected", outcome.NullFuncRejected);
                 because.ItsTrue("a null Action handler is rejected", outcome.NullActionRejected);
+                because.ItsTrue("a typed handler under a blank name is rejected and nothing is stored", outcome.TypedBlankNameRejected);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -274,7 +277,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
         private sealed record RegistryOutcome(string Ran, int StartCount, int ErrorCount);
 
-        private sealed record RejectionOutcome(bool BlankNameRejected, bool NullFuncRejected, bool NullActionRejected);
+        private sealed record RejectionOutcome(bool BlankNameRejected, bool NullFuncRejected, bool NullActionRejected, bool TypedBlankNameRejected);
 
         private sealed record TypedOutcome(bool AsyncRefused, bool ValueBoxed, bool Deduplicated, bool TaskTypedRefused, string? TaskMessage = null);
 
