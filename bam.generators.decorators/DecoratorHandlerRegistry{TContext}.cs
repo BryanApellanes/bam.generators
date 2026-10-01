@@ -75,11 +75,40 @@ namespace Bam.Generators.Decorators
                     nameof(handler));
             }
 
-            // One wrapper per subscriber delegate, so Add's de-duplication sees the same handler twice.
-            Add(phase, methodName, _wrappers.GetValue(handler, _ => new Func<TContext, object?>(context => handler(context))));
+            // De-duplicated on the subscriber's delegate by delegate equality, the same rule Add applies to an
+            // untyped handler: an instance method group subscribed twice is stored once either way. The
+            // wrapper carries the delegate so a later subscription can find it; nothing is cached per store.
+            ArgumentException.ThrowIfNullOrWhiteSpace(methodName);
+            if (Lookup(phase, methodName).Any(existing => existing.Target is ITypedHandler typed && typed.Inner.Equals(handler)))
+            {
+                return;
+            }
+
+            Add(phase, methodName, new TypedHandler<R>(handler).Invoke);
         }
 
-        private readonly ConditionalWeakTable<Delegate, Func<TContext, object?>> _wrappers = new ConditionalWeakTable<Delegate, Func<TContext, object?>>();
+        private interface ITypedHandler
+        {
+            Delegate Inner { get; }
+        }
+
+        // Adapts a Func<TContext, R> to the stored shape while keeping the subscriber's delegate reachable.
+        private sealed class TypedHandler<R> : ITypedHandler
+        {
+            private readonly Func<TContext, R> _inner;
+
+            public TypedHandler(Func<TContext, R> inner)
+            {
+                _inner = inner;
+            }
+
+            public Delegate Inner => _inner;
+
+            public object? Invoke(TContext context)
+            {
+                return _inner(context);
+            }
+        }
 
         /// <summary>
         /// Subscribes an observe-only <paramref name="handler"/>: it runs like any other handler but never

@@ -3,8 +3,8 @@ using System.Collections.Concurrent;
 namespace Bam.Generators.Decorators
 {
     /// <summary>
-    /// The decorated services of one <c>ServiceRegistry</c>, by service interface. One instance lives in each
-    /// registry. It is how decorating a service twice finds the first decoration, and how a service that was
+    /// The decorated services of one <c>ServiceRegistry</c>, by service interface. Each registry has one, reached
+    /// through <c>GetDecoratorRegistrations()</c> (never <c>Get&lt;DecoratorRegistrations&gt;()</c>). It is how decorating a service twice finds the first decoration, and how a service that was
     /// registered again after being decorated gets its handlers back when it is decorated again.
     /// </summary>
     public class DecoratorRegistrations

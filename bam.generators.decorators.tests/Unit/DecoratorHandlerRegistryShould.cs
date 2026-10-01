@@ -138,10 +138,16 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 subscriptions.Add(DecoratorPhase.Start, "Add", typed);
                 subscriptions.Add(DecoratorPhase.Start, "Add", typed);
                 object? value = subscriptions.Get(DecoratorPhase.Start, "Add").Single()(NewContext());
+                // Two delegate instances over the same instance method are equal delegates, stored once, the
+                // same rule the untyped overload applies.
+                Func<DecoratorInvocationContext, int> firstGroup = Seven;
+                Func<DecoratorInvocationContext, int> secondGroup = Seven;
+                subscriptions.Add(DecoratorPhase.Start, "Reset", firstGroup);
+                subscriptions.Add(DecoratorPhase.Start, "Reset", secondGroup);
                 return new TypedOutcome(
                     Throws<ArgumentException>(() => subscriptions.Add<object?>(DecoratorPhase.Start, "Add", asyncByCovariance)),
                     value is int boxed && boxed == 42,
-                    subscriptions.Count(DecoratorPhase.Start, "Add") == 1,
+                    subscriptions.Count(DecoratorPhase.Start, "Add") == 1 && subscriptions.Count(DecoratorPhase.Start, "Reset") == 1,
                     Throws<ArgumentException>(() => subscriptions.Add(DecoratorPhase.Start, "Add", taskTyped)));
             })
             .TheTest
@@ -154,6 +160,11 @@ namespace Bam.Generators.Decorators.Tests.Unit
             })
             .SoBeHappy()
             .UnlessItFailed();
+        }
+
+        private int Seven(DecoratorInvocationContext context)
+        {
+            return 7;
         }
 
         private static async Task<object?> AsyncByCovariance(DecoratorInvocationContext context)

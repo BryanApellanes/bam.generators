@@ -175,6 +175,90 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
+        public void ResolveARegisteredAgainServiceOnceWhenDecoratingIt()
+        {
+            // Finding out that a decorated service was registered again means resolving it once. Decorate
+            // checks before and after resolving the decorator type; the second check must not resolve again.
+            After.Setup(reg =>
+            {
+                Prepare(reg);
+                reg.For<ICounterService>().Use<CounterService>();
+                reg.For<ServiceRegistry>().Use(reg);
+            })
+            .When<ServiceRegistry>("decorates a transient that was registered again", registry =>
+            {
+                registry.Decorate<ICounterService, CounterService>();
+                registry.For<ICounterService>().Use<CounterService>();
+                int before = CounterService.Constructed;
+                registry.Decorate<ICounterService, CounterService>();
+                int whileDecorating = CounterService.Constructed - before;
+                registry.Decorate<ICounterService, CounterService>();
+                int whileDecoratingAgain = CounterService.Constructed - before - whileDecorating;
+                return new ReprobeOutcome(whileDecorating, whileDecoratingAgain);
+            })
+            .TheTest
+            .ShouldPass<ReprobeOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("decorating the re-registered service constructed it exactly once", outcome.WhileDecorating == 1, $"constructed: {outcome.WhileDecorating}");
+                because.ItsTrue("decorating a current decoration constructed nothing", outcome.WhileDecoratingAgain == 0, $"constructed: {outcome.WhileDecoratingAgain}");
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void RefuseWhenTheServiceIsRemovedWhileTheTypeIsResolved()
+        {
+            // The decorator type is resolved outside the lock; a service removed in that gap is refused with a
+            // DecoratorException rather than surfacing as whatever CopyTypeFrom throws.
+            After.Setup(reg =>
+            {
+                reg.For<ILogger>().Use(Substitute.For<ILogger>());
+                reg.For<IEchoService>().Use<EchoService>();
+                reg.For<ServiceRegistry>().Use(reg);
+            })
+            .When<ServiceRegistry>("has a resolver that removes the service", registry =>
+            {
+                registry.For<IDecoratorTypeResolver>().Use(new RemovingResolver(registry, typeof(IEchoService)));
+                try
+                {
+                    registry.Decorate<IEchoService, EchoService>();
+                    return new RemovalOutcome(null);
+                }
+                catch (Exception ex)
+                {
+                    return new RemovalOutcome(ex);
+                }
+            })
+            .TheTest
+            .ShouldPass<RemovalOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("decorating is refused with a DecoratorException", outcome.Thrown is DecoratorException, outcome.Thrown?.GetType().Name);
+                because.ItsTrue("which says the service is not registered", outcome.Thrown?.Message.Contains("not registered") == true, outcome.Thrown?.Message);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        private sealed class RemovingResolver : IDecoratorTypeResolver
+        {
+            private readonly ServiceRegistry _registry;
+            private readonly Type _toRemove;
+
+            public RemovingResolver(ServiceRegistry registry, Type toRemove)
+            {
+                _registry = registry;
+                _toRemove = toRemove;
+            }
+
+            public Type Resolve(Type interfaceType, Type implementationType)
+            {
+                _registry.Remove(_toRemove);
+                return typeof(EchoServiceDecorator);
+            }
+        }
+
+        [UnitTest]
         public void KeepInstanceHandlersToTheirInstance()
         {
             After.Setup(reg =>
@@ -419,7 +503,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 because.ItsTrue("a service decorated after the Include is guarded", outcome.Counter == "guarded by app", outcome.Counter);
                 because.ItsTrue("the included service is not guarded until this registry decorates it", outcome.EchoBefore == null, outcome.EchoBefore);
                 because.ItsTrue("once decorated here, the included service is guarded", outcome.EchoAfter == "guarded by app", outcome.EchoAfter);
-                because.ItsTrue("the other registry's own consumers are not guarded by this registry", outcome.LibraryOwn == null, outcome.LibraryOwn);
+                because.ItsTrue("the other registry's own consumers of a transient service are not guarded by this registry", outcome.LibraryOwn == null, outcome.LibraryOwn);
                 because.ItsTrue("the guard ran for the two guarded calls", outcome.Guarded == 2, $"guarded: {outcome.Guarded}");
             })
             .SoBeHappy()
@@ -554,6 +638,10 @@ namespace Bam.Generators.Decorators.Tests.Unit
         private sealed record CompositionOutcome(bool SameDecorator, string ThroughFirst, string ThroughSecond, int Registrations, int SharedStores);
 
         private sealed record ParallelOutcome(int Failures, int Registrations, int Stores, int Ran, int Decorated, int Round);
+
+        private sealed record ReprobeOutcome(int WhileDecorating, int WhileDecoratingAgain);
+
+        private sealed record RemovalOutcome(Exception? Thrown);
 
         private sealed record IncludeOutcome(bool StoreKept, bool EchoRecorded, string? Counter, string? EchoBefore, string? EchoAfter, string? LibraryOwn, int Guarded);
 

@@ -48,7 +48,9 @@ namespace Bam.Generators.Decorators
                 {
                     if (candidate.IsGenericType && candidate.GetGenericTypeDefinition() == typeof(Task<>))
                     {
-                        return $"Task<{candidate.GetGenericArguments()[0].Name}>";
+                        // A plain Task is a Task<VoidTaskResult> underneath; nobody wrote that.
+                        Type result = candidate.GetGenericArguments()[0];
+                        return result.Name == "VoidTaskResult" ? "Task" : $"Task<{result.Name}>";
                     }
 
                     candidate = candidate.BaseType;

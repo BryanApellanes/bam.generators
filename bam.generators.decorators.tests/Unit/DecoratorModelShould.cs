@@ -193,6 +193,31 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
+        public void OfferNoTypedHookForAnAwaitableResult()
+        {
+            // A handler can never hand an awaitable back as a result, so a method whose result type is itself
+            // a task gets only the Action hook; its sibling with a plain result keeps the typed one.
+            After.Setup(reg =>
+            {
+                reg.For<DecoratorModel>().Use(new DecoratorModel(typeof(INestedTaskService), typeof(NestedTaskService)));
+            })
+            .When<DecoratorModel>("builds hooks for nested and plain task results", model =>
+            {
+                DecoratorHookModel nested = model.Hooks.First(hook => hook.HookName == "OnNestedStart");
+                DecoratorHookModel plain = model.Hooks.First(hook => hook.HookName == "OnPlainStart");
+                return new NestedHookOutcome(nested.HasResult, plain.HasResult, plain.ResultTypeName);
+            })
+            .TheTest
+            .ShouldPass<NestedHookOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("Task<Task<int>> gets no typed handler", !outcome.NestedHasResult);
+                because.ItsTrue("Task<int> keeps its typed handler", outcome.PlainHasResult && outcome.PlainResultTypeName == "global::System.Int32?", outcome.PlainResultTypeName);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
         public void RejectPairsThatCannotBeDecorated()
         {
             When.A<DecoratorModelShould>("builds models for unsupported pairs", this, test =>
@@ -204,7 +229,9 @@ namespace Bam.Generators.Decorators.Tests.Unit
                     Rejects(typeof(IInitOnlyService), typeof(InitOnlyService)),
                     Rejects(typeof(IBoxService<>), typeof(BoxService<>)),
                     Rejects(typeof(IEchoService), typeof(IEchoService)),
-                    Rejects(typeof(IPointerService), typeof(PointerService)));
+                    Rejects(typeof(IPointerService), typeof(PointerService)),
+                    Rejects(typeof(IFunctionPointerService), typeof(FunctionPointerService)),
+                    Rejects(typeof(IPointerArgumentService), typeof(PointerArgumentService)));
             })
             .TheTest
             .ShouldPass<RejectionOutcome>((because, outcome) =>
@@ -216,6 +243,8 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 because.ItsTrue("an open generic is rejected", outcome.OpenGeneric != null);
                 because.ItsTrue("an interface in place of the implementation is rejected", outcome.NotAClass != null);
                 because.ItsTrue("a pointer-typed member is rejected up front rather than by the compiler", outcome.Pointer != null && outcome.Pointer.Contains("pointer"), outcome.Pointer);
+                because.ItsTrue("a function pointer is rejected too", outcome.FunctionPointer != null && outcome.FunctionPointer.Contains("pointer"), outcome.FunctionPointer);
+                because.ItsTrue("so is a pointer inside a generic argument", outcome.PointerArgument != null && outcome.PointerArgument.Contains("pointer"), outcome.PointerArgument);
                 because.ItsTrue("the message names the interface", outcome.NotImplemented!.StartsWith("[" + typeof(IEchoService).FullName + "]"));
             })
             .SoBeHappy()
@@ -356,7 +385,9 @@ namespace Bam.Generators.Decorators.Tests.Unit
             bool TryParseHasHooks,
             string FailErrorPhase);
 
-        private sealed record RejectionOutcome(string? NotAnInterface, string? NotImplemented, string? NotPublic, string? InitOnly, string? OpenGeneric, string? NotAClass, string? Pointer);
+        private sealed record RejectionOutcome(string? NotAnInterface, string? NotImplemented, string? NotPublic, string? InitOnly, string? OpenGeneric, string? NotAClass, string? Pointer, string? FunctionPointer = null, string? PointerArgument = null);
+
+        private sealed record NestedHookOutcome(bool NestedHasResult, bool PlainHasResult, string? PlainResultTypeName);
 
         private sealed record ClashOutcome(bool PropertyExplicit, bool MethodExplicit, string Describes, int DescribeHooks);
 

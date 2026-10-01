@@ -26,8 +26,8 @@ namespace Bam.Generators.Decorators
         /// <summary>Gets the record of the services decorated in the registry.</summary>
         public DecoratorRegistrations Registrations { get; }
 
-        /// <summary>Gets the object decoration in the registry is serialized on.</summary>
-        public object Lock { get; }
+        /// <summary>Gets the object decoration in the registry is serialized on. Held only by <c>Decorate</c>.</summary>
+        internal object Lock { get; }
 
         /// <summary>
         /// Gets the state of <paramref name="registry"/>, creating it on first use. The same registry always

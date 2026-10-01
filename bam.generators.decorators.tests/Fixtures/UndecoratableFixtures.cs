@@ -39,6 +39,58 @@ namespace Bam.Generators.Decorators.Tests.Fixtures
         }
     }
 
+    /// <summary>A function pointer: IsPointer is false on it, IsFunctionPointer is true.</summary>
+    public unsafe interface IFunctionPointerService
+    {
+        delegate*<int, void> Callback();
+    }
+
+    public unsafe class FunctionPointerService : IFunctionPointerService
+    {
+        public delegate*<int, void> Callback()
+        {
+            return null;
+        }
+    }
+
+    /// <summary>A pointer hidden inside a generic argument.</summary>
+    public unsafe interface IPointerArgumentService
+    {
+        List<nint> Addresses(List<int*[]> pointers);
+    }
+
+    public unsafe class PointerArgumentService : IPointerArgumentService
+    {
+        public List<nint> Addresses(List<int*[]> pointers)
+        {
+            return new List<nint>();
+        }
+    }
+
+    /// <summary>
+    /// A method whose result is itself awaitable gets no typed Func hook: a handler could never hand such a
+    /// result back. Its sibling with a plain result keeps one.
+    /// </summary>
+    public interface INestedTaskService
+    {
+        Task<Task<int>> Nested();
+
+        Task<int> Plain();
+    }
+
+    public class NestedTaskService : INestedTaskService
+    {
+        public Task<Task<int>> Nested()
+        {
+            return Task.FromResult(Task.FromResult(1));
+        }
+
+        public Task<int> Plain()
+        {
+            return Task.FromResult(1);
+        }
+    }
+
     public class InitOnlyService : IInitOnlyService
     {
         public string Value { get; init; } = string.Empty;
