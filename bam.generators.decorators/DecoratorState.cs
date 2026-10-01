@@ -9,7 +9,7 @@ namespace Bam.Generators.Decorators
     /// registered in it, so composing registries (<c>Include</c>, <c>CombineWith</c>, <c>CopyFrom</c>)
     /// copies services and never a registry's handlers or its record.
     /// </summary>
-    public sealed class DecoratorState
+    internal sealed class DecoratorState
     {
         private static readonly ConditionalWeakTable<ServiceRegistry, DecoratorState> _states = new ConditionalWeakTable<ServiceRegistry, DecoratorState>();
 

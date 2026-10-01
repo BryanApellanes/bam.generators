@@ -747,12 +747,6 @@ namespace Bam.Generators.Decorators
                 {
                     context.Result = returned;
                 }
-
-                // The same thing put on the context by hand.
-                if (!context.Rejected && context.ResultOverridden && context.Result != null && Awaitable.Is(context.Result.GetType()))
-                {
-                    RejectAwaitable(context, "set Result to", context.Result);
-                }
             }
             catch (DecoratorRejectionException rejection)
             {
@@ -762,6 +756,13 @@ namespace Bam.Generators.Decorators
             catch (Exception ex)
             {
                 this._logger?.Error("Exception invoking {0} handler for method {1} on type of Decorator<{2}>: {3}", ex, context.Phase.ToString().ToUpperInvariant(), context.MethodName, typeof(T).Name, ex.Message);
+            }
+
+            // The same thing put on the context by hand, checked after the catch so a handler that set it
+            // and then threw is still caught.
+            if (!context.Rejected && context.ResultOverridden && context.Result != null && Awaitable.Is(context.Result.GetType()))
+            {
+                RejectAwaitable(context, "set Result to", context.Result);
             }
         }
 
@@ -777,7 +778,14 @@ namespace Bam.Generators.Decorators
             };
             string message = $"{context.Phase.ToString().ToUpperInvariant()} handler for method {context.MethodName} on type of Decorator<{typeof(T).Name}> {how} a {Awaitable.Describe(awaitable.GetType())}; handlers run synchronously, so {outcome}";
             context.Reject(context.Exception == null ? new DecoratorException(message) : new DecoratorException(message, context.Exception));
-            this._logger?.Error(message);
+            try
+            {
+                this._logger?.Error(message);
+            }
+            catch (Exception)
+            {
+                // The rejection stands whether or not it could be logged.
+            }
         }
 
         private bool TryConvert<R>(DecoratorInvocationContext<T> context, out R? value)

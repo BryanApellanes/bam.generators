@@ -31,7 +31,16 @@ namespace Bam.Generators.Decorators
                     return true;
                 }
 
-                return candidate.GetMethod("GetAwaiter", BindingFlags.Public | BindingFlags.Instance, Type.EmptyTypes) != null;
+                try
+                {
+                    return candidate.GetMethod("GetAwaiter", BindingFlags.Public | BindingFlags.Instance, Type.EmptyTypes) != null;
+                }
+                catch (Exception)
+                {
+                    // A type reflection cannot answer for (an ambiguous match, a type that fails to load) is
+                    // treated as awaitable, so the check fails closed rather than open.
+                    return true;
+                }
             });
         }
 

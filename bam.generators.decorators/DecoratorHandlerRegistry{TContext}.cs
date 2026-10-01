@@ -79,17 +79,21 @@ namespace Bam.Generators.Decorators
             // De-duplicated on the subscriber's delegate by delegate equality, the same rule Add applies to an
             // untyped handler: an instance method group subscribed twice is stored once either way. The
             // wrapper carries the delegate so a later subscription can find it. The check and the add are one
-            // compare-and-swap, as in Add, so two threads subscribing the same delegate store it once.
-            Func<TContext, object?> wrapper = new TypedHandler<R>(handler).Invoke;
+            // compare-and-swap, as in Add, so two threads subscribing the same delegate store it once. A stored
+            // delegate counts only when it is the wrapper's own Invoke: something else bound to a wrapper's
+            // object (an extension method, CreateDelegate) must not pass for it and get a guard skipped.
+            TypedHandler<R> typedHandler = new TypedHandler<R>(handler);
             _handlers.AddOrUpdate(
                 new HandlerKey(phase, methodName),
-                _ => ImmutableArray.Create(wrapper),
-                (_, existing) => existing.Any(stored => stored.Target is ITypedHandler typed && typed.Inner.Equals(handler)) ? existing : existing.Add(wrapper));
+                _ => ImmutableArray.Create(typedHandler.Stored),
+                (_, existing) => existing.Any(stored => stored.Target is ITypedHandler typed && ReferenceEquals(typed.Stored, stored) && typed.Inner.Equals(handler)) ? existing : existing.Add(typedHandler.Stored));
         }
 
         private interface ITypedHandler
         {
             Delegate Inner { get; }
+
+            Func<TContext, object?> Stored { get; }
         }
 
         // Adapts a Func<TContext, R> to the stored shape while keeping the subscriber's delegate reachable.
@@ -100,9 +104,12 @@ namespace Bam.Generators.Decorators
             public TypedHandler(Func<TContext, R> inner)
             {
                 _inner = inner;
+                Stored = Invoke;
             }
 
             public Delegate Inner => _inner;
+
+            public Func<TContext, object?> Stored { get; }
 
             public object? Invoke(TContext context)
             {

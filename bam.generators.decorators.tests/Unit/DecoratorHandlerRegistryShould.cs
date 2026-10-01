@@ -1,4 +1,5 @@
 using Bam.DependencyInjection;
+using Bam.Generators.Decorators.Tests.Fixtures;
 using Bam.Test;
 
 namespace Bam.Generators.Decorators.Tests.Unit
@@ -217,6 +218,43 @@ namespace Bam.Generators.Decorators.Tests.Unit
             .UnlessItFailed();
         }
 
+        [UnitTest]
+        public void NotLetADelegateBoundToAWrapperPassForIt()
+        {
+            // The de-dup looks for the wrapper's own Invoke. Another method bound to a wrapper's object (an
+            // extension method here; CreateDelegate would do the same) carries the same Target but is not
+            // the typed handler, so a guard subscribed after it must still be stored and still run.
+            After.Setup(reg =>
+            {
+                reg.For<DecoratorSubscriptions>().Use(new DecoratorSubscriptions());
+            })
+            .When<DecoratorSubscriptions>("holds a delegate forged over a typed wrapper's target", subscriptions =>
+            {
+                int guardRan = 0;
+                Func<DecoratorInvocationContext, int> guard = context => { guardRan++; return 1; };
+                DecoratorSubscriptions other = new DecoratorSubscriptions();
+                other.Add(DecoratorPhase.Start, "Add", guard);
+                object wrapperTarget = other.Get(DecoratorPhase.Start, "Add").Single().Target!;
+                Func<DecoratorInvocationContext, object?> forged = wrapperTarget.Quiet;
+                subscriptions.Add(DecoratorPhase.Start, "Add", forged);
+                subscriptions.Add(DecoratorPhase.Start, "Add", guard);
+                foreach (Func<DecoratorInvocationContext, object?> handler in subscriptions.Get(DecoratorPhase.Start, "Add"))
+                {
+                    handler(NewContext());
+                }
+
+                return new ForgedOutcome(subscriptions.Count(DecoratorPhase.Start, "Add"), guardRan);
+            })
+            .TheTest
+            .ShouldPass<ForgedOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the forged delegate did not pass for the guard, so both are stored", outcome.Stored == 2, $"stored: {outcome.Stored}");
+                because.ItsTrue("the guard ran", outcome.GuardRan == 1, $"guard ran: {outcome.GuardRan}");
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
         private int Seven(DecoratorInvocationContext context)
         {
             return 7;
@@ -282,6 +320,8 @@ namespace Bam.Generators.Decorators.Tests.Unit
         private sealed record TypedOutcome(bool AsyncRefused, bool ValueBoxed, bool Deduplicated, bool TaskTypedRefused, string? TaskMessage = null);
 
         private sealed record ConcurrentOutcome(int BadRounds, int Worst);
+
+        private sealed record ForgedOutcome(int Stored, int GuardRan);
 
         private sealed record ContextOutcome(bool OverriddenInitially, object? InitialResult, bool OverriddenAfterSet, object? ResultAfterSet, string MethodName);
     }
