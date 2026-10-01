@@ -4,6 +4,7 @@ using Bam.Generators.Decorators.Tests.Fixtures.Decorators;
 using Bam.Logging;
 using Bam.Test;
 using NSubstitute;
+using System.Reflection;
 
 namespace Bam.Generators.Decorators.Tests.Unit
 {
@@ -392,6 +393,33 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
+        public void NotRememberATypeReflectionCouldNotAnswerFor()
+        {
+            // A failed GetAwaiter lookup answers "awaitable" (fail closed) but must not be cached: a type that
+            // can't be answered for now (an assembly not loaded yet) may be answerable later. Definite answers
+            // are cached. Awaitable is internal, so the test reaches it by reflection.
+            When.A<DecoratorRejectionShould>("asks whether an ambiguous type and a plain type are awaitable", this, test =>
+            {
+                Type awaitable = typeof(Decorator<>).Assembly.GetType("Bam.Generators.Decorators.Awaitable", true)!;
+                MethodInfo isAwaitable = awaitable.GetMethod("Is", BindingFlags.Public | BindingFlags.Static)!;
+                System.Collections.IDictionary known = (System.Collections.IDictionary)awaitable.GetField("_known", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
+                bool ambiguous = (bool)isAwaitable.Invoke(null, new object[] { typeof(AmbiguousAwaitable) })!;
+                bool plain = (bool)isAwaitable.Invoke(null, new object[] { typeof(Uri) })!;
+                return new CacheOutcome(ambiguous, known.Contains(typeof(AmbiguousAwaitable)), plain, known.Contains(typeof(Uri)));
+            })
+            .TheTest
+            .ShouldPass<CacheOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a type reflection can't answer for counts as awaitable", outcome.AmbiguousAwaitable);
+                because.ItsTrue("and is not remembered", !outcome.AmbiguousCached);
+                because.ItsTrue("a plain type is not awaitable", !outcome.PlainAwaitable);
+                because.ItsTrue("and that answer is remembered", outcome.PlainCached);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
         public void RefuseACombinedDelegateWithAnAsyncTarget()
         {
             After.Setup(reg =>
@@ -516,6 +544,8 @@ namespace Bam.Generators.Decorators.Tests.Unit
         private sealed record CombinedOutcome(string? AsyncFirst, string? AsyncLast, string? BothSync);
 
         private sealed record FailClosedOutcome(bool SetThenThrewRejected, bool AmbiguousRejected, bool AmbiguousTypedRefused, int Count);
+
+        private sealed record CacheOutcome(bool AmbiguousAwaitable, bool AmbiguousCached, bool PlainAwaitable, bool PlainCached);
 
         private sealed record AwaitableOutcome(bool ConfiguredAwaitable, bool Yield, bool ByHand, bool ErrorChained, int Count);
 

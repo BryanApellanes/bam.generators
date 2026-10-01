@@ -759,10 +759,12 @@ namespace Bam.Generators.Decorators
             }
 
             // The same thing put on the context by hand, checked after the catch so a handler that set it
-            // and then threw is still caught.
-            if (!context.Rejected && context.ResultOverridden && context.Result != null && Awaitable.Is(context.Result.GetType()))
+            // and then threw is still caught. Read once: a handler that kept the context could change it
+            // from another thread between reads.
+            object? byHand = context.Result;
+            if (!context.Rejected && context.ResultOverridden && byHand != null && Awaitable.Is(byHand.GetType()))
             {
-                RejectAwaitable(context, "set Result to", context.Result);
+                RejectAwaitable(context, "set Result to", byHand);
             }
         }
 

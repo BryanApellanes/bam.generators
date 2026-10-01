@@ -15,33 +15,35 @@ namespace Bam.Generators.Decorators
         /// Gets a value indicating whether <paramref name="type"/> is <c>Task</c>, <c>Task&lt;T&gt;</c>,
         /// <c>ValueTask</c>, <c>ValueTask&lt;T&gt;</c>, or anything else with a public parameterless
         /// <c>GetAwaiter()</c>, which is what <c>ConfigureAwait</c>, <c>Task.Yield</c> and custom awaitables
-        /// return. Cached per type.
+        /// return. A type reflection cannot answer for is treated as awaitable. Definite answers are cached
+        /// per type; a failed lookup is not, so it is asked again next time.
         /// </summary>
         public static bool Is(Type type)
         {
-            return _known.GetOrAdd(type, static candidate =>
+            try
             {
-                if (typeof(Task).IsAssignableFrom(candidate) || candidate == typeof(ValueTask))
+                return _known.GetOrAdd(type, static candidate =>
                 {
-                    return true;
-                }
+                    if (typeof(Task).IsAssignableFrom(candidate) || candidate == typeof(ValueTask))
+                    {
+                        return true;
+                    }
 
-                if (candidate.IsGenericType && candidate.GetGenericTypeDefinition() == typeof(ValueTask<>))
-                {
-                    return true;
-                }
+                    if (candidate.IsGenericType && candidate.GetGenericTypeDefinition() == typeof(ValueTask<>))
+                    {
+                        return true;
+                    }
 
-                try
-                {
                     return candidate.GetMethod("GetAwaiter", BindingFlags.Public | BindingFlags.Instance, Type.EmptyTypes) != null;
-                }
-                catch (Exception)
-                {
-                    // A type reflection cannot answer for (an ambiguous match, a type that fails to load) is
-                    // treated as awaitable, so the check fails closed rather than open.
-                    return true;
-                }
-            });
+                });
+            }
+            catch (Exception)
+            {
+                // A type reflection cannot answer for (an ambiguous match, a type that fails to load) is
+                // treated as awaitable, so the check fails closed rather than open. The factory threw, so
+                // nothing was cached: if the type becomes answerable later, it is answered then.
+                return true;
+            }
         }
 
         /// <summary>
