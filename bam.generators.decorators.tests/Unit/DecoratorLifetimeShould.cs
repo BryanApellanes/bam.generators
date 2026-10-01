@@ -363,6 +363,102 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
+        public void KeepItsHandlersWhenItIncludesAnotherRegistry()
+        {
+            // The stores belong to the registry by identity, not as entries: Include copies services, never
+            // handlers or the record of what was decorated. A guard subscribed before the Include keeps guarding
+            // what this registry decorates afterward, including the service it took from the other registry,
+            // and never reaches the other registry's own consumers.
+            ServiceRegistry library = new ServiceRegistry();
+            Prepare(library);
+            library.For<IEchoService>().Use<EchoService>();
+            library.Decorate<IEchoService, EchoService>();
+
+            After.Setup(reg =>
+            {
+                Prepare(reg);
+                reg.For<ICounterService>().Use<CounterService>();
+                reg.For<ServiceRegistry>().Use(reg);
+            })
+            .When<ServiceRegistry>("subscribes a guard, includes a registry that decorated, then decorates", app =>
+            {
+                int guarded = 0;
+                app.OnMethodStart("*", context => { guarded++; context.Reject("guarded by app"); });
+                DecoratorSubscriptions before = app.GetDecoratorSubscriptions();
+                app.Include(library);
+                bool storeKept = ReferenceEquals(before, app.GetDecoratorSubscriptions());
+                bool echoRecorded = app.GetDecoratorRegistrations().DecoratedTypes.Contains(typeof(IEchoService));
+
+                app.Decorate<ICounterService, CounterService>();
+                string? counter = Rejection(() => app.Get<ICounterService>().Next());
+                string? echoBefore = Rejection(() => app.Get<IEchoService>().Message("hi"));
+                app.Decorate<IEchoService, EchoService>();
+                string? echoAfter = Rejection(() => app.Get<IEchoService>().Message("hi"));
+                string? libraryOwn = Rejection(() => library.Get<IEchoService>().Message("hi"));
+                return new IncludeOutcome(storeKept, echoRecorded, counter, echoBefore, echoAfter, libraryOwn, guarded);
+            })
+            .TheTest
+            .ShouldPass<IncludeOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("Include left the registry-wide store in place", outcome.StoreKept);
+                because.ItsTrue("the included registry's decoration is not recorded here until this registry decorates it", !outcome.EchoRecorded);
+                because.ItsTrue("a service decorated after the Include is guarded", outcome.Counter == "guarded by app", outcome.Counter);
+                because.ItsTrue("the included service is not guarded until this registry decorates it", outcome.EchoBefore == null, outcome.EchoBefore);
+                because.ItsTrue("once decorated here, the included service is guarded", outcome.EchoAfter == "guarded by app", outcome.EchoAfter);
+                because.ItsTrue("the other registry's own consumers are not guarded by this registry", outcome.LibraryOwn == null, outcome.LibraryOwn);
+                because.ItsTrue("the guard ran for the two guarded calls", outcome.Guarded == 2, $"guarded: {outcome.Guarded}");
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void GuardWhatItDecoratedBeforeIncludingAnotherRegistry()
+        {
+            ServiceRegistry library = new ServiceRegistry();
+            Prepare(library);
+            library.For<IEchoService>().Use<EchoService>();
+            library.Decorate<IEchoService, EchoService>();
+
+            After.Setup(reg =>
+            {
+                Prepare(reg);
+                reg.For<ICounterService>().Use<CounterService>();
+                reg.For<ServiceRegistry>().Use(reg);
+            })
+            .When<ServiceRegistry>("decorates, includes a registry that decorated, then subscribes a guard", app =>
+            {
+                app.Decorate<ICounterService, CounterService>();
+                app.Include(library);
+                app.OnMethodStart("*", context => context.Reject("guarded by app"));
+                string? counter = Rejection(() => app.Get<ICounterService>().Next());
+                string? libraryOwn = Rejection(() => library.Get<IEchoService>().Message("hi"));
+                return new IncludeOutcome(true, false, counter, null, null, libraryOwn, 0);
+            })
+            .TheTest
+            .ShouldPass<IncludeOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the service decorated before the Include is guarded by the handler subscribed after it", outcome.Counter == "guarded by app", outcome.Counter);
+                because.ItsTrue("the other registry's own consumers are not", outcome.LibraryOwn == null, outcome.LibraryOwn);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        private static string? Rejection(Action call)
+        {
+            try
+            {
+                call();
+                return null;
+            }
+            catch (DecoratorRejectionException ex)
+            {
+                return ex.Message;
+            }
+        }
+
+        [UnitTest]
         public void RefuseToDecorateAsASecondImplementationType()
         {
             After.Setup(reg =>
@@ -444,6 +540,8 @@ namespace Bam.Generators.Decorators.Tests.Unit
         private sealed record CompositionOutcome(bool SameDecorator, string ThroughFirst, string ThroughSecond, int Registrations, int SharedStores);
 
         private sealed record ParallelOutcome(int Failures, int Registrations, int Stores, int Ran, int Decorated);
+
+        private sealed record IncludeOutcome(bool StoreKept, bool EchoRecorded, string? Counter, string? EchoBefore, string? EchoAfter, string? LibraryOwn, int Guarded);
 
         private sealed record SecondTypeOutcome(string? Refused, string StillWorks, string AfterReregistering);
 

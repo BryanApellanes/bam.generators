@@ -302,6 +302,49 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
+        public void RejectAnyAwaitableHoweverItArrives()
+        {
+            ILogger throwing = Substitute.For<ILogger>();
+            throwing.When(logger => logger.Error(Arg.Any<string>(), Arg.Any<object[]>())).Do(call => throw new InvalidOperationException("logger down"));
+
+            After.Setup(reg =>
+            {
+                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), throwing));
+            })
+            .When<Decorator<KitchenSinkService>>("has handlers that hand back other awaitable shapes", decorator =>
+            {
+                // Anything `await` would accept, and a task put on the context by hand, are caught the same
+                // way as a Task; and the rejection is made before the log line, so a logger that throws
+                // cannot undo it.
+                decorator.SubscribeStart("Reset", context => Task.CompletedTask.ConfigureAwait(false));
+                decorator.SubscribeStart("Add", context => Task.Yield());
+                decorator.SubscribeStart("Find", context => { context.Result = Task.FromResult("by hand"); return null; });
+                decorator.SubscribeError("Fail", context => new ValueTask());
+                DecoratorInvocationResult<KitchenSinkService, object> reset = decorator.Invoke<object>("Reset");
+                DecoratorInvocationResult<KitchenSinkService, int> sum = decorator.Invoke<int>("Add", 1, 2);
+                DecoratorInvocationResult<KitchenSinkService, string?> find = decorator.Invoke<string?>("Find", "key");
+                DecoratorInvocationResult<KitchenSinkService, string> fail = decorator.Invoke<string>("Fail", "boom");
+                return new AwaitableOutcome(
+                    reset.Rejected && reset.Exception is DecoratorException,
+                    sum.Rejected && sum.Exception is DecoratorException && !sum.ShortCircuited,
+                    find.Rejected && find.Exception is DecoratorException && find.Value == null,
+                    fail.Rejected && fail.Exception is DecoratorException && fail.Exception.InnerException?.Message == "boom",
+                    decorator.Instance.Count);
+            })
+            .TheTest
+            .ShouldPass<AwaitableOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a ConfigureAwait awaitable rejects the call even though the logger threw", outcome.ConfiguredAwaitable);
+                because.ItsTrue("a YieldAwaitable rejects the call", outcome.Yield);
+                because.ItsTrue("a task set on the context by hand rejects the call", outcome.ByHand);
+                because.ItsTrue("on error the service's exception rides along as the inner exception", outcome.ErrorChained);
+                because.ItsTrue("none of the start-phase calls ran", outcome.Count == 0, $"count: {outcome.Count}");
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
         public void RefuseACombinedDelegateWithAnAsyncTarget()
         {
             After.Setup(reg =>
@@ -424,6 +467,8 @@ namespace Bam.Generators.Decorators.Tests.Unit
         private sealed record TaskOutcome(string Rejections, bool ValueRejected, bool ReferenceRejected, int Count, bool NotFlushed, int ErrorsLogged);
 
         private sealed record CombinedOutcome(string? AsyncFirst, string? AsyncLast, string? BothSync);
+
+        private sealed record AwaitableOutcome(bool ConfiguredAwaitable, bool Yield, bool ByHand, bool ErrorChained, int Count);
 
         private sealed record ArgumentOutcome(string? ByName, string? CallersArgument, string Generated);
     }

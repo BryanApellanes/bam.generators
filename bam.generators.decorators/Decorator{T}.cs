@@ -517,16 +517,28 @@ namespace Bam.Generators.Decorators
             return Cast<R>(returned);
         }
 
-        // Task, Task<X>, ValueTask and ValueTask<X>: the shapes AwaitReturned knows how to await.
-        private static bool IsTaskLike(Type type)
+        // Task, Task<X>, ValueTask and ValueTask<X>, plus anything else `await` would accept: a type with a
+        // public parameterless GetAwaiter(), which is what ConfigureAwait, Task.Yield and custom awaitables
+        // return. Cached per type; a result type is asked once.
+        private static bool IsAwaitable(Type type)
         {
-            if (typeof(Task).IsAssignableFrom(type) || type == typeof(ValueTask))
+            return _awaitable.GetOrAdd(type, static candidate =>
             {
-                return true;
-            }
+                if (typeof(Task).IsAssignableFrom(candidate) || candidate == typeof(ValueTask))
+                {
+                    return true;
+                }
 
-            return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ValueTask<>);
+                if (candidate.IsGenericType && candidate.GetGenericTypeDefinition() == typeof(ValueTask<>))
+                {
+                    return true;
+                }
+
+                return candidate.GetMethod("GetAwaiter", BindingFlags.Public | BindingFlags.Instance, Type.EmptyTypes) != null;
+            });
         }
+
+        private static readonly ConcurrentDictionary<Type, bool> _awaitable = new ConcurrentDictionary<Type, bool>();
 
         // Null (a void method, or a null return) becomes default; anything else must actually be an R.
         private static R Cast<R>(object? returned)
@@ -744,21 +756,25 @@ namespace Bam.Generators.Decorators
             try
             {
                 object? returned = handler();
-                if (returned != null && IsTaskLike(returned.GetType()))
+                if (returned != null && IsAwaitable(returned.GetType()))
                 {
-                    // A handler that hands back a Task or ValueTask does its work asynchronously, after this
+                    // A handler that hands back something awaitable does its work asynchronously, after this
                     // point. It is not a result, and treating it as one would skip a void method's call without
                     // a word; letting the call go ahead would let a guard written that way fail open. So the
                     // call fails closed, and the author finds out on the first call rather than in a log.
-                    string message = $"{context.Phase.ToString().ToUpperInvariant()} handler for method {context.MethodName} on type of Decorator<{typeof(T).Name}> returned a {returned.GetType().Name}; handlers run synchronously, so the call was rejected";
-                    this._logger?.Error(message);
-                    context.Reject(new DecoratorException(message));
+                    RejectAwaitable(context, "returned", returned);
                     return;
                 }
 
                 if (returned != null && !context.Rejected)
                 {
                     context.Result = returned;
+                }
+
+                // The same thing put on the context by hand.
+                if (!context.Rejected && context.ResultOverridden && context.Result != null && IsAwaitable(context.Result.GetType()))
+                {
+                    RejectAwaitable(context, "set Result to", context.Result);
                 }
             }
             catch (DecoratorRejectionException rejection)
@@ -770,6 +786,15 @@ namespace Bam.Generators.Decorators
             {
                 this._logger?.Error("Exception invoking {0} handler for method {1} on type of Decorator<{2}>: {3}", ex, context.Phase.ToString().ToUpperInvariant(), context.MethodName, typeof(T).Name, ex.Message);
             }
+        }
+
+        // Rejected before it is logged, so a logger that throws cannot undo the rejection. On error the
+        // service's own exception rides along as the inner one rather than being dropped.
+        private void RejectAwaitable(DecoratorInvocationContext<T> context, string how, object awaitable)
+        {
+            string message = $"{context.Phase.ToString().ToUpperInvariant()} handler for method {context.MethodName} on type of Decorator<{typeof(T).Name}> {how} a {awaitable.GetType().Name}; handlers run synchronously, so the call was rejected";
+            context.Reject(context.Exception == null ? new DecoratorException(message) : new DecoratorException(message, context.Exception));
+            this._logger?.Error(message);
         }
 
         private bool TryConvert<R>(DecoratorInvocationContext<T> context, out R? value)

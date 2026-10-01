@@ -79,31 +79,24 @@ namespace Bam.Generators.Decorators
         }
 
         /// <summary>
-        /// Gets the registry-wide handler store of <paramref name="registry"/>, creating it on first use.
+        /// Gets the registry-wide handler store of <paramref name="registry"/>, creating it on first use. The
+        /// store belongs to the registry itself, not to its entries: including or combining another registry
+        /// neither replaces it nor brings the other registry's handlers along, and a copy of the registry
+        /// starts with an empty one.
         /// </summary>
         public static DecoratorSubscriptions GetDecoratorSubscriptions(this ServiceRegistry registry)
         {
-            ArgumentNullException.ThrowIfNull(registry);
-
-            // Get constructs on a miss without synchronizing, so two first callers could each get a store of
-            // their own and one of them would be subscribing to a store nothing runs.
-            lock (LockFor(registry))
-            {
-                return registry.Get<DecoratorSubscriptions>();
-            }
+            return DecoratorState.Of(registry).Subscriptions;
         }
 
         /// <summary>
         /// Gets the record of the services decorated in <paramref name="registry"/>, creating it on first use.
+        /// Like the handler store, it belongs to the registry itself: an included registry's decorations are
+        /// not recorded here until this registry decorates them.
         /// </summary>
         public static DecoratorRegistrations GetDecoratorRegistrations(this ServiceRegistry registry)
         {
-            ArgumentNullException.ThrowIfNull(registry);
-
-            lock (LockFor(registry))
-            {
-                return registry.Get<DecoratorRegistrations>();
-            }
+            return DecoratorState.Of(registry).Registrations;
         }
 
         /// <summary>
@@ -199,7 +192,7 @@ namespace Bam.Generators.Decorators
         /// invoked on any decorated service in <paramref name="registry"/>. Decorates nothing by itself, so it
         /// may be called before the services it applies to are registered.
         /// </summary>
-        /// <param name="registry">The registry whose decorated services the handler applies to.</param>
+        /// <param name="registry">The registry whose decorated services the handler applies to. The handler belongs to this registry by identity: including or combining another registry neither replaces nor shares it, and it governs an included service once this registry decorates that service.</param>
         /// <param name="methodName">The method name to match, or <c>*</c> for every method.</param>
         /// <param name="handler">The handler.</param>
         /// <returns><paramref name="registry"/>, for chaining.</returns>
@@ -213,7 +206,7 @@ namespace Bam.Generators.Decorators
         /// Subscribes <paramref name="handler"/> to run before <paramref name="methodName"/> is invoked on any
         /// decorated service in <paramref name="registry"/>. A non-null return value short-circuits the invocation.
         /// </summary>
-        /// <param name="registry">The registry whose decorated services the handler applies to.</param>
+        /// <param name="registry">The registry whose decorated services the handler applies to. The handler belongs to this registry by identity: including or combining another registry neither replaces nor shares it, and it governs an included service once this registry decorates that service.</param>
         /// <param name="methodName">The method name to match, or <c>*</c> for every method.</param>
         /// <param name="handler">The handler.</param>
         /// <returns><paramref name="registry"/>, for chaining.</returns>
@@ -227,7 +220,7 @@ namespace Bam.Generators.Decorators
         /// Subscribes an observe-only <paramref name="handler"/> to run after <paramref name="methodName"/>
         /// returns on any decorated service in <paramref name="registry"/>.
         /// </summary>
-        /// <param name="registry">The registry whose decorated services the handler applies to.</param>
+        /// <param name="registry">The registry whose decorated services the handler applies to. The handler belongs to this registry by identity: including or combining another registry neither replaces nor shares it, and it governs an included service once this registry decorates that service.</param>
         /// <param name="methodName">The method name to match, or <c>*</c> for every method.</param>
         /// <param name="handler">The handler.</param>
         /// <returns><paramref name="registry"/>, for chaining.</returns>
@@ -241,7 +234,7 @@ namespace Bam.Generators.Decorators
         /// Subscribes <paramref name="handler"/> to run after <paramref name="methodName"/> returns on any
         /// decorated service in <paramref name="registry"/>. A non-null return value replaces the result.
         /// </summary>
-        /// <param name="registry">The registry whose decorated services the handler applies to.</param>
+        /// <param name="registry">The registry whose decorated services the handler applies to. The handler belongs to this registry by identity: including or combining another registry neither replaces nor shares it, and it governs an included service once this registry decorates that service.</param>
         /// <param name="methodName">The method name to match, or <c>*</c> for every method.</param>
         /// <param name="handler">The handler.</param>
         /// <returns><paramref name="registry"/>, for chaining.</returns>
@@ -255,7 +248,7 @@ namespace Bam.Generators.Decorators
         /// Subscribes an observe-only <paramref name="handler"/> to run when <paramref name="methodName"/>
         /// throws on any decorated service in <paramref name="registry"/>.
         /// </summary>
-        /// <param name="registry">The registry whose decorated services the handler applies to.</param>
+        /// <param name="registry">The registry whose decorated services the handler applies to. The handler belongs to this registry by identity: including or combining another registry neither replaces nor shares it, and it governs an included service once this registry decorates that service.</param>
         /// <param name="methodName">The method name to match, or <c>*</c> for every method.</param>
         /// <param name="handler">The handler.</param>
         /// <returns><paramref name="registry"/>, for chaining.</returns>
@@ -270,7 +263,7 @@ namespace Bam.Generators.Decorators
         /// decorated service in <paramref name="registry"/>. A non-null return value is used as a fallback and
         /// suppresses the exception.
         /// </summary>
-        /// <param name="registry">The registry whose decorated services the handler applies to.</param>
+        /// <param name="registry">The registry whose decorated services the handler applies to. The handler belongs to this registry by identity: including or combining another registry neither replaces nor shares it, and it governs an included service once this registry decorates that service.</param>
         /// <param name="methodName">The method name to match, or <c>*</c> for every method.</param>
         /// <param name="handler">The handler.</param>
         /// <returns><paramref name="registry"/>, for chaining.</returns>
@@ -283,10 +276,9 @@ namespace Bam.Generators.Decorators
         private static DecoratorRegistration<I, T> Decorate<I, T>(ServiceRegistry registry, ILogger? logger, Func<Type> decoratorTypeProvider) where I : class where T : class, I
         {
             // Registering is not something ServiceRegistry synchronizes, but two callers decorating the same
-            // service at once must not end up with one wrapping the other, and two callers decorating anything
-            // at once must not end up with two stores. The lock belongs to the registry, so it exists before
-            // the stores do.
-            object decorating = LockFor(registry);
+            // service at once must not end up with one wrapping the other. The lock, like the stores, belongs
+            // to the registry by identity, so it exists before anything it protects.
+            object decorating = DecoratorState.Of(registry).Lock;
             lock (decorating)
             {
                 if (TryGetCurrent(registry, out DecoratorRegistration<I, T>? current))
@@ -357,14 +349,6 @@ namespace Bam.Generators.Decorators
             current = null;
             return false;
         }
-
-        private static object LockFor(ServiceRegistry registry)
-        {
-            return _locks.GetValue(registry, _ => new object());
-        }
-
-        // One lock per registry, living as long as the registry does.
-        private static readonly ConditionalWeakTable<ServiceRegistry, object> _locks = new ConditionalWeakTable<ServiceRegistry, object>();
 
         private static ILogger? ResolveLogger(ServiceRegistry registry)
         {
