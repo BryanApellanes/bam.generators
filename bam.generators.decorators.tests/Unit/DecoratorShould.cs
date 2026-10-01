@@ -450,17 +450,19 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 List<string> order = new List<string>();
                 DecoratorSubscriptions shared = new DecoratorSubscriptions();
                 shared.Add(DecoratorPhase.Start, "Message", context => { order.Add("shared:" + context.ImplementationType.Name); });
-                decorator.SharedSubscriptions = shared;
+                // Attached twice: the second attach is a no-op, so the shared handler runs once.
+                decorator.AttachSharedSubscriptions(shared);
+                decorator.AttachSharedSubscriptions(shared);
                 decorator.Subscribe(DecoratorPhase.Start, DecoratorSubscriptions.AnyMethod, context => { order.Add("any"); });
                 decorator.Subscribe(DecoratorPhase.Start, "Message", context => { order.Add("own"); });
                 decorator.Invoke<string>("Message", "hello");
-                return new EventOutcome(string.Join("|", order));
+                return new EventOutcome(string.Join("|", order) + $" stores:{decorator.SharedSubscriptions.Count}");
             })
             .TheTest
             .ShouldPass<EventOutcome>((because, outcome) =>
             {
-                because.ItsTrue("shared handlers ran first, then named, then any-method",
-                    outcome.Raised == "shared:EchoService|own|any",
+                because.ItsTrue("shared handlers ran first and once, then named, then any-method",
+                    outcome.Raised == "shared:EchoService|own|any stores:1",
                     $"order: {outcome.Raised}");
             })
             .SoBeHappy()

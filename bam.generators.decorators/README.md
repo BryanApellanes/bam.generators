@@ -41,9 +41,13 @@ Handlers live in three places, and run in this order:
 
 | Subscribed through | Runs for |
 |---|---|
-| `registry.OnMethodStart(name, ...)` | every decorated service in the registry |
-| `registry.OnMethodStart<I, T>(...)`, `registry.OnMessageStart(...)`, `registry.Decorate<I, T>().Subscribe(...)` | every instance of that service the registry resolves; a decorator that a second registry resolves through the first serves both registrations and runs both |
+| `registry.OnMethodStart(name, ...)` | every decorated service in the registry, including one the registry resolves through another registry's decorator |
+| `registry.OnMethodStart<I, T>(...)`, `registry.OnMessageStart(...)`, `registry.Decorate<I, T>().Subscribe(...)` | every instance of that service the registry resolves |
 | `echo.OnMessageStart(...)`, `decorator.Subscribe(...)` | that instance only |
+
+A decorator that a second registry resolves through the first serves both registries: it runs both registries' registry-wide handlers, then both registrations' handlers, in the order the registries attached, then its own. Handlers subscribed in the second registry govern calls made by the first registry's consumers too, since the decorator is the same object.
+
+Decorating is serialized per registry. Two threads decorating at once, the same service or different ones, end up with one registration per service and one registry-wide store; a handler subscribed from either thread runs.
 
 Two things to know about ordering:
 
@@ -86,7 +90,7 @@ registry.OnMethodStart<IAccountService, AccountService>(nameof(IAccountService.C
 
 `ctx.Reject(exception)` throws that exception to the caller. `ctx.Reject("reason")` and throwing a `DecoratorRejectionException` from the handler both throw a `DecoratorRejectionException`. At start the decorated method never runs, at end its result is discarded, on error the rejection replaces the failure. No further handlers run on that call, and no error handler on that call can suppress the rejection. (A service that made the rejected call from inside its own decorated method sees an ordinary exception; an error handler on *that* service can still replace what its caller sees. The guarded call didn't run either way.)
 
-Handlers run synchronously, so a rejection has to be made before the handler returns. An `async` handler would return at its first `await` and the call would go ahead, so subscribing one throws `ArgumentException`. A handler that returns a `Task` is logged and the call goes ahead too. Do the asynchronous work somewhere else and reject from a synchronous handler.
+Handlers run synchronously, so a rejection has to be made before the handler returns. An `async` handler would return at its first `await` and the call would go ahead, so subscribing one throws `ArgumentException`; every target of a combined delegate is checked. A handler that isn't marked `async` but hands back a `Task`, `ValueTask` or `ValueTask<T>` (`ctx => writer.WriteAsync(...)`, say) is caught on the call instead: the task is not a result, it's logged, and the call is rejected with a `DecoratorException`, so the author finds out on the first call rather than in a log. Do the asynchronous work somewhere else and reject from a synchronous handler. A synchronous wrapper around an async delegate passes the subscription check, and whatever it awaits happens after the call went ahead.
 
 A guard only covers what's intercepted. Properties, indexers, events and methods with `ref`/`out`/`in` parameters are forwarded without handlers (see the table below), and a subscription to a name no method has never fires. Check the table before guarding a service by `*`. The runtime doesn't log rejections; a guard that needs an audit trail writes its own.
 

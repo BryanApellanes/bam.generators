@@ -25,6 +25,20 @@ namespace Bam.Generators.Decorators.Tests.Fixtures
         string Value { get; init; }
     }
 
+    /// <summary>Pointer-typed members: generated code is not unsafe, so the model refuses them up front.</summary>
+    public unsafe interface IPointerService
+    {
+        int* Address();
+    }
+
+    public unsafe class PointerService : IPointerService
+    {
+        public int* Address()
+        {
+            return null;
+        }
+    }
+
     public class InitOnlyService : IInitOnlyService
     {
         public string Value { get; init; } = string.Empty;

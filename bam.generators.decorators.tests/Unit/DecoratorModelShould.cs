@@ -203,7 +203,8 @@ namespace Bam.Generators.Decorators.Tests.Unit
                     Rejects(typeof(IHiddenService), typeof(HiddenService)),
                     Rejects(typeof(IInitOnlyService), typeof(InitOnlyService)),
                     Rejects(typeof(IBoxService<>), typeof(BoxService<>)),
-                    Rejects(typeof(IEchoService), typeof(IEchoService)));
+                    Rejects(typeof(IEchoService), typeof(IEchoService)),
+                    Rejects(typeof(IPointerService), typeof(PointerService)));
             })
             .TheTest
             .ShouldPass<RejectionOutcome>((because, outcome) =>
@@ -214,6 +215,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 because.ItsTrue("an init-only property is rejected", outcome.InitOnly != null && outcome.InitOnly.Contains("init-only"));
                 because.ItsTrue("an open generic is rejected", outcome.OpenGeneric != null);
                 because.ItsTrue("an interface in place of the implementation is rejected", outcome.NotAClass != null);
+                because.ItsTrue("a pointer-typed member is rejected up front rather than by the compiler", outcome.Pointer != null && outcome.Pointer.Contains("pointer"), outcome.Pointer);
                 because.ItsTrue("the message names the interface", outcome.NotImplemented!.StartsWith("[" + typeof(IEchoService).FullName + "]"));
             })
             .SoBeHappy()
@@ -267,7 +269,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 method.GetILGenerator().Emit(OpCodes.Ret);
                 Type hostileImplementation = implementationBuilder.CreateType();
 
-                return new RejectionOutcome(Rejects(hostileInterface, hostileImplementation), null, null, null, null, null);
+                return new RejectionOutcome(Rejects(hostileInterface, hostileImplementation), null, null, null, null, null, null);
             })
             .TheTest
             .ShouldPass<RejectionOutcome>((because, outcome) =>
@@ -354,7 +356,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
             bool TryParseHasHooks,
             string FailErrorPhase);
 
-        private sealed record RejectionOutcome(string? NotAnInterface, string? NotImplemented, string? NotPublic, string? InitOnly, string? OpenGeneric, string? NotAClass);
+        private sealed record RejectionOutcome(string? NotAnInterface, string? NotImplemented, string? NotPublic, string? InitOnly, string? OpenGeneric, string? NotAClass, string? Pointer);
 
         private sealed record ClashOutcome(bool PropertyExplicit, bool MethodExplicit, string Describes, int DescribeHooks);
 

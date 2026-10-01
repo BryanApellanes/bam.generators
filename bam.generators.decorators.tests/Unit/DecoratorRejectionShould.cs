@@ -263,23 +263,71 @@ namespace Bam.Generators.Decorators.Tests.Unit
             {
                 reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), logger));
             })
-            .When<Decorator<KitchenSinkService>>("has handlers that hand back a Task without being async themselves", decorator =>
+            .When<Decorator<KitchenSinkService>>("has handlers that hand back a task-like without being async themselves", decorator =>
             {
-                // A method-group or lambda that returns a Task is not marked async, so subscription can't refuse
-                // it. It still cannot stop the call; the task is ignored and the call goes ahead.
+                // A method-group or lambda that returns a Task or ValueTask is not marked async, so subscription
+                // can't refuse it. Whatever it would have decided comes too late, so the call fails closed: the
+                // task-like is never a result, and the call is rejected rather than skipped or let through.
                 decorator.SubscribeStart("Add", context => Task.FromResult<object?>("never a result"));
                 decorator.SubscribeStart("Reset", context => Task.CompletedTask);
+                decorator.SubscribeStart("Find", context => new ValueTask<string>("never a result either"));
+                decorator.SubscribeStart("FlushAsync", context => new ValueTask());
+                decorator.SubscribeStart("ResetAsync", context => new ValueTask<int>(42));
+                decorator.Instance.Add(1, 1);
                 DecoratorInvocationResult<KitchenSinkService, int> sum = decorator.Invoke<int>("Add", 1, 2);
                 DecoratorInvocationResult<KitchenSinkService, object> reset = decorator.Invoke<object>("Reset");
+                DecoratorInvocationResult<KitchenSinkService, string?> find = decorator.Invoke<string?>("Find", "key");
+                DecoratorInvocationResult<KitchenSinkService, object> flush = decorator.InvokeAsync<object>("FlushAsync").GetAwaiter().GetResult();
+                DecoratorInvocationResult<KitchenSinkService, object> resetAsync = decorator.InvokeAsync<object>("ResetAsync").GetAwaiter().GetResult();
                 int errors = logger.ReceivedCalls().Count(call => call.GetMethodInfo().Name == nameof(ILogger.Error));
-                return new TaskOutcome(sum.Value, sum.ShortCircuited, reset.Success && !reset.ShortCircuited, decorator.Instance.Count, errors);
+                return new TaskOutcome(
+                    string.Join("|", new DecoratorInvocationResult<KitchenSinkService, object>[] { reset, flush, resetAsync }.Select(result => result.Exception?.GetType().Name ?? "none")),
+                    sum.Rejected && sum.Exception is DecoratorException && !sum.ShortCircuited,
+                    find.Rejected && find.Value == null,
+                    decorator.Instance.Count,
+                    decorator.Instance.Flushes == 0,
+                    errors);
             })
             .TheTest
             .ShouldPass<TaskOutcome>((because, outcome) =>
             {
-                because.ItsTrue("a task is not taken as the value of a method with a result", outcome.Sum == 3 && !outcome.SumShortCircuited);
-                because.ItsTrue("a task is not taken as the result of a void method, so the call is not skipped", outcome.ResetRan && outcome.Count == 0);
-                because.ItsTrue("each was logged", outcome.ErrorsLogged == 2, $"errors logged: {outcome.ErrorsLogged}");
+                because.ItsTrue("a task is not taken as the value of a method with a result; the call is rejected", outcome.ValueRejected);
+                because.ItsTrue("a ValueTask<T> is not taken as the value either", outcome.ReferenceRejected);
+                because.ItsTrue("void, Task and ValueTask methods are rejected rather than silently skipped", outcome.Rejections == "DecoratorException|DecoratorException|DecoratorException", outcome.Rejections);
+                because.ItsTrue("none of the calls ran", outcome.Count == 1 && outcome.NotFlushed, $"count: {outcome.Count}, not flushed: {outcome.NotFlushed}");
+                because.ItsTrue("each was logged", outcome.ErrorsLogged == 5, $"errors logged: {outcome.ErrorsLogged}");
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void RefuseACombinedDelegateWithAnAsyncTarget()
+        {
+            After.Setup(reg =>
+            {
+                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<ILogger>()));
+            })
+            .When<Decorator<EchoService>>("is given combined delegates with an async target at either end", decorator =>
+            {
+                // Delegate.Method names only the last target of a combined delegate. The check has to see
+                // every target, or an async guard hidden in front of a synchronous one would fail open.
+                Action<DecoratorInvocationContext<EchoService>> asyncGuard = async context => { await Task.Yield(); context.Reject("too late"); };
+                Action<DecoratorInvocationContext<EchoService>> sync = context => { };
+                Action<DecoratorInvocationContext<EchoService>> asyncFirst = asyncGuard + sync;
+                Action<DecoratorInvocationContext<EchoService>> asyncLast = sync + asyncGuard;
+                Action<DecoratorInvocationContext<EchoService>> bothSync = sync + sync;
+                return new CombinedOutcome(
+                    Refuses(() => decorator.Subscribe(DecoratorPhase.Start, "Message", asyncFirst)),
+                    Refuses(() => decorator.Subscribe(DecoratorPhase.Start, "Message", asyncLast)),
+                    Refuses(() => decorator.Subscribe(DecoratorPhase.Start, "Message", bothSync)));
+            })
+            .TheTest
+            .ShouldPass<CombinedOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("an async target ahead of a synchronous one is refused", outcome.AsyncFirst != null);
+                because.ItsTrue("an async target after a synchronous one is refused", outcome.AsyncLast != null);
+                because.ItsTrue("two synchronous targets are accepted", outcome.BothSync == null, outcome.BothSync);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -373,7 +421,9 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
         private sealed record RefusalOutcome(string? TypedAction, string? RegistryWide, string? GeneratedRegistry, string? GeneratedInstance, string? DecoratorAction, string? Store, bool SynchronousAccepted, string Message);
 
-        private sealed record TaskOutcome(int Sum, bool SumShortCircuited, bool ResetRan, int Count, int ErrorsLogged);
+        private sealed record TaskOutcome(string Rejections, bool ValueRejected, bool ReferenceRejected, int Count, bool NotFlushed, int ErrorsLogged);
+
+        private sealed record CombinedOutcome(string? AsyncFirst, string? AsyncLast, string? BothSync);
 
         private sealed record ArgumentOutcome(string? ByName, string? CallersArgument, string Generated);
     }

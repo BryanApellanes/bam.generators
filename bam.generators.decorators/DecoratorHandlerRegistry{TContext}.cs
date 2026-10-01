@@ -49,6 +49,29 @@ namespace Bam.Generators.Decorators
         }
 
         /// <summary>
+        /// Subscribes a <paramref name="handler"/> whose return type is the decorated method's result type, as
+        /// the generated typed hooks do. Checked and stored like any other handler; a non-null return value
+        /// overrides the invocation's result.
+        /// </summary>
+        /// <typeparam name="R">The handler's return type.</typeparam>
+        /// <param name="phase">The phase the handler runs in.</param>
+        /// <param name="methodName">The method to subscribe to, or <see cref="AnyMethod"/> for all of them.</param>
+        /// <param name="handler">The handler.</param>
+        /// <exception cref="ArgumentException">
+        /// <paramref name="methodName"/> is blank, or <paramref name="handler"/> is an <c>async</c> method or
+        /// lambda.
+        /// </exception>
+        public void Add<R>(DecoratorPhase phase, string methodName, Func<TContext, R> handler)
+        {
+            ArgumentNullException.ThrowIfNull(handler);
+            // Checked here, on the delegate the subscriber handed over, rather than on the wrapper below,
+            // which is always synchronous.
+            RequireSynchronous(handler);
+
+            Add(phase, methodName, new Func<TContext, object?>(context => handler(context)));
+        }
+
+        /// <summary>
         /// Subscribes an observe-only <paramref name="handler"/>: it runs like any other handler but never
         /// overrides the result unless it sets <see cref="DecoratorInvocationContext.Result"/> itself.
         /// </summary>
@@ -73,14 +96,18 @@ namespace Bam.Generators.Decorators
 
         // The compiler marks every async method and lambda with AsyncStateMachineAttribute. Such a handler
         // returns at its first await, before it can reject anything, and the call goes ahead: a guard that
-        // never guards. Refusing it here covers every way to subscribe, since they all end up in Add.
-        private static void RequireSynchronous(Delegate handler)
+        // never guards. Refusing it here covers every way to subscribe, since they all end up in Add. Every
+        // target of a combined delegate is checked; Delegate.Method alone names only the last one.
+        internal static void RequireSynchronous(Delegate handler)
         {
-            if (handler.Method.IsDefined(typeof(AsyncStateMachineAttribute), false))
+            foreach (Delegate target in handler.GetInvocationList())
             {
-                throw new ArgumentException(
-                    "Handlers run synchronously and an async handler returns at its first await, before it can stop the call. Do the asynchronous work elsewhere and reject from a synchronous handler.",
-                    nameof(handler));
+                if (target.Method.IsDefined(typeof(AsyncStateMachineAttribute), false))
+                {
+                    throw new ArgumentException(
+                        "Handlers run synchronously and an async handler returns at its first await, before it can stop the call. Do the asynchronous work elsewhere and reject from a synchronous handler.",
+                        nameof(handler));
+                }
             }
         }
 

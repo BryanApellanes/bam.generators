@@ -75,7 +75,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
                     ReferenceEquals(registration, again),
                     resolved.Message("hello"),
                     decorator?.Instance.Calls ?? -1,
-                    ReferenceEquals(decorator?.SharedSubscriptions, registry.GetDecoratorSubscriptions()) && decorator?.RegistrationHandlers.Contains(registration.Handlers) == true,
+                    decorator?.SharedSubscriptions.Contains(registry.GetDecoratorSubscriptions()) == true && decorator?.RegistrationHandlers.Contains(registration.Handlers) == true,
                     registration.InterfaceType == typeof(IEchoService) && registration.ImplementationType == typeof(EchoService) && decorator?.InterfaceType == typeof(IEchoService));
             })
             .TheTest

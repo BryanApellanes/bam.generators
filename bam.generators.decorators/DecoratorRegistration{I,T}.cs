@@ -77,7 +77,10 @@ namespace Bam.Generators.Decorators
         /// <summary>Gets the logger handed to every decorator created.</summary>
         public ILogger? Logger { get; }
 
-        /// <summary>Gets the registry-wide handlers every decorator created also runs.</summary>
+        /// <summary>
+        /// Gets the registry-wide handlers every decorator created or adopted also runs. Null when the
+        /// registration was made without a registry.
+        /// </summary>
         public DecoratorSubscriptions? SharedSubscriptions { get; }
 
         /// <summary>Gets the handlers shared by every decorator this registration creates.</summary>
@@ -85,6 +88,12 @@ namespace Bam.Generators.Decorators
 
         /// <inheritdoc />
         public void Subscribe(DecoratorPhase phase, string methodName, Func<DecoratorInvocationContext<T>, object?> handler)
+        {
+            Handlers.Add(phase, methodName, handler);
+        }
+
+        /// <inheritdoc />
+        public void Subscribe<R>(DecoratorPhase phase, string methodName, Func<DecoratorInvocationContext<T>, R> handler)
         {
             Handlers.Add(phase, methodName, handler);
         }
@@ -172,11 +181,15 @@ namespace Bam.Generators.Decorators
         }
 
         // A decorator that already serves another registration (a second registry resolving through the
-        // first) keeps that registration's handlers and gains this one's.
+        // first) keeps that registry's stores, registry-wide and registration, and gains this one's.
         private Decorator<I, T> Attach(Decorator<I, T> decorator)
         {
+            if (SharedSubscriptions != null)
+            {
+                decorator.AttachSharedSubscriptions(SharedSubscriptions);
+            }
+
             decorator.AttachRegistrationHandlers(Handlers);
-            decorator.SharedSubscriptions ??= SharedSubscriptions;
             return decorator;
         }
     }

@@ -401,7 +401,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OndefaultStart(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::System.String?> handler)
         {
-            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "default", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "default", handler);
             return registry;
         }
 
@@ -413,7 +413,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService OndefaultStart(this global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "default", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "default", handler);
             return service;
         }
 
@@ -447,7 +447,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OndefaultEnd(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::System.String?> handler)
         {
-            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "default", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "default", handler);
             return registry;
         }
 
@@ -459,7 +459,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService OndefaultEnd(this global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "default", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "default", handler);
             return service;
         }
 
@@ -493,7 +493,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OndefaultError(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::System.String?> handler)
         {
-            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "default", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "default", handler);
             return registry;
         }
 
@@ -505,7 +505,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService OndefaultError(this global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "default", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "default", handler);
             return service;
         }
 
@@ -539,7 +539,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnLogStart(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::System.String?> handler)
         {
-            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Log", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Log", handler);
             return registry;
         }
 
@@ -551,7 +551,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService OnLogStart(this global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Log", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Log", handler);
             return service;
         }
 
@@ -585,7 +585,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnLogEnd(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::System.String?> handler)
         {
-            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Log", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Log", handler);
             return registry;
         }
 
@@ -597,7 +597,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService OnLogEnd(this global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Log", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Log", handler);
             return service;
         }
 
@@ -631,7 +631,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnLogError(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::System.String?> handler)
         {
-            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Log", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Log", handler);
             return registry;
         }
 
@@ -643,7 +643,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService OnLogError(this global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Log", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Log", handler);
             return service;
         }
 
@@ -677,7 +677,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnKeysStart(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::System.Collections.Generic.Dictionary<global::System.String, global::System.Int32>.KeyCollection?> handler)
         {
-            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Keys", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Keys", handler);
             return registry;
         }
 
@@ -689,7 +689,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService OnKeysStart(this global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::System.Collections.Generic.Dictionary<global::System.String, global::System.Int32>.KeyCollection?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Keys", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Keys", handler);
             return service;
         }
 
@@ -723,7 +723,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnKeysEnd(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::System.Collections.Generic.Dictionary<global::System.String, global::System.Int32>.KeyCollection?> handler)
         {
-            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Keys", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Keys", handler);
             return registry;
         }
 
@@ -735,7 +735,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService OnKeysEnd(this global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::System.Collections.Generic.Dictionary<global::System.String, global::System.Int32>.KeyCollection?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Keys", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Keys", handler);
             return service;
         }
 
@@ -769,7 +769,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnKeysError(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::System.Collections.Generic.Dictionary<global::System.String, global::System.Int32>.KeyCollection?> handler)
         {
-            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Keys", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Keys", handler);
             return registry;
         }
 
@@ -781,7 +781,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService OnKeysError(this global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::System.Collections.Generic.Dictionary<global::System.String, global::System.Int32>.KeyCollection?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Keys", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Keys", handler);
             return service;
         }
 
@@ -815,7 +815,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnWrapStart(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::Bam.Generators.Decorators.Tests.Fixtures.Wrapper<global::System.Int32>.Item?> handler)
         {
-            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Wrap", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Wrap", handler);
             return registry;
         }
 
@@ -827,7 +827,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService OnWrapStart(this global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::Bam.Generators.Decorators.Tests.Fixtures.Wrapper<global::System.Int32>.Item?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Wrap", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Wrap", handler);
             return service;
         }
 
@@ -861,7 +861,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnWrapEnd(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::Bam.Generators.Decorators.Tests.Fixtures.Wrapper<global::System.Int32>.Item?> handler)
         {
-            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Wrap", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Wrap", handler);
             return registry;
         }
 
@@ -873,7 +873,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService OnWrapEnd(this global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::Bam.Generators.Decorators.Tests.Fixtures.Wrapper<global::System.Int32>.Item?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Wrap", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Wrap", handler);
             return service;
         }
 
@@ -907,7 +907,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnWrapError(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::Bam.Generators.Decorators.Tests.Fixtures.Wrapper<global::System.Int32>.Item?> handler)
         {
-            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Wrap", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            EdgeCaseServiceDecoratorExtensions.DecorateEdgeCaseService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Wrap", handler);
             return registry;
         }
 
@@ -919,7 +919,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService OnWrapError(this global::Bam.Generators.Decorators.Tests.Fixtures.IEdgeCaseService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, global::Bam.Generators.Decorators.Tests.Fixtures.Wrapper<global::System.Int32>.Item?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Wrap", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Wrap", handler);
             return service;
         }
     }

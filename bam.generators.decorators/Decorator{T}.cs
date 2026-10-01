@@ -14,7 +14,8 @@ namespace Bam.Generators.Decorators
     /// <remarks>
     /// <para>
     /// Handlers run in subscription order: registry-wide handlers (<see cref="SharedSubscriptions"/>) first,
-    /// then those subscribed to the registration (<see cref="RegistrationHandlers"/>), then this instance's own.
+    /// then those subscribed to the registrations (<see cref="RegistrationHandlers"/>), then this instance's
+    /// own. A decorator that serves several registries runs every registry's stores, in the order they attached.
     /// A handler overrides the outcome by returning a non-null value or by setting
     /// <see cref="DecoratorInvocationContext.Result"/>: at start the decorated method is skipped, at end the
     /// returned value is replaced, on error the exception is suppressed. When several handlers override, the
@@ -49,6 +50,7 @@ namespace Bam.Generators.Decorators
 
         private readonly object _attachLock = new object();
         private ImmutableList<DecoratorHandlerRegistry<DecoratorInvocationContext<T>>> _registrationHandlers = ImmutableList<DecoratorHandlerRegistry<DecoratorInvocationContext<T>>>.Empty;
+        private ImmutableList<DecoratorSubscriptions> _sharedSubscriptions = ImmutableList<DecoratorSubscriptions>.Empty;
 
         ILogger? _logger;
 
@@ -102,7 +104,21 @@ namespace Bam.Generators.Decorators
         }
 
         /// <inheritdoc />
-        public DecoratorSubscriptions? SharedSubscriptions { get; set; }
+        public IReadOnlyList<DecoratorSubscriptions> SharedSubscriptions => _sharedSubscriptions;
+
+        /// <inheritdoc />
+        public void AttachSharedSubscriptions(DecoratorSubscriptions subscriptions)
+        {
+            ArgumentNullException.ThrowIfNull(subscriptions);
+
+            lock (_attachLock)
+            {
+                if (!_sharedSubscriptions.Contains(subscriptions))
+                {
+                    _sharedSubscriptions = _sharedSubscriptions.Add(subscriptions);
+                }
+            }
+        }
 
         /// <inheritdoc />
         public event EventHandler<DecoratorEventArgs<T>>? MethodStart;
@@ -124,6 +140,12 @@ namespace Bam.Generators.Decorators
 
         /// <inheritdoc />
         public void Subscribe(DecoratorPhase phase, string methodName, Func<DecoratorInvocationContext<T>, object?> handler)
+        {
+            _handlers.Add(phase, methodName, handler);
+        }
+
+        /// <inheritdoc />
+        public void Subscribe<R>(DecoratorPhase phase, string methodName, Func<DecoratorInvocationContext<T>, R> handler)
         {
             _handlers.Add(phase, methodName, handler);
         }
@@ -495,6 +517,17 @@ namespace Bam.Generators.Decorators
             return Cast<R>(returned);
         }
 
+        // Task, Task<X>, ValueTask and ValueTask<X>: the shapes AwaitReturned knows how to await.
+        private static bool IsTaskLike(Type type)
+        {
+            if (typeof(Task).IsAssignableFrom(type) || type == typeof(ValueTask))
+            {
+                return true;
+            }
+
+            return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ValueTask<>);
+        }
+
         // Null (a void method, or a null return) becomes default; anything else must actually be an R.
         private static R Cast<R>(object? returned)
         {
@@ -669,8 +702,7 @@ namespace Bam.Generators.Decorators
 
         private void RunHandlers(DecoratorInvocationContext<T> context)
         {
-            DecoratorSubscriptions? shared = SharedSubscriptions;
-            if (shared != null)
+            foreach (DecoratorSubscriptions shared in _sharedSubscriptions)
             {
                 foreach (Func<DecoratorInvocationContext, object?> handler in shared.Get(context.Phase, context.MethodName))
                 {
@@ -712,11 +744,15 @@ namespace Bam.Generators.Decorators
             try
             {
                 object? returned = handler();
-                if (returned is Task)
+                if (returned != null && IsTaskLike(returned.GetType()))
                 {
-                    // A handler that hands back a Task did its work asynchronously, after this point. It is
-                    // not a result, and treating it as one would skip a void method's call without a word.
-                    this._logger?.Error("{0} handler for method {1} on type of Decorator<{2}> returned a Task; handlers run synchronously, so the task was ignored and the call went ahead", context.Phase.ToString().ToUpperInvariant(), context.MethodName, typeof(T).Name);
+                    // A handler that hands back a Task or ValueTask does its work asynchronously, after this
+                    // point. It is not a result, and treating it as one would skip a void method's call without
+                    // a word; letting the call go ahead would let a guard written that way fail open. So the
+                    // call fails closed, and the author finds out on the first call rather than in a log.
+                    string message = $"{context.Phase.ToString().ToUpperInvariant()} handler for method {context.MethodName} on type of Decorator<{typeof(T).Name}> returned a {returned.GetType().Name}; handlers run synchronously, so the call was rejected";
+                    this._logger?.Error(message);
+                    context.Reject(new DecoratorException(message));
                     return;
                 }
 

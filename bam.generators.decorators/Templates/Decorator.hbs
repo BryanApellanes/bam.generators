@@ -86,7 +86,7 @@ namespace {{{Namespace}}}
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry {{{HookName}}}(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<{{{ContextTypeName}}}, {{{ResultTypeName}}}> handler)
         {
-            {{{ExtensionsTypeName}}}.{{{DecorateMethodName}}}(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.{{{Phase}}}, "{{{MethodName}}}", new global::System.Func<{{{ContextTypeName}}}, object?>(context => handler(context)));
+            {{{ExtensionsTypeName}}}.{{{DecorateMethodName}}}(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.{{{Phase}}}, "{{{MethodName}}}", handler);
             return registry;
         }
 
@@ -98,7 +98,7 @@ namespace {{{Namespace}}}
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static {{{InterfaceName}}} {{{HookName}}}(this {{{InterfaceName}}} service, global::System.Func<{{{ContextTypeName}}}, {{{ResultTypeName}}}> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<{{{ImplementationName}}}>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.{{{Phase}}}, "{{{MethodName}}}", new global::System.Func<{{{ContextTypeName}}}, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<{{{ImplementationName}}}>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.{{{Phase}}}, "{{{MethodName}}}", handler);
             return service;
         }
 {{/if}}

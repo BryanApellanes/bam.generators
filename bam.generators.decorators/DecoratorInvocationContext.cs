@@ -68,8 +68,10 @@ namespace Bam.Generators.Decorators
         /// Use this for anything that must stop a call, such as an authorization or validation check. A
         /// handler that throws any other exception is logged and the call goes ahead. Handlers run
         /// synchronously, so the rejection has to be made before the handler returns: an <c>async</c> handler
-        /// is refused when subscribed, and a handler that returns a <see cref="System.Threading.Tasks.Task"/>
-        /// is logged and the call goes ahead.
+        /// is refused when subscribed, and a handler that returns a <see cref="System.Threading.Tasks.Task"/>,
+        /// <see cref="System.Threading.Tasks.ValueTask"/> or <see cref="System.Threading.Tasks.ValueTask{TResult}"/>
+        /// rejects the call with a <see cref="DecoratorException"/>, since whatever it would have decided
+        /// comes too late.
         /// </remarks>
         /// <param name="exception">The exception the caller receives.</param>
         public void Reject(Exception exception)

@@ -74,7 +74,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnMessageStart(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EchoService>, global::System.String?> handler)
         {
-            EchoServiceDecoratorExtensions.DecorateEchoService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Message", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EchoService>, object?>(context => handler(context)));
+            EchoServiceDecoratorExtensions.DecorateEchoService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Message", handler);
             return registry;
         }
 
@@ -86,7 +86,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IEchoService OnMessageStart(this global::Bam.Generators.Decorators.Tests.Fixtures.IEchoService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EchoService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EchoService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Message", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EchoService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EchoService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Message", handler);
             return service;
         }
 
@@ -120,7 +120,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnMessageEnd(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EchoService>, global::System.String?> handler)
         {
-            EchoServiceDecoratorExtensions.DecorateEchoService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Message", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EchoService>, object?>(context => handler(context)));
+            EchoServiceDecoratorExtensions.DecorateEchoService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Message", handler);
             return registry;
         }
 
@@ -132,7 +132,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IEchoService OnMessageEnd(this global::Bam.Generators.Decorators.Tests.Fixtures.IEchoService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EchoService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EchoService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Message", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EchoService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EchoService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Message", handler);
             return service;
         }
 
@@ -166,7 +166,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnMessageError(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EchoService>, global::System.String?> handler)
         {
-            EchoServiceDecoratorExtensions.DecorateEchoService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Message", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EchoService>, object?>(context => handler(context)));
+            EchoServiceDecoratorExtensions.DecorateEchoService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Message", handler);
             return registry;
         }
 
@@ -178,7 +178,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IEchoService OnMessageError(this global::Bam.Generators.Decorators.Tests.Fixtures.IEchoService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EchoService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EchoService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Message", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.EchoService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.EchoService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Message", handler);
             return service;
         }
     }

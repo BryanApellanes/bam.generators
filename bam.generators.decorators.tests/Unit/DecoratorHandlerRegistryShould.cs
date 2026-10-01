@@ -122,6 +122,41 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
+        public void CheckATypedHandlerBeforeWrappingIt()
+        {
+            // The generated hooks subscribe a Func typed to the method's result. The async check has to see
+            // that delegate, not the synchronous wrapper the store puts around it.
+            After.Setup(reg =>
+            {
+                reg.For<DecoratorSubscriptions>().Use(new DecoratorSubscriptions());
+            })
+            .When<DecoratorSubscriptions>("is given typed handlers", subscriptions =>
+            {
+                Func<DecoratorInvocationContext, object?> asyncByCovariance = AsyncByCovariance;
+                Func<DecoratorInvocationContext, int> typed = context => 42;
+                subscriptions.Add(DecoratorPhase.Start, "Add", typed);
+                object? value = subscriptions.Get(DecoratorPhase.Start, "Add").Single()(NewContext());
+                return new TypedOutcome(
+                    Throws<ArgumentException>(() => subscriptions.Add<object?>(DecoratorPhase.Start, "Add", asyncByCovariance)),
+                    value is int boxed && boxed == 42);
+            })
+            .TheTest
+            .ShouldPass<TypedOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("an async method group bound through return-type covariance is refused", outcome.AsyncRefused);
+                because.ItsTrue("a typed handler's value comes through the wrapper boxed", outcome.ValueBoxed);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        private static async Task<object?> AsyncByCovariance(DecoratorInvocationContext context)
+        {
+            await Task.Yield();
+            return null;
+        }
+
+        [UnitTest]
         public void TrackWhetherAHandlerOverrodeTheResult()
         {
             When.A<DecoratorInvocationContext>("has its result set by a handler", NewContext(), context =>
@@ -158,6 +193,8 @@ namespace Bam.Generators.Decorators.Tests.Unit
         private sealed record RegistryOutcome(string Ran, int StartCount, int ErrorCount);
 
         private sealed record RejectionOutcome(bool BlankNameRejected, bool NullFuncRejected, bool NullActionRejected);
+
+        private sealed record TypedOutcome(bool AsyncRefused, bool ValueBoxed);
 
         private sealed record ContextOutcome(bool OverriddenInitially, object? InitialResult, bool OverriddenAfterSet, object? ResultAfterSet, string MethodName);
     }

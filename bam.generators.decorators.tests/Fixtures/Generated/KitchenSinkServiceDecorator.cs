@@ -316,7 +316,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnFindStart(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Find", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Find", handler);
             return registry;
         }
 
@@ -328,7 +328,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService OnFindStart(this global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Find", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Find", handler);
             return service;
         }
 
@@ -362,7 +362,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnFindEnd(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Find", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Find", handler);
             return registry;
         }
 
@@ -374,7 +374,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService OnFindEnd(this global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Find", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Find", handler);
             return service;
         }
 
@@ -408,7 +408,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnFindError(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Find", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Find", handler);
             return registry;
         }
 
@@ -420,7 +420,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService OnFindError(this global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Find", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Find", handler);
             return service;
         }
 
@@ -454,7 +454,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnAddAsyncStart(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.Int32?> handler)
         {
-            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "AddAsync", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "AddAsync", handler);
             return registry;
         }
 
@@ -466,7 +466,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService OnAddAsyncStart(this global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.Int32?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "AddAsync", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "AddAsync", handler);
             return service;
         }
 
@@ -500,7 +500,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnAddAsyncEnd(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.Int32?> handler)
         {
-            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "AddAsync", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "AddAsync", handler);
             return registry;
         }
 
@@ -512,7 +512,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService OnAddAsyncEnd(this global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.Int32?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "AddAsync", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "AddAsync", handler);
             return service;
         }
 
@@ -546,7 +546,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnAddAsyncError(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.Int32?> handler)
         {
-            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "AddAsync", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "AddAsync", handler);
             return registry;
         }
 
@@ -558,7 +558,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService OnAddAsyncError(this global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.Int32?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "AddAsync", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "AddAsync", handler);
             return service;
         }
 
@@ -658,7 +658,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnDescribeAsyncStart(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "DescribeAsync", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "DescribeAsync", handler);
             return registry;
         }
 
@@ -670,7 +670,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService OnDescribeAsyncStart(this global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "DescribeAsync", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "DescribeAsync", handler);
             return service;
         }
 
@@ -704,7 +704,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnDescribeAsyncEnd(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "DescribeAsync", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "DescribeAsync", handler);
             return registry;
         }
 
@@ -716,7 +716,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService OnDescribeAsyncEnd(this global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "DescribeAsync", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "DescribeAsync", handler);
             return service;
         }
 
@@ -750,7 +750,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnDescribeAsyncError(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "DescribeAsync", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "DescribeAsync", handler);
             return registry;
         }
 
@@ -762,7 +762,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService OnDescribeAsyncError(this global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "DescribeAsync", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "DescribeAsync", handler);
             return service;
         }
 
@@ -928,7 +928,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnFailStart(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Fail", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Fail", handler);
             return registry;
         }
 
@@ -940,7 +940,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService OnFailStart(this global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Fail", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Fail", handler);
             return service;
         }
 
@@ -974,7 +974,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnFailEnd(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Fail", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Fail", handler);
             return registry;
         }
 
@@ -986,7 +986,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService OnFailEnd(this global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Fail", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Fail", handler);
             return service;
         }
 
@@ -1020,7 +1020,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnFailError(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Fail", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Fail", handler);
             return registry;
         }
 
@@ -1032,7 +1032,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService OnFailError(this global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Fail", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Fail", handler);
             return service;
         }
 
@@ -1066,7 +1066,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnFailAsyncStart(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "FailAsync", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "FailAsync", handler);
             return registry;
         }
 
@@ -1078,7 +1078,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService OnFailAsyncStart(this global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "FailAsync", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "FailAsync", handler);
             return service;
         }
 
@@ -1112,7 +1112,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnFailAsyncEnd(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "FailAsync", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "FailAsync", handler);
             return registry;
         }
 
@@ -1124,7 +1124,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService OnFailAsyncEnd(this global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "FailAsync", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "FailAsync", handler);
             return service;
         }
 
@@ -1158,7 +1158,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnFailAsyncError(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "FailAsync", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "FailAsync", handler);
             return registry;
         }
 
@@ -1170,7 +1170,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService OnFailAsyncError(this global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "FailAsync", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "FailAsync", handler);
             return service;
         }
 
@@ -1204,7 +1204,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnInvokeStart(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Invoke", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Invoke", handler);
             return registry;
         }
 
@@ -1216,7 +1216,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService OnInvokeStart(this global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Invoke", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Start, "Invoke", handler);
             return service;
         }
 
@@ -1250,7 +1250,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnInvokeEnd(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Invoke", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Invoke", handler);
             return registry;
         }
 
@@ -1262,7 +1262,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService OnInvokeEnd(this global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Invoke", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.End, "Invoke", handler);
             return service;
         }
 
@@ -1296,7 +1296,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="registry"/>, for chaining.</returns>
         public static global::Bam.DependencyInjection.ServiceRegistry OnInvokeError(this global::Bam.DependencyInjection.ServiceRegistry registry, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Invoke", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            KitchenSinkServiceDecoratorExtensions.DecorateKitchenSinkService(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Invoke", handler);
             return registry;
         }
 
@@ -1308,7 +1308,7 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
         /// <returns><paramref name="service"/>, for chaining.</returns>
         public static global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService OnInvokeError(this global::Bam.Generators.Decorators.Tests.Fixtures.IKitchenSinkService service, global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, global::System.String?> handler)
         {
-            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Invoke", new global::System.Func<global::Bam.Generators.Decorators.DecoratorInvocationContext<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>, object?>(context => handler(context)));
+            global::Bam.Generators.Decorators.DecoratorExtensions.GetDecorator<global::Bam.Generators.Decorators.Tests.Fixtures.KitchenSinkService>(service).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.Error, "Invoke", handler);
             return service;
         }
     }

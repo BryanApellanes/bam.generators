@@ -21,7 +21,8 @@ namespace Bam.Generators.Decorators
         /// <exception cref="DecoratorGenerationException">
         /// Thrown when <paramref name="interfaceType"/> is not a closed, public interface;
         /// <paramref name="implementationType"/> is not a closed, public class that implements it; or the
-        /// interface declares a member generated code cannot implement (static, init-only or ref-returning).
+        /// interface declares a member generated code cannot implement (static, init-only, ref-returning or
+        /// pointer-typed).
         /// </exception>
         public DecoratorModel(Type interfaceType, Type implementationType)
         {
@@ -257,6 +258,11 @@ namespace Bam.Generators.Decorators
             {
                 throw new DecoratorGenerationException(InterfaceType, $"Property {property.Name} returns by reference, which is not supported.");
             }
+
+            if (IsPointer(property.PropertyType))
+            {
+                throw new DecoratorGenerationException(InterfaceType, $"Property {property.Name} is pointer-typed, which a decorator cannot forward: generated code is not unsafe.");
+            }
         }
 
         private void RequireSupported(MethodInfo method)
@@ -265,6 +271,28 @@ namespace Bam.Generators.Decorators
             {
                 throw new DecoratorGenerationException(InterfaceType, $"Method {method.Name} returns by reference, which is not supported.");
             }
+
+            if (IsPointer(method.ReturnType) || method.GetParameters().Any(parameter => IsPointer(parameter.ParameterType)))
+            {
+                throw new DecoratorGenerationException(InterfaceType, $"Method {method.Name} uses a pointer type, which a decorator cannot forward: generated code is not unsafe.");
+            }
+        }
+
+        // A pointer anywhere in the type: int*, int*[], ref int*.
+        private static bool IsPointer(Type type)
+        {
+            Type candidate = type;
+            while (candidate.HasElementType)
+            {
+                if (candidate.IsPointer)
+                {
+                    return true;
+                }
+
+                candidate = candidate.GetElementType()!;
+            }
+
+            return candidate.IsPointer;
         }
 
         private void RequireNoStaticMembers(List<Type> interfaces)

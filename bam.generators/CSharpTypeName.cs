@@ -165,8 +165,9 @@ public static class CSharpTypeName
 
     // Names `actual` while walking `declared` — the same type as the member declared it, which differs from
     // `actual` only where the declaring type's generic parameters were substituted — consuming the compiler's
-    // nullable flags in the order it wrote them: one per reference type, array and generic parameter, none
-    // for a plain value type, in declaration order with generic arguments after their type.
+    // nullable flags in the order it wrote them: one per reference type, array, pointer and generic
+    // parameter, none for a plain value type, in declaration order with generic arguments after their type.
+    // A pointer's flag is never consumed here, since nothing nullable can follow a pointer in a type.
     private static string Render(Type actual, Type declared, NullableFlags flags)
     {
         if (actual.IsByRef)

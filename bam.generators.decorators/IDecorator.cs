@@ -14,10 +14,18 @@ namespace Bam.Generators.Decorators
         T Instance { get; set; }
 
         /// <summary>
-        /// Gets or sets the registry-wide handlers this decorator also runs, ahead of its own. Null when the
-        /// decorator was not created through a <c>ServiceRegistry</c>.
+        /// Gets the registry-wide handler stores this decorator also runs, ahead of its registrations' and its
+        /// own, in the order they attached. One per registry the decorator serves; empty when the decorator
+        /// was not created through a <c>ServiceRegistry</c>.
         /// </summary>
-        DecoratorSubscriptions? SharedSubscriptions { get; set; }
+        IReadOnlyList<DecoratorSubscriptions> SharedSubscriptions { get; }
+
+        /// <summary>
+        /// Adds a registry's store of registry-wide handlers to those this decorator runs. Attaching the same
+        /// store twice has no effect, and attaching a second store never displaces the first.
+        /// </summary>
+        /// <param name="subscriptions">The registry's store.</param>
+        void AttachSharedSubscriptions(DecoratorSubscriptions subscriptions);
 
         /// <summary>Raised after a method returned, or was short-circuited by a start handler.</summary>
         event EventHandler<DecoratorEventArgs<T>>? MethodEnd;
