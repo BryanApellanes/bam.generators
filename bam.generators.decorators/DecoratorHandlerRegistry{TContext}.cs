@@ -64,6 +64,7 @@ namespace Bam.Generators.Decorators
         /// </exception>
         public void Add<R>(DecoratorPhase phase, string methodName, Func<TContext, R> handler)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(methodName);
             ArgumentNullException.ThrowIfNull(handler);
             // Checked here, on the delegate the subscriber handed over, rather than on the wrapper below,
             // which is always synchronous.
@@ -77,14 +78,13 @@ namespace Bam.Generators.Decorators
 
             // De-duplicated on the subscriber's delegate by delegate equality, the same rule Add applies to an
             // untyped handler: an instance method group subscribed twice is stored once either way. The
-            // wrapper carries the delegate so a later subscription can find it; nothing is cached per store.
-            ArgumentException.ThrowIfNullOrWhiteSpace(methodName);
-            if (Lookup(phase, methodName).Any(existing => existing.Target is ITypedHandler typed && typed.Inner.Equals(handler)))
-            {
-                return;
-            }
-
-            Add(phase, methodName, new TypedHandler<R>(handler).Invoke);
+            // wrapper carries the delegate so a later subscription can find it. The check and the add are one
+            // compare-and-swap, as in Add, so two threads subscribing the same delegate store it once.
+            Func<TContext, object?> wrapper = new TypedHandler<R>(handler).Invoke;
+            _handlers.AddOrUpdate(
+                new HandlerKey(phase, methodName),
+                _ => ImmutableArray.Create(wrapper),
+                (_, existing) => existing.Any(stored => stored.Target is ITypedHandler typed && typed.Inner.Equals(handler)) ? existing : existing.Add(wrapper));
         }
 
         private interface ITypedHandler

@@ -135,6 +135,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 Func<DecoratorInvocationContext, object?> asyncByCovariance = AsyncByCovariance;
                 Func<DecoratorInvocationContext, int> typed = context => 42;
                 Func<DecoratorInvocationContext, Task<int>> taskTyped = context => Task.FromResult(42);
+                Func<DecoratorInvocationContext, Task> plainTask = context => Task.CompletedTask;
                 subscriptions.Add(DecoratorPhase.Start, "Add", typed);
                 subscriptions.Add(DecoratorPhase.Start, "Add", typed);
                 object? value = subscriptions.Get(DecoratorPhase.Start, "Add").Single()(NewContext());
@@ -148,7 +149,8 @@ namespace Bam.Generators.Decorators.Tests.Unit
                     Throws<ArgumentException>(() => subscriptions.Add<object?>(DecoratorPhase.Start, "Add", asyncByCovariance)),
                     value is int boxed && boxed == 42,
                     subscriptions.Count(DecoratorPhase.Start, "Add") == 1 && subscriptions.Count(DecoratorPhase.Start, "Reset") == 1,
-                    Throws<ArgumentException>(() => subscriptions.Add(DecoratorPhase.Start, "Add", taskTyped)));
+                    Throws<ArgumentException>(() => subscriptions.Add(DecoratorPhase.Start, "Add", taskTyped)),
+                    Message(() => subscriptions.Add(DecoratorPhase.Start, "Add", plainTask)));
             })
             .TheTest
             .ShouldPass<TypedOutcome>((because, outcome) =>
@@ -157,6 +159,56 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 because.ItsTrue("a typed handler's value comes through the wrapper boxed", outcome.ValueBoxed);
                 because.ItsTrue("the same typed delegate subscribed twice is stored once", outcome.Deduplicated);
                 because.ItsTrue("a typed handler declared to return a task is refused when subscribed", outcome.TaskTypedRefused);
+                because.ItsTrue("the refusal names a plain Task as Task", outcome.TaskMessage?.StartsWith("A handler returning Task can never") == true, outcome.TaskMessage);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void StoreATypedHandlerOnceWhenSubscribedFromParallelThreads()
+        {
+            // The typed de-dup has to be one compare-and-swap, like the untyped one: a scan followed by an add
+            // lets two threads both miss and both store. Two threads released together, a fresh store per
+            // round, 200 rounds; a scan-then-add fails about 44% of rounds, so this cannot pass by luck.
+            When.A<DecoratorHandlerRegistryShould>("subscribes the same typed delegate from two threads at once, 200 times", this, test =>
+            {
+                Func<DecoratorInvocationContext, int> handler = context => 1;
+                int worst = 0;
+                int badRounds = 0;
+                for (int round = 0; round < 200; round++)
+                {
+                    DecoratorSubscriptions subscriptions = new DecoratorSubscriptions();
+                    using Barrier starting = new Barrier(2);
+                    Thread[] threads = Enumerable.Range(0, 2).Select(_ => new Thread(() =>
+                    {
+                        starting.SignalAndWait();
+                        subscriptions.Add(DecoratorPhase.Start, "Add", handler);
+                    })).ToArray();
+                    foreach (Thread thread in threads)
+                    {
+                        thread.Start();
+                    }
+
+                    foreach (Thread thread in threads)
+                    {
+                        thread.Join();
+                    }
+
+                    int stored = subscriptions.Count(DecoratorPhase.Start, "Add");
+                    worst = Math.Max(worst, stored);
+                    if (stored != 1)
+                    {
+                        badRounds++;
+                    }
+                }
+
+                return new ConcurrentOutcome(badRounds, worst);
+            })
+            .TheTest
+            .ShouldPass<ConcurrentOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("every round stored the handler once", outcome.BadRounds == 0, $"bad rounds: {outcome.BadRounds}, worst: {outcome.Worst}");
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -194,6 +246,19 @@ namespace Bam.Generators.Decorators.Tests.Unit
             .UnlessItFailed();
         }
 
+        private static string? Message(Action action)
+        {
+            try
+            {
+                action();
+                return null;
+            }
+            catch (ArgumentException ex)
+            {
+                return ex.Message;
+            }
+        }
+
         private static bool Throws<TException>(Action action) where TException : Exception
         {
             try
@@ -211,7 +276,9 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
         private sealed record RejectionOutcome(bool BlankNameRejected, bool NullFuncRejected, bool NullActionRejected);
 
-        private sealed record TypedOutcome(bool AsyncRefused, bool ValueBoxed, bool Deduplicated, bool TaskTypedRefused);
+        private sealed record TypedOutcome(bool AsyncRefused, bool ValueBoxed, bool Deduplicated, bool TaskTypedRefused, string? TaskMessage = null);
+
+        private sealed record ConcurrentOutcome(int BadRounds, int Worst);
 
         private sealed record ContextOutcome(bool OverriddenInitially, object? InitialResult, bool OverriddenAfterSet, object? ResultAfterSet, string MethodName);
     }
