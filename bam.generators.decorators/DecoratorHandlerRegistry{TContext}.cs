@@ -86,7 +86,7 @@ namespace Bam.Generators.Decorators
             _handlers.AddOrUpdate(
                 new HandlerKey(phase, methodName),
                 _ => ImmutableArray.Create(typedHandler.Stored),
-                (_, existing) => existing.Any(stored => stored.Target is ITypedHandler typed && ReferenceEquals(typed.Stored, stored) && typed.Inner.Equals(handler)) ? existing : existing.Add(typedHandler.Stored));
+                (_, existing) => existing.Any(stored => stored.Target is ITypedHandler typed && typed.Stored.Equals(stored) && typed.Inner.Equals(handler)) ? existing : existing.Add(typedHandler.Stored));
         }
 
         private interface ITypedHandler

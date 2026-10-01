@@ -356,6 +356,42 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
+        public void FailClosedWhenAHandlerThrowsAfterSettingATaskOrReflectionCannotAnswer()
+        {
+            // Two fail-closed paths with no other test: the by-hand ctx.Result check runs after the catch,
+            // so a handler that set a task and then threw is still caught; and a type reflection cannot
+            // answer for (two GetAwaiter methods) counts as awaitable rather than slipping through.
+            After.Setup(reg =>
+            {
+                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<ILogger>()));
+            })
+            .When<Decorator<KitchenSinkService>>("has a handler that sets a task and then throws, and handlers that hand back a type with two GetAwaiter methods", decorator =>
+            {
+                decorator.SubscribeStart("Reset", context => { context.Result = Task.CompletedTask; throw new InvalidOperationException("after setting it"); });
+                decorator.SubscribeStart("Add", context => new AmbiguousAwaitable());
+                Func<DecoratorInvocationContext<KitchenSinkService>, AmbiguousAwaitable> typed = context => new AmbiguousAwaitable();
+                decorator.Instance.Add(1, 1);
+                DecoratorInvocationResult<KitchenSinkService, object> reset = decorator.Invoke<object>("Reset");
+                DecoratorInvocationResult<KitchenSinkService, int> sum = decorator.Invoke<int>("Add", 1, 2);
+                return new FailClosedOutcome(
+                    reset.Rejected && reset.Exception is DecoratorException && !reset.ShortCircuited,
+                    sum.Rejected && sum.Exception is DecoratorException,
+                    Refuses(() => decorator.Subscribe(DecoratorPhase.Start, "Find", typed)) != null,
+                    decorator.Instance.Count);
+            })
+            .TheTest
+            .ShouldPass<FailClosedOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a task set on the context by a handler that then threw rejects the call", outcome.SetThenThrewRejected);
+                because.ItsTrue("a returned value whose GetAwaiter lookup throws rejects the call", outcome.AmbiguousRejected);
+                because.ItsTrue("a typed handler declared to return such a type is refused when subscribed", outcome.AmbiguousTypedRefused);
+                because.ItsTrue("neither call ran", outcome.Count == 1, $"count: {outcome.Count}");
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
         public void RefuseACombinedDelegateWithAnAsyncTarget()
         {
             After.Setup(reg =>
@@ -478,6 +514,8 @@ namespace Bam.Generators.Decorators.Tests.Unit
         private sealed record TaskOutcome(string Rejections, bool ValueRejected, bool ReferenceRejected, int Count, bool NotFlushed, int ErrorsLogged, bool EndRejected, bool ErrorChained);
 
         private sealed record CombinedOutcome(string? AsyncFirst, string? AsyncLast, string? BothSync);
+
+        private sealed record FailClosedOutcome(bool SetThenThrewRejected, bool AmbiguousRejected, bool AmbiguousTypedRefused, int Count);
 
         private sealed record AwaitableOutcome(bool ConfiguredAwaitable, bool Yield, bool ByHand, bool ErrorChained, int Count);
 

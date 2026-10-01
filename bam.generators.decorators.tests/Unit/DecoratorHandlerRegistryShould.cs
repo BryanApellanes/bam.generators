@@ -149,10 +149,14 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 Func<DecoratorInvocationContext, int> secondGroup = Seven;
                 subscriptions.Add(DecoratorPhase.Start, "Reset", firstGroup);
                 subscriptions.Add(DecoratorPhase.Start, "Reset", secondGroup);
+                // Behind another handler under the key: the de-dup must still find it, so the delegate stored
+                // for a typed handler has to be the wrapper's own on every path, not only the first under a key.
+                subscriptions.Add(DecoratorPhase.Start, "Reset", typed);
+                subscriptions.Add(DecoratorPhase.Start, "Reset", typed);
                 return new TypedOutcome(
                     Throws<ArgumentException>(() => subscriptions.Add<object?>(DecoratorPhase.Start, "Add", asyncByCovariance)),
                     value is int boxed && boxed == 42,
-                    subscriptions.Count(DecoratorPhase.Start, "Add") == 1 && subscriptions.Count(DecoratorPhase.Start, "Reset") == 1,
+                    subscriptions.Count(DecoratorPhase.Start, "Add") == 1 && subscriptions.Count(DecoratorPhase.Start, "Reset") == 2,
                     Throws<ArgumentException>(() => subscriptions.Add(DecoratorPhase.Start, "Add", taskTyped)),
                     Message(() => subscriptions.Add(DecoratorPhase.Start, "Add", plainTask)));
             })
