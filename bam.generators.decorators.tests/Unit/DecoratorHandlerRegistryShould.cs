@@ -247,13 +247,20 @@ namespace Bam.Generators.Decorators.Tests.Unit
                     handler(NewContext());
                 }
 
-                return new ForgedOutcome(subscriptions.Count(DecoratorPhase.Start, "Add"), guardRan);
+                // The wrapper's own delegate, cloned, is still the typed handler: stored first under a key and
+                // followed by the same typed handler, it is stored once.
+                Func<DecoratorInvocationContext, object?> cloned = (Func<DecoratorInvocationContext, object?>)other.Get(DecoratorPhase.Start, "Add").Single().Clone();
+                subscriptions.Add(DecoratorPhase.Start, "Reset", cloned);
+                subscriptions.Add(DecoratorPhase.Start, "Reset", guard);
+
+                return new ForgedOutcome(subscriptions.Count(DecoratorPhase.Start, "Add"), guardRan, subscriptions.Count(DecoratorPhase.Start, "Reset"));
             })
             .TheTest
             .ShouldPass<ForgedOutcome>((because, outcome) =>
             {
                 because.ItsTrue("the forged delegate did not pass for the guard, so both are stored", outcome.Stored == 2, $"stored: {outcome.Stored}");
                 because.ItsTrue("the guard ran", outcome.GuardRan == 1, $"guard ran: {outcome.GuardRan}");
+                because.ItsTrue("a clone of the wrapper's own delegate counts as the typed handler", outcome.ClonedStored == 1, $"stored: {outcome.ClonedStored}");
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -325,7 +332,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
         private sealed record ConcurrentOutcome(int BadRounds, int Worst);
 
-        private sealed record ForgedOutcome(int Stored, int GuardRan);
+        private sealed record ForgedOutcome(int Stored, int GuardRan, int ClonedStored);
 
         private sealed record ContextOutcome(bool OverriddenInitially, object? InitialResult, bool OverriddenAfterSet, object? ResultAfterSet, string MethodName);
     }

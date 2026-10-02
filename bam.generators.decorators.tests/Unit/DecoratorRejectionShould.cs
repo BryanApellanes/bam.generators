@@ -420,6 +420,71 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
+        public void ReadAResultSetByHandOnce()
+        {
+            // A handler that keeps its context can change Result from another thread while the decorator checks
+            // it. Read more than once, a Result cleared between the reads throws NullReferenceException out of
+            // the call. With a thread clearing it continuously that happens on hundreds of these calls; read
+            // once, on none.
+            After.Setup(reg =>
+            {
+                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<ILogger>()));
+            })
+            .When<Decorator<KitchenSinkService>>("has a start handler whose context another thread keeps clearing", decorator =>
+            {
+                DecoratorInvocationContext<KitchenSinkService>?[] kept = new DecoratorInvocationContext<KitchenSinkService>?[1];
+                bool stop = false;
+                decorator.SubscribeStart("Reset", context =>
+                {
+                    context.Result = Task.CompletedTask;
+                    Volatile.Write(ref kept[0], context);
+                    return null;
+                });
+                Thread clearer = new Thread(() =>
+                {
+                    while (!Volatile.Read(ref stop))
+                    {
+                        DecoratorInvocationContext<KitchenSinkService>? current = Volatile.Read(ref kept[0]);
+                        if (current != null)
+                        {
+                            current.Result = null;
+                        }
+                    }
+                });
+                int escaped = 0;
+                clearer.Start();
+                try
+                {
+                    for (int call = 0; call < 20000; call++)
+                    {
+                        try
+                        {
+                            decorator.Invoke<object>("Reset");
+                        }
+                        catch (Exception)
+                        {
+                            escaped++;
+                        }
+                    }
+                }
+                finally
+                {
+                    Volatile.Write(ref stop, true);
+                    clearer.Join();
+                }
+
+                return escaped;
+            })
+            .TheTest
+            .ShouldPass<int>((because, escaped) =>
+            {
+                because.ItsTrue("no exception left the decorated call", escaped == 0, $"escaped: {escaped}");
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
         public void RefuseACombinedDelegateWithAnAsyncTarget()
         {
             After.Setup(reg =>
