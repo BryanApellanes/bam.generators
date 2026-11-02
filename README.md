@@ -22,7 +22,7 @@ Three sibling projects extend the same template-driven approach to other generat
 | `HandlebarsTemplateSet` / `HandlebarsEmbeddedResources` | Loads the embedded `.hbs` templates by name. |
 | `BamServiceClientGenerator` (client) | Generates a strongly-typed client for a Bam protocol service. |
 | `UxSiteGenerator` (ux) | Generates a UX site's pages/navigation/theme from a `UxGenerationConfig`. |
-| `DecoratorGenerator` (decorators) | Generates a typed decorator and its subscription extension methods for a service interface. |
+| `DecoratorGenerator` (decorators) | Generates a typed decorator and its subscription extension methods for a service interface, from an interface and implementation pair or from the interface alone. |
 | `Decorator<I, T>` (decorators.runtime) | The base a generated decorator extends; runs the subscribed handlers around every call. `netstandard2.0`, no Bam dependency. |
 | `DecoratorFactory` (decorators.runtime) | Creates generated decorators for hosts on another container, sharing handlers per service pair; `GeneratedDecorators` finds them among the loaded assemblies. |
 | `CSharpTypeName` | Renders fully-qualified, nullable-annotated C# type names for reflection-driven generators. |

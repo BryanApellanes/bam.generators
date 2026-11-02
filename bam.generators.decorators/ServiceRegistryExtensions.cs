@@ -64,6 +64,24 @@ namespace Bam.Generators.Decorators
         }
 
         /// <summary>
+        /// Decorates the <typeparamref name="I"/> registered in <paramref name="registry"/> with a decorator
+        /// typed on the interface alone (<c>Decorator&lt;I, I&gt;</c>), whatever the registration resolves to:
+        /// an internal implementation, or one chosen at resolve time. Same as <c>Decorate&lt;I, I&gt;()</c>;
+        /// handlers subscribe with <c>OnMethodStart&lt;I, I&gt;</c> and see the method on the instance's runtime
+        /// type.
+        /// </summary>
+        /// <typeparam name="I">The service interface to decorate.</typeparam>
+        /// <param name="registry">The registry holding the registration.</param>
+        /// <param name="logger">Receives handler failures. Defaults to the registry's <see cref="ILogger"/>, then <see cref="Log.Default"/>.</param>
+        /// <returns>The registration now standing in for <typeparamref name="I"/>, to subscribe handlers to.</returns>
+        /// <exception cref="DecoratorException"><typeparamref name="I"/> is not registered.</exception>
+        /// <exception cref="DecoratorGenerationException">No decorator exists for the interface and one could not be compiled.</exception>
+        public static DecoratorRegistration<I, I> Decorate<I>(this ServiceRegistry registry, ILogger? logger = null) where I : class
+        {
+            return Decorate<I, I>(registry, logger);
+        }
+
+        /// <summary>
         /// Decorates the <typeparamref name="I"/> registered in <paramref name="registry"/> with
         /// <typeparamref name="TDecorator"/>. Generated code calls this with its own decorator type. Decorating
         /// an already decorated service returns the existing registration, whatever its decorator type.
