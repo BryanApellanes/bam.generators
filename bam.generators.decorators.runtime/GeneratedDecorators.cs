@@ -93,7 +93,10 @@ namespace Bam.Generators.Decorators
 
         /// <summary>
         /// Finds the generated decorator for the pair, or null when none is loaded. When several qualify, the
-        /// one at the conventional name (<see cref="FullNameOf"/>) wins, then the first found.
+        /// one at the conventional name (<see cref="FullNameOf"/>) wins; among those, one declared in the
+        /// implementation's own assembly, then one from an assembly loaded from disk (a non-empty
+        /// <see cref="Assembly.Location"/>) rather than from bytes; then the first found. The order does not
+        /// depend on which assembly loaded first.
         /// </summary>
         /// <exception cref="ArgumentException">The pair cannot close <c>Decorator&lt;I, T&gt;</c>.</exception>
         public static Type? Find(Type interfaceType, Type implementationType)
@@ -105,7 +108,11 @@ namespace Bam.Generators.Decorators
             }
 
             string conventionalName = FullNameOf(implementationType);
-            return candidates.FirstOrDefault(type => type.FullName == conventionalName) ?? candidates[0];
+            return candidates
+                .OrderBy(type => type.FullName == conventionalName ? 0 : 1)
+                .ThenBy(type => type.Assembly == implementationType.Assembly ? 0 : 1)
+                .ThenBy(type => string.IsNullOrEmpty(type.Assembly.Location) ? 1 : 0)
+                .First();
         }
 
         private static IEnumerable<Type> TypesOf(Assembly assembly)

@@ -130,14 +130,103 @@ namespace Bam.Generators.Decorators
         /// </exception>
         public void Add(DecoratorPhase phase, string methodName, Action<TContext> handler)
         {
+            Guard.NotNullOrWhiteSpace(methodName, nameof(methodName));
             Guard.NotNull(handler, nameof(handler));
             RequireSynchronous(handler);
 
-            Add(phase, methodName, new Func<TContext, object?>(context =>
+            // Wrapped so Remove can find the subscription by the delegate the subscriber holds. Stored once per
+            // subscription, as before: observe-only handlers are not de-duplicated, because equal delegates
+            // (one lambda, one closure, subscribed from many places) are each meant to run.
+            ActionHandler actionHandler = new ActionHandler(handler);
+            _handlers.AddOrUpdate(
+                new HandlerKey(phase, methodName),
+                _ => ImmutableArray.Create(actionHandler.Stored),
+                (_, existing) => existing.Add(actionHandler.Stored));
+        }
+
+        // Adapts an Action<TContext> to the stored shape while keeping the subscriber's delegate reachable.
+        private sealed class ActionHandler : ITypedHandler
+        {
+            private readonly Action<TContext> _inner;
+
+            public ActionHandler(Action<TContext> inner)
             {
-                handler(context);
+                _inner = inner;
+                Stored = Invoke;
+            }
+
+            public Delegate Inner => _inner;
+
+            public Func<TContext, object?> Stored { get; }
+
+            public object? Invoke(TContext context)
+            {
+                _inner(context);
                 return null;
-            }));
+            }
+        }
+
+        /// <summary>
+        /// Unsubscribes <paramref name="handler"/> from <paramref name="methodName"/> in <paramref name="phase"/>:
+        /// the delegate handed to any <c>Add</c> overload, found by delegate equality. Decorators already
+        /// holding this registry stop running the handler at their next call.
+        /// </summary>
+        /// <param name="phase">The phase the handler was subscribed to.</param>
+        /// <param name="methodName">The method it was subscribed to, or <see cref="AnyMethod"/>.</param>
+        /// <param name="handler">The delegate that was subscribed.</param>
+        /// <returns>True when a handler was removed; false when none matched.</returns>
+        public bool Remove(DecoratorPhase phase, string methodName, Delegate handler)
+        {
+            Guard.NotNullOrWhiteSpace(methodName, nameof(methodName));
+            Guard.NotNull(handler, nameof(handler));
+
+            HandlerKey key = new HandlerKey(phase, methodName);
+            while (_handlers.TryGetValue(key, out ImmutableArray<Func<TContext, object?>> existing))
+            {
+                Func<TContext, object?>? match = existing.FirstOrDefault(stored => Matches(stored, handler));
+                if (match is null)
+                {
+                    return false;
+                }
+
+                ImmutableArray<Func<TContext, object?>> updated = existing.Remove(match);
+                bool replaced = updated.IsEmpty
+                    ? ((ICollection<KeyValuePair<HandlerKey, ImmutableArray<Func<TContext, object?>>>>)_handlers).Remove(new KeyValuePair<HandlerKey, ImmutableArray<Func<TContext, object?>>>(key, existing))
+                    : _handlers.TryUpdate(key, updated, existing);
+                if (replaced)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Unsubscribes every handler from <paramref name="methodName"/> in <paramref name="phase"/>. Handlers
+        /// subscribed to <see cref="AnyMethod"/> are a separate entry: clear them by that name.
+        /// </summary>
+        /// <returns>True when any handler was removed.</returns>
+        public bool Clear(DecoratorPhase phase, string methodName)
+        {
+            Guard.NotNullOrWhiteSpace(methodName, nameof(methodName));
+
+            return _handlers.TryRemove(new HandlerKey(phase, methodName), out _);
+        }
+
+        /// <summary>
+        /// Unsubscribes every handler. Decorators already holding this registry run none of them at their
+        /// next call; the registry stays usable for new subscriptions.
+        /// </summary>
+        public void Clear()
+        {
+            _handlers.Clear();
+        }
+
+        private static bool Matches(Func<TContext, object?> stored, Delegate handler)
+        {
+            return stored.Equals(handler)
+                || (stored.Target is ITypedHandler typed && typed.Stored.Equals(stored) && typed.Inner.Equals(handler));
         }
 
         // The compiler marks every async method and lambda with AsyncStateMachineAttribute. Such a handler

@@ -35,11 +35,15 @@ The generated extensions class offers the same hooks as typed extension methods 
 DecoratorFactory.Handlers<IEchoService, EchoService>()
     .Add(DecoratorPhase.Error, nameof(IEchoService.Message), ctx => log.Warn(ctx.Exception));
 
-// SimpleInjector, Microsoft.Extensions.DependencyInjection + Scrutor, or a plain factory lambda:
+// From the container's decoration hook (SimpleInjector's ExpressionBuilt event,
+// Microsoft.Extensions.DependencyInjection + Scrutor's Decorate, or a plain factory lambda):
 IEchoService Decorate(EchoService inner) => DecoratorFactory.Create<IEchoService, EchoService>(inner);
+
+// When a host is torn down (one process, many hosts), empty the pair's store.
+DecoratorFactory.Reset<IEchoService, EchoService>();
 ```
 
-`Create<I, T>` finds the generated decorator among the loaded assemblies (`GeneratedDecorators.Find`: a class extending `Decorator<I, T>`, implementing `I`, with a `(T, IDecoratorLogger)` constructor; the conventional name `{T namespace}.Decorators.{T}Decorator` wins a tie) and throws `DecoratorException` when none is loaded. `Create<I, T, TDecorator>` names the type instead. Nothing is compiled.
+`Create<I, T>` returns the decorator as `I`, the type the hook hands back; the generated `On…` hooks are extension methods on `I`, so they apply to the result as returned, and the decorator itself is one cast away. It finds the generated decorator among the loaded assemblies (`GeneratedDecorators.Find`: a class extending `Decorator<I, T>`, implementing `I`, with a `(T, IDecoratorLogger)` constructor; the conventional name `{T namespace}.Decorators.{T}Decorator` wins a tie, then a type from the implementation's own assembly, then one loaded from disk) and throws `DecoratorException` when none is loaded. `Create<I, T, TDecorator>` names the type instead. Nothing is compiled. The shared store belongs to the process, not to any container: `Reset<I, T>()` empties it, and `DecoratorHandlerRegistry` has `Remove` and `Clear` for finer control.
 
 ## Logging
 

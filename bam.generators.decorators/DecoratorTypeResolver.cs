@@ -106,7 +106,7 @@ namespace Bam.Generators.Decorators
         /// <exception cref="DecoratorGenerationException">The pair cannot be decorated, or the generated source did not compile.</exception>
         protected virtual Type Compile(Type interfaceType, Type implementationType)
         {
-            DecoratorModel model = new DecoratorModel(interfaceType, implementationType);
+            DecoratorModel model = new DecoratorModel(interfaceType, implementationType, Generator.RegistryExtensions);
             string source = Generator.CodeWriter.GetSource(model);
             Type[] references = model.ReferencedTypes.Where(type => !string.IsNullOrEmpty(type.Assembly.Location)).ToArray();
 

@@ -133,7 +133,7 @@ The `./Templates` override applies to generation only, not to `Decorate<I, T>()`
 
 ## Using another container
 
-A host that does not use `ServiceRegistry` generates with `WithoutRegistryExtensions()`, references the runtime package alone, and creates decorators through `DecoratorFactory` from its own container's decoration hook (SimpleInjector's `RegisterDecorator`, `Decorate` in Microsoft.Extensions.DependencyInjection, or a factory lambda):
+A host that does not use `ServiceRegistry` generates with `WithoutRegistryExtensions()`, references the runtime package alone, and creates decorators through `DecoratorFactory` from its own container's decoration hook (SimpleInjector's `ExpressionBuilt` event, `Decorate` in Microsoft.Extensions.DependencyInjection with Scrutor, or a factory lambda). `Create<I, T>` returns the decorator as `I`, the type the hook hands back; the generated `On…` hooks are extension methods on `I`, so they apply to it as returned:
 
 ```csharp
 using Bam.Generators.Decorators;
@@ -148,6 +148,9 @@ IEchoService Decorate(EchoService inner) => DecoratorFactory.Create<IEchoService
 // Or name the generated type, when it is known at compile time.
 EchoServiceDecorator decorator = DecoratorFactory.Create<IEchoService, EchoService, EchoServiceDecorator>(inner);
 decorator.OnMessageEnd(ctx => { /* this instance only */ });
+
+// When a host is torn down (one process, many hosts: integration tests), empty the pair's store.
+DecoratorFactory.Reset<IEchoService, EchoService>();
 ```
 
 `Create<I, T>` finds the decorator generated for the pair among the loaded assemblies (`GeneratedDecorators.Find`) and remembers it; it compiles nothing, so a pair with no generated decorator loaded throws `DecoratorException`. Handlers added through `DecoratorFactory.Handlers<I, T>()` run before the ones subscribed on the decorator itself, the same order a registry's handlers take. Compiling a decorator on first use stays a `ServiceRegistry` feature.
@@ -187,6 +190,14 @@ dotnet build bam.generators.decorators.runtime.compat472/bam.generators.decorato
 
 ```bash
 bam generate Decorator --config /full/path/to/config.yaml
+```
+
+The CLI config gains a `RegistryExtensions: false` switch with bamtk#86; until it lands, regenerate the `NoRegistry` fixture from the generator itself:
+
+```csharp
+new DecoratorGenerator().WithoutRegistryExtensions()
+    .AddServiceType<IEchoService, EchoService>()
+    .WriteSource("bam.generators.decorators.tests/Fixtures/Generated/NoRegistry");
 ```
 
 The fixtures and the types they decorate are in the same assembly. If a change stops the checked-in fixtures from compiling, the assembly can't be built to regenerate them from. Fix the fixtures by hand far enough to compile, then regenerate over them.

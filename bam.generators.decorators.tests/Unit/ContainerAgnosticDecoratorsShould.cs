@@ -202,8 +202,8 @@ namespace Bam.Generators.Decorators.Tests.Unit
             When.A<EchoService>("is decorated by the factory", new EchoService(), service =>
             {
                 RecordingLogger logger = new RecordingLogger();
-                Decorator<IEchoService, EchoService> decorator = DecoratorFactory.Create<IEchoService, EchoService>(service, logger);
-                IEchoService echo = (IEchoService)decorator;
+                IEchoService echo = DecoratorFactory.Create<IEchoService, EchoService>(service, logger);
+                Decorator<IEchoService, EchoService> decorator = (Decorator<IEchoService, EchoService>)(object)echo;
                 string forwarded = echo.Message("hello");
                 Action<DecoratorInvocationContext<EchoService>> badHandler = context => throw new InvalidOperationException("bad handler");
                 decorator.Subscribe(DecoratorPhase.Start, nameof(IEchoService.Message), badHandler);
@@ -256,6 +256,151 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 because.ItsTrue("the shared handler ran for both, before the first decorator's own handler", string.Join(",", outcome.Order) == "shared:1,own:1,shared:2", string.Join(",", outcome.Order));
                 because.ItsTrue("the store is one per pair", outcome.SameStoreForPair);
                 because.ItsTrue("and not shared across pairs", !outcome.SharedAcrossPairs);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void CompileTheDocumentedContainerHook()
+        {
+            // The README's hook, verbatim in shape: a method returning the service interface from Create<I, T>.
+            const string source =
+                "using Bam.Generators.Decorators;\n" +
+                "using Bam.Generators.Decorators.Tests.Fixtures;\n" +
+                "public static class Host\n" +
+                "{\n" +
+                "    public static IEchoService Decorate(EchoService inner) => DecoratorFactory.Create<IEchoService, EchoService>(inner);\n" +
+                "}\n";
+
+            When.A<string>("is the README's container hook", source, hookSource =>
+            {
+                try
+                {
+                    Assembly loaded = Assembly.Load(new RoslynCompiler().Compile("DocumentedHook.Test", hookSource, typeof(DecoratorFactory), typeof(IEchoService)));
+                    MethodInfo decorate = loaded.GetType("Host")!.GetMethod("Decorate")!;
+                    EchoService inner = new EchoService();
+                    object? decorated = decorate.Invoke(null, new object[] { inner });
+                    string answer = decorated is IEchoService echo ? echo.Message("hi") : string.Empty;
+                    return new HookOutcome(true, decorated?.GetType(), answer, inner.Calls, string.Empty);
+                }
+                catch (Exception ex)
+                {
+                    return new HookOutcome(false, null, string.Empty, 0, ex.Message);
+                }
+            })
+            .TheTest
+            .ShouldPass<HookOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the documented hook compiles", outcome.Compiled, outcome.Diagnostics);
+                because.ItsTrue("it returns the generated decorator as the service interface", outcome.DecoratedType == typeof(EchoServiceDecorator), outcome.DecoratedType?.FullName);
+                because.ItsTrue("the call goes through the decorator to the instance", outcome.Answer == "hi" && outcome.Calls == 1);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void EmptyTheSharedStore()
+        {
+            When.A<ContainerAgnosticDecoratorsShould>("resets a pair's shared store", this, test =>
+            {
+                List<string> seen = new List<string>();
+                Action<DecoratorInvocationContext<Fuse>> shared = context => seen.Add("shared:" + context.Args[0]);
+                DecoratorFactory.Handlers<IFuse, Fuse>().Add(DecoratorPhase.Start, nameof(IFuse.Light), shared);
+                FuseDecorator decorator = DecoratorFactory.Create<IFuse, Fuse, FuseDecorator>(new Fuse());
+                decorator.Subscribe(DecoratorPhase.Start, nameof(IFuse.Light), context => seen.Add("own:" + context.Args[0]));
+                decorator.Light("1");
+                DecoratorFactory.Reset<IFuse, Fuse>();
+                decorator.Light("2");
+                DecoratorFactory.Handlers<IFuse, Fuse>().Add(DecoratorPhase.Start, nameof(IFuse.Light), shared);
+                decorator.Light("3");
+                DecoratorFactory.Reset<IFuse, Fuse>();
+
+                // Remove and Clear on a registry of their own, so no other test's subscriptions take part.
+                DecoratorHandlerRegistry<DecoratorInvocationContext<Fuse>> registry = new DecoratorHandlerRegistry<DecoratorInvocationContext<Fuse>>();
+                Func<DecoratorInvocationContext<Fuse>, object?> untyped = context => null;
+                Func<DecoratorInvocationContext<Fuse>, string?> typed = context => null;
+                Action<DecoratorInvocationContext<Fuse>> action = context => { };
+                registry.Add(DecoratorPhase.End, nameof(IFuse.Light), untyped);
+                registry.Add(DecoratorPhase.End, nameof(IFuse.Light), typed);
+                registry.Add(DecoratorPhase.End, nameof(IFuse.Light), action);
+                registry.Add(DecoratorPhase.End, nameof(IFuse.Light), action);
+                int afterAdds = registry.Count(DecoratorPhase.End, nameof(IFuse.Light));
+                bool removedTyped = registry.Remove(DecoratorPhase.End, nameof(IFuse.Light), typed);
+                bool removedAction = registry.Remove(DecoratorPhase.End, nameof(IFuse.Light), action) && registry.Remove(DecoratorPhase.End, nameof(IFuse.Light), action);
+                bool removedAgain = registry.Remove(DecoratorPhase.End, nameof(IFuse.Light), action);
+                int afterRemoves = registry.Count(DecoratorPhase.End, nameof(IFuse.Light));
+                registry.Add(DecoratorPhase.Error, DecoratorHandlerRegistry<DecoratorInvocationContext<Fuse>>.AnyMethod, untyped);
+                bool cleared = registry.Clear(DecoratorPhase.End, nameof(IFuse.Light));
+                int afterClear = registry.Count(DecoratorPhase.End, nameof(IFuse.Light));
+                int errorsLeft = registry.Count(DecoratorPhase.Error, nameof(IFuse.Light));
+                registry.Clear();
+                int afterClearAll = registry.Count(DecoratorPhase.Error, nameof(IFuse.Light));
+
+                return new ResetOutcome(string.Join(",", seen), afterAdds, removedTyped && removedAction, removedAgain, afterRemoves, cleared, afterClear, errorsLeft, afterClearAll);
+            })
+            .TheTest
+            .ShouldPass<ResetOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a decorator created before Reset stops running the shared handler and keeps its own, and a later subscription runs again", outcome.Seen == "shared:1,own:1,own:2,shared:3,own:3", outcome.Seen);
+                because.ItsTrue("an action subscribed twice is stored twice, as before", outcome.AfterAdds == 4, $"after adds: {outcome.AfterAdds}");
+                because.ItsTrue("typed and action handlers are removed by the delegate the subscriber holds, one subscription per call", outcome.Removed);
+                because.ItsTrue("removing a handler that is gone reports false", !outcome.RemovedAgain);
+                because.ItsTrue("the untyped handler remains", outcome.AfterRemoves == 1);
+                because.ItsTrue("Clear(phase, method) empties that entry only", outcome.Cleared && outcome.AfterClear == 0 && outcome.ErrorsLeft == 1);
+                because.ItsTrue("Clear() empties everything", outcome.AfterClearAll == 0);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void WrapAConstructorFailure()
+        {
+            When.A<Fuse>("has a decorator whose constructor throws", new Fuse(), fuse =>
+            {
+                try
+                {
+                    DecoratorFactory.Create<IFuse, Fuse, ExplodingFuseDecorator>(fuse);
+                    return new WrapOutcome(null);
+                }
+                catch (Exception ex)
+                {
+                    return new WrapOutcome(ex);
+                }
+            })
+            .TheTest
+            .ShouldPass<WrapOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a DecoratorException is thrown, not a TargetInvocationException", outcome.Thrown is DecoratorException, outcome.Thrown?.GetType().Name);
+                because.ItsTrue("its message carries the constructor's", outcome.Thrown?.Message.Contains("lit too early") == true, outcome.Thrown?.Message);
+                because.ItsTrue("the constructor's exception is the inner exception", outcome.Thrown?.InnerException is InvalidOperationException, outcome.Thrown?.InnerException?.GetType().Name);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void PreferTheDecoratorFromDiskOverAByteLoadedTwin()
+        {
+            When.A<DecoratorGenerator>("has a twin of the fixture loaded from bytes", new DecoratorGenerator().WithoutRegistryExtensions(), generator =>
+            {
+                // The same decorator the fixtures assembly holds, compiled again and loaded from bytes: a second
+                // candidate at the conventional name, from another assembly, with no Location.
+                DecoratorModel model = new DecoratorModel(typeof(IEchoService), typeof(EchoService), false);
+                Assembly twin = Assembly.Load(new RoslynCompiler().Compile("EchoTwin.Test", generator.GetSource<IEchoService, EchoService>(), model.ReferencedTypes));
+                Type twinType = twin.GetType(model.DecoratorFullName)!;
+                IReadOnlyList<Type> candidates = GeneratedDecorators.FindAll(typeof(IEchoService), typeof(EchoService));
+                Type? found = GeneratedDecorators.Find(typeof(IEchoService), typeof(EchoService));
+                return new TwinOutcome(candidates.Contains(twinType), candidates.Count, found, twinType.Assembly.Location);
+            })
+            .TheTest
+            .ShouldPass<TwinOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the twin is a candidate", outcome.TwinIsCandidate && outcome.Candidates >= 2, $"candidates: {outcome.Candidates}");
+                because.ItsTrue("the twin has no location", string.IsNullOrEmpty(outcome.TwinLocation));
+                because.ItsTrue("Find returns the fixture, whichever assembly enumerates first", outcome.Found == typeof(EchoServiceDecorator), outcome.Found?.Assembly.FullName);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -346,6 +491,45 @@ namespace Bam.Generators.Decorators.Tests.Unit
             }
         }
 
+        /// <summary>A pair for the shared-store and constructor-failure tests, so no other test's subscriptions take part.</summary>
+        public interface IFuse
+        {
+            string Light(string value);
+        }
+
+        public class Fuse : IFuse
+        {
+            public string Light(string value)
+            {
+                return "lit " + value;
+            }
+        }
+
+        public class FuseDecorator : Decorator<IFuse, Fuse>, IFuse
+        {
+            public FuseDecorator(Fuse instance, IDecoratorLogger? logger = null) : base(instance, logger)
+            {
+            }
+
+            public string Light(string value)
+            {
+                return Intercept<string>(nameof(Light), new object?[] { value }, () => Instance.Light(value)).Value!;
+            }
+        }
+
+        public class ExplodingFuseDecorator : Decorator<IFuse, Fuse>, IFuse
+        {
+            public ExplodingFuseDecorator(Fuse instance, IDecoratorLogger? logger = null) : base(instance, logger)
+            {
+                throw new InvalidOperationException("lit too early");
+            }
+
+            public string Light(string value)
+            {
+                return Instance.Light(value);
+            }
+        }
+
         /// <summary>A pair nothing decorates.</summary>
         public interface INobody
         {
@@ -386,5 +570,13 @@ namespace Bam.Generators.Decorators.Tests.Unit
         private sealed record ShareOutcome(string Pinged, string[] Order, bool SameStoreForPair, bool SharedAcrossPairs);
 
         private sealed record RefuseOutcome(string Missing, bool NullRejected);
+
+        private sealed record HookOutcome(bool Compiled, Type? DecoratedType, string Answer, int Calls, string Diagnostics);
+
+        private sealed record ResetOutcome(string Seen, int AfterAdds, bool Removed, bool RemovedAgain, int AfterRemoves, bool Cleared, int AfterClear, int ErrorsLeft, int AfterClearAll);
+
+        private sealed record WrapOutcome(Exception? Thrown);
+
+        private sealed record TwinOutcome(bool TwinIsCandidate, int Candidates, Type? Found, string TwinLocation);
     }
 }
