@@ -2,7 +2,7 @@
 
 Decorators for services in a `ServiceRegistry`: wrap a registered service, then run handlers at the start, end and failure of any of its methods.
 
-The project has two halves. The runtime (`Decorator<I, T>` and the extension methods) does the wrapping and runs the handlers. The generator (`DecoratorGenerator`) emits a strongly-typed decorator for a service interface, plus typed extension methods for subscribing to it.
+The work is split across two projects. [`bam.generators.decorators.runtime`](../bam.generators.decorators.runtime/README.md) (`netstandard2.0` and `net10.0`, no Bam dependency) holds what a generated decorator references: `Decorator<I, T>`, the invocation contexts and results, the handler stores and `IDecoratorLogger`. This project (`net10.0`) holds the `ServiceRegistry` extensions, the registrations, the resolver that finds or compiles a decorator, the generator (`DecoratorGenerator`) that emits a strongly-typed decorator plus typed subscription extension methods, and the adapter from the Bam `ILogger` to the runtime's logger. A .NET Framework application references the runtime package alone and compiles generated decorators against it.
 
 ## Usage
 
@@ -100,6 +100,10 @@ A guard only covers what's intercepted. Properties, indexers, events and methods
 
 Two things to keep in mind when a decorated service makes decisions other code relies on. An error handler that returns a value turns a failure into a success, so don't subscribe one to a service that denies by throwing. And a registry-wide handler that returns a value changes the result of every matching method whose return type fits, so subscribe those by method name and keep `*` for handlers that only observe.
 
+## Logging handler failures
+
+A handler or event subscriber that throws, or a handler that supplies a value of the wrong type, is reported through the runtime's `IDecoratorLogger` and the call goes ahead. A decorator constructed by hand takes one in its constructor; without one it uses whatever `DecoratorLogger.Default` is at the time of the failure, so a decorator built before the host installs its default still reports to it. Decorating through a registry passes the registry's `ILogger` (or the one given to `Decorate`) wrapped in `BamDecoratorLogger`, and the first use of `ServiceRegistryExtensions` installs a `BamDecoratorLogger` following `Log.Default` as `DecoratorLogger.Default`, so a Bam host sees the same log lines it did when the runtime depended on `bam.base`. A host that builds decorators by hand and never touches a registry calls `BamDecoratorLogger.InstallAsDefault()` at startup, or wraps a logger with `ILogger.ToDecoratorLogger()`.
+
 ## Generating decorators
 
 ```csharp
@@ -108,7 +112,7 @@ new DecoratorGenerator()
     .WriteSource("./Generated_Decorators");
 ```
 
-This writes `EchoServiceDecorator.cs`, holding `EchoServiceDecorator` and `EchoServiceDecoratorExtensions`, in the namespace `{implementation namespace}.Decorators`. `GetSource<I, T>()` renders the same source without writing it.
+This writes `EchoServiceDecorator.cs`, holding `EchoServiceDecorator` and `EchoServiceDecoratorExtensions`, in the namespace `{implementation namespace}.Decorators`. The decorator's constructor takes the instance and an optional `IDecoratorLogger`; the decorator class references the runtime package alone, while the extensions class references `ServiceRegistry` and `ILogger` (bam.generators#15 adds an option to omit it). `GetSource<I, T>()` renders the same source without writing it.
 
 The template is embedded (`Templates/Decorator.hbs`). When generating with `DecoratorGenerator`, a `Decorator.hbs` in `./Templates` overrides the embedded one. The template references no partials, since Handlebars partials are registered process-wide.
 
@@ -139,6 +143,12 @@ Overloads share their hooks, since handlers are selected by method name. Two gen
 
 ```bash
 dotnet run --project bam.generators.decorators.tests/bam.generators.decorators.tests.csproj -- --ut
+```
+
+The runtime's `netstandard2.0` target is proven by `bam.generators.decorators.runtime.compat472`, a .NET Framework 4.7.2 class library that references the runtime project alone and compiles a generated decorator. It is built on its own, not from `bamtk.sln`:
+
+```bash
+dotnet build bam.generators.decorators.runtime.compat472/bam.generators.decorators.runtime.compat472.csproj
 ```
 
 `Fixtures/Generated` in the test project holds real generator output, compiled into the tests. One test compares it to what the generator produces today, so regenerate those files when a template changes:

@@ -32,7 +32,7 @@ namespace Bam.Generators.Decorators
         /// <param name="previous">Resolves the registration being decorated.</param>
         /// <param name="decoratorType">
         /// The decorator type: a class extending <see cref="Decorator{I, T}"/> that implements
-        /// <typeparamref name="I"/> and has a public <c>(T, ILogger)</c> constructor.
+        /// <typeparamref name="I"/> and has a public <c>(T, IDecoratorLogger)</c> constructor.
         /// </param>
         /// <param name="logger">Handed to every decorator created, to receive handler failures.</param>
         /// <param name="sharedSubscriptions">The registry-wide handlers every decorator created also runs.</param>
@@ -54,8 +54,8 @@ namespace Bam.Generators.Decorators
                     $"{decoratorType.FullName} cannot decorate {typeof(I).FullName}: a decorator must extend Decorator<{typeof(I).Name}, {typeof(T).Name}> and implement {typeof(I).Name}.");
             }
 
-            _constructor = decoratorType.GetConstructor(new Type[] { typeof(T), typeof(ILogger) })
-                ?? throw new DecoratorException($"{decoratorType.FullName} has no public constructor taking ({typeof(T).Name}, ILogger).");
+            _constructor = decoratorType.GetConstructor(new Type[] { typeof(T), typeof(IDecoratorLogger) })
+                ?? throw new DecoratorException($"{decoratorType.FullName} has no public constructor taking ({typeof(T).Name}, IDecoratorLogger).");
             _previous = previous;
             _decorators = new ConditionalWeakTable<T, Decorator<I, T>>();
 
@@ -177,7 +177,7 @@ namespace Bam.Generators.Decorators
 
         private Decorator<I, T> Wrap(T instance)
         {
-            return Attach((Decorator<I, T>)_constructor.Invoke(new object?[] { instance, Logger }));
+            return Attach((Decorator<I, T>)_constructor.Invoke(new object?[] { instance, Logger.ToDecoratorLogger() }));
         }
 
         // A decorator that already serves another registration (a second registry resolving through the

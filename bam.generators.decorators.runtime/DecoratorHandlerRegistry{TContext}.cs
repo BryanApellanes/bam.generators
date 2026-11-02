@@ -38,8 +38,8 @@ namespace Bam.Generators.Decorators
         /// </exception>
         public void Add(DecoratorPhase phase, string methodName, Func<TContext, object?> handler)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(methodName);
-            ArgumentNullException.ThrowIfNull(handler);
+            Guard.NotNullOrWhiteSpace(methodName, nameof(methodName));
+            Guard.NotNull(handler, nameof(handler));
             RequireSynchronous(handler);
 
             _handlers.AddOrUpdate(
@@ -64,8 +64,8 @@ namespace Bam.Generators.Decorators
         /// </exception>
         public void Add<R>(DecoratorPhase phase, string methodName, Func<TContext, R> handler)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(methodName);
-            ArgumentNullException.ThrowIfNull(handler);
+            Guard.NotNullOrWhiteSpace(methodName, nameof(methodName));
+            Guard.NotNull(handler, nameof(handler));
             // Checked here, on the delegate the subscriber handed over, rather than on the wrapper below,
             // which is always synchronous.
             RequireSynchronous(handler);
@@ -130,7 +130,7 @@ namespace Bam.Generators.Decorators
         /// </exception>
         public void Add(DecoratorPhase phase, string methodName, Action<TContext> handler)
         {
-            ArgumentNullException.ThrowIfNull(handler);
+            Guard.NotNull(handler, nameof(handler));
             RequireSynchronous(handler);
 
             Add(phase, methodName, new Func<TContext, object?>(context =>

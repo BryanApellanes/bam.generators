@@ -36,6 +36,13 @@ namespace Bam.Generators.Decorators
     /// </remarks>
     public static class ServiceRegistryExtensions
     {
+        static ServiceRegistryExtensions()
+        {
+            // Decorators built without a logger report through Log.Default, as they did when the runtime
+            // depended on bam.base directly.
+            BamDecoratorLogger.InstallAsDefault();
+        }
+
         /// <summary>
         /// Decorates the <typeparamref name="I"/> registered in <paramref name="registry"/>. Uses a generated
         /// decorator for the pair when one is loaded, and otherwise generates and compiles one on the spot

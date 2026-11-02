@@ -43,7 +43,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 because.ItsTrue("declares the namespace", source.Contains("namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators"));
                 because.ItsTrue("declares the decorator class", source.Contains("public partial class EchoServiceDecorator : "));
                 because.ItsTrue("extends the decorator base", source.Contains($": global::Bam.Generators.Decorators.Decorator<{FixtureNamespace}.IEchoService, {FixtureNamespace}.EchoService>, {FixtureNamespace}.IEchoService"));
-                because.ItsTrue("takes the instance and a logger", source.Contains($"public EchoServiceDecorator({FixtureNamespace}.EchoService instance, global::Bam.Logging.ILogger? logger = null) : base(instance, logger)"));
+                because.ItsTrue("takes the instance and a logger", source.Contains($"public EchoServiceDecorator({FixtureNamespace}.EchoService instance, global::Bam.Generators.Decorators.IDecoratorLogger? logger = null) : base(instance, logger)"));
                 because.ItsTrue("looks the method up once, by its exact signature", source.Contains($"private static readonly global::System.Reflection.MethodInfo? __method0 = global::Bam.Generators.Decorators.DecoratedMethod.Find(typeof({FixtureNamespace}.IEchoService), \"Message\", 0, \"System.String\");"));
                 because.ItsTrue("routes the method through Intercept", source.Contains("return base.Intercept<global::System.String>(__method0, \"Message\", new object?[] { message }, () => "));
                 because.ItsTrue("forwards to the decorated instance", source.Contains($"(({FixtureNamespace}.IEchoService)base.Instance).Message(message)"));

@@ -24,7 +24,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<EchoService>>("has a start handler that rejects the call", decorator =>
             {
@@ -57,7 +57,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         [UnitTest]
         public void TreatAThrownRejectionAsARejection()
         {
-            ILogger logger = Substitute.For<ILogger>();
+            IDecoratorLogger logger = Substitute.For<IDecoratorLogger>();
 
             After.Setup(reg =>
             {
@@ -69,7 +69,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 decorator.Subscribe(DecoratorPhase.Start, "Message", guard);
 
                 DecoratorInvocationResult<EchoService, string> result = decorator.Invoke<string>("Message", "hello");
-                int errorsLogged = logger.ReceivedCalls().Count(call => call.GetMethodInfo().Name == nameof(ILogger.Error));
+                int errorsLogged = logger.ReceivedCalls().Count(call => call.GetMethodInfo().Name == nameof(IDecoratorLogger.Error));
                 return new RejectionOutcome(result.Success, result.Rejected, result.Value, result.Exception, Thrown(() => result.GetValue()), decorator.Instance.Calls, errorsLogged > 0, null);
             })
             .TheTest
@@ -90,7 +90,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
             // Documented behavior, pinned so it cannot change unnoticed: only a rejection stops a call.
             After.Setup(reg =>
             {
-                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<EchoService>>("has a start handler that throws an ordinary exception", decorator =>
             {
@@ -115,7 +115,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<KitchenSinkService>>("has error handlers that supply a fallback", decorator =>
             {
@@ -144,7 +144,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<EchoService>>("has an end handler that rejects what the method returned", decorator =>
             {
@@ -226,8 +226,8 @@ namespace Bam.Generators.Decorators.Tests.Unit
             {
                 Action<DecoratorInvocationContext<EchoService>> asyncAction = async context => { await Task.Yield(); context.Reject("too late"); };
                 Action<DecoratorInvocationContext> asyncRegistryWide = async context => { await Task.Yield(); context.Reject("too late"); };
-                IEchoService echo = new EchoServiceDecorator(new EchoService(), Substitute.For<ILogger>());
-                Decorator<EchoService> decorator = new Decorator<EchoService>(new EchoService(), Substitute.For<ILogger>());
+                IEchoService echo = new EchoServiceDecorator(new EchoService(), Substitute.For<IDecoratorLogger>());
+                Decorator<EchoService> decorator = new Decorator<EchoService>(new EchoService(), Substitute.For<IDecoratorLogger>());
 
                 return new RefusalOutcome(
                     Refuses(() => registry.OnMethodStart<IEchoService, EchoService>("Message", asyncAction)),
@@ -258,7 +258,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         [UnitTest]
         public void NotTakeAReturnedTaskAsAResult()
         {
-            ILogger logger = Substitute.For<ILogger>();
+            IDecoratorLogger logger = Substitute.For<IDecoratorLogger>();
 
             After.Setup(reg =>
             {
@@ -287,7 +287,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 decorator.SubscribeError("Fail", context => Task.CompletedTask);
                 DecoratorInvocationResult<KitchenSinkService, string> atEnd = decorator.Invoke<string>("Invoke", "event");
                 DecoratorInvocationResult<KitchenSinkService, string> fail = decorator.Invoke<string>("Fail", "the real cause");
-                int errors = logger.ReceivedCalls().Count(call => call.GetMethodInfo().Name == nameof(ILogger.Error));
+                int errors = logger.ReceivedCalls().Count(call => call.GetMethodInfo().Name == nameof(IDecoratorLogger.Error));
                 return new TaskOutcome(
                     string.Join("|", new DecoratorInvocationResult<KitchenSinkService, object>[] { reset, flush, resetAsync }.Select(result => result.Exception?.GetType().Name ?? "none")) + (reset.Exception?.Message.Contains("returned a Task;") == true ? "" : " (Task not described as Task)"),
                     sum.Rejected && sum.Exception is DecoratorException && !sum.ShortCircuited,
@@ -316,8 +316,8 @@ namespace Bam.Generators.Decorators.Tests.Unit
         [UnitTest]
         public void RejectAnyAwaitableHoweverItArrives()
         {
-            ILogger throwing = Substitute.For<ILogger>();
-            throwing.When(logger => logger.Error(Arg.Any<string>(), Arg.Any<object[]>())).Do(call => throw new InvalidOperationException("logger down"));
+            IDecoratorLogger throwing = Substitute.For<IDecoratorLogger>();
+            throwing.When(logger => logger.Error(Arg.Any<string>(), Arg.Any<Exception?>())).Do(call => throw new InvalidOperationException("logger down"));
 
             After.Setup(reg =>
             {
@@ -364,7 +364,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
             // answer for (two GetAwaiter methods) counts as awaitable rather than slipping through.
             After.Setup(reg =>
             {
-                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<KitchenSinkService>>("has a handler that sets a task and then throws, and handlers that hand back a type with two GetAwaiter methods", decorator =>
             {
@@ -428,7 +428,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
             // once, on none.
             After.Setup(reg =>
             {
-                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<KitchenSinkService>>("has a start handler whose context another thread keeps clearing", decorator =>
             {
@@ -489,7 +489,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<EchoService>>("is given combined delegates with an async target at either end", decorator =>
             {
@@ -543,7 +543,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<EchoService>>("has a start handler that overwrites an argument", decorator =>
             {
@@ -551,7 +551,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 decorator.Subscribe(DecoratorPhase.Start, "Message", context => { context.Args[0] = "tampered"; });
                 DecoratorInvocationResult<EchoService, string> byName = decorator.Invoke<string>("Message", arguments);
 
-                IEchoService generated = new EchoServiceDecorator(new EchoService(), Substitute.For<ILogger>())
+                IEchoService generated = new EchoServiceDecorator(new EchoService(), Substitute.For<IDecoratorLogger>())
                     .OnMessageStart(context => { context.Args[0] = "tampered"; });
                 return new ArgumentOutcome(byName.Value, (string?)arguments[0], generated.Message("original"));
             })

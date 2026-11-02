@@ -113,6 +113,7 @@ namespace Bam.Generators.Decorators
                     InterfaceType,
                     ImplementationType,
                     typeof(Decorator<>),
+                    typeof(IDecoratorLogger),
                     typeof(ServiceRegistry),
                     typeof(ILogger)
                 };

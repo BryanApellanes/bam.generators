@@ -1,5 +1,3 @@
-using Bam.Logging;
-
 namespace Bam.Generators.Decorators
 {
     /// <summary>
@@ -20,9 +18,9 @@ namespace Bam.Generators.Decorators
 
         /// <summary>Initializes a decorator around <paramref name="value"/>.</summary>
         /// <param name="value">The instance to decorate.</param>
-        /// <param name="logger">Receives handler failures. Defaults to <see cref="Log.Default"/>.</param>
+        /// <param name="logger">Receives handler failures. Defaults to <see cref="DecoratorLogger.Default"/>.</param>
         /// <exception cref="ArgumentNullException"><paramref name="value"/> is null.</exception>
-        public Decorator(T value, ILogger? logger = null) : base(value, logger)
+        public Decorator(T value, IDecoratorLogger? logger = null) : base(value, logger)
         {
         }
 

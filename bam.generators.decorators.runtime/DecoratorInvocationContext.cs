@@ -76,7 +76,7 @@ namespace Bam.Generators.Decorators
         /// <param name="exception">The exception the caller receives.</param>
         public void Reject(Exception exception)
         {
-            ArgumentNullException.ThrowIfNull(exception);
+            Guard.NotNull(exception, nameof(exception));
 
             Rejection ??= exception;
         }

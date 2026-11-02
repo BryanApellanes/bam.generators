@@ -23,7 +23,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
         private static EdgeCaseServiceDecorator NewDecorator()
         {
-            return new EdgeCaseServiceDecorator(new EdgeCaseService(), Substitute.For<ILogger>());
+            return new EdgeCaseServiceDecorator(new EdgeCaseService(), Substitute.For<IDecoratorLogger>());
         }
 
         [UnitTest]
@@ -190,7 +190,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<EchoService>>("intercepts with no method, as a stale generated decorator would", decorator =>
             {

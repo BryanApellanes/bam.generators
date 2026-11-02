@@ -1,4 +1,3 @@
-using Bam.Logging;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Reflection;
@@ -52,23 +51,28 @@ namespace Bam.Generators.Decorators
         private ImmutableList<DecoratorHandlerRegistry<DecoratorInvocationContext<T>>> _registrationHandlers = ImmutableList<DecoratorHandlerRegistry<DecoratorInvocationContext<T>>>.Empty;
         private ImmutableList<DecoratorSubscriptions> _sharedSubscriptions = ImmutableList<DecoratorSubscriptions>.Empty;
 
-        ILogger? _logger;
+        private readonly IDecoratorLogger? _logger;
 
         /// <summary>Initializes a decorator around <paramref name="value"/>.</summary>
         /// <param name="value">The instance to decorate.</param>
-        /// <param name="logger">Receives handler failures. Defaults to <see cref="Log.Default"/>.</param>
+        /// <param name="logger">Receives handler failures. Defaults to <see cref="DecoratorLogger.Default"/>.</param>
         /// <exception cref="ArgumentNullException"><paramref name="value"/> is null.</exception>
-        public Decorator(T value, ILogger? logger = null)
+        public Decorator(T value, IDecoratorLogger? logger = null)
         {
-            ArgumentNullException.ThrowIfNull(value);
+            Guard.NotNull(value, nameof(value));
 
             this.Instance = value;
             this._handlers = new DecoratorHandlerRegistry<DecoratorInvocationContext<T>>();
-            this._logger = logger ?? Log.Default;
+            this._logger = logger;
         }
 
         /// <inheritdoc />
         public T Instance { get; set; }
+
+        // The logger given to the constructor, or else DecoratorLogger.Default as it is at the time of the failure,
+        // so a decorator built before the host installs its default still reports to it. Private, so a service
+        // interface with a member of this name is not hidden in the generated decorator.
+        private IDecoratorLogger CurrentLogger => this._logger ?? DecoratorLogger.Default;
 
         /// <summary>
         /// Gets the store holding the handlers subscribed to this decorator instance. They run for calls made
@@ -92,7 +96,7 @@ namespace Bam.Generators.Decorators
         /// <param name="handlers">The registration's store.</param>
         public void AttachRegistrationHandlers(DecoratorHandlerRegistry<DecoratorInvocationContext<T>> handlers)
         {
-            ArgumentNullException.ThrowIfNull(handlers);
+            Guard.NotNull(handlers, nameof(handlers));
 
             lock (_attachLock)
             {
@@ -109,7 +113,7 @@ namespace Bam.Generators.Decorators
         /// <inheritdoc />
         public void AttachSharedSubscriptions(DecoratorSubscriptions subscriptions)
         {
-            ArgumentNullException.ThrowIfNull(subscriptions);
+            Guard.NotNull(subscriptions, nameof(subscriptions));
 
             lock (_attachLock)
             {
@@ -212,7 +216,7 @@ namespace Bam.Generators.Decorators
         /// <param name="invocation">The call to the decorated instance.</param>
         public DecoratorInvocationResult<T, R> Intercept<R>(string methodName, object?[] args, Func<R> invocation)
         {
-            ArgumentNullException.ThrowIfNull(invocation);
+            Guard.NotNull(invocation, nameof(invocation));
 
             object?[] arguments = args ?? Array.Empty<object?>();
             return Run<R>(methodName, ResolveMethod(methodName, arguments), arguments, invocation);
@@ -227,7 +231,7 @@ namespace Bam.Generators.Decorators
         /// <param name="invocation">The call to the decorated instance.</param>
         public DecoratorInvocationResult<T, object> Intercept(string methodName, object?[] args, Action invocation)
         {
-            ArgumentNullException.ThrowIfNull(invocation);
+            Guard.NotNull(invocation, nameof(invocation));
 
             return Intercept<object>(methodName, args, () =>
             {
@@ -246,7 +250,7 @@ namespace Bam.Generators.Decorators
         /// <param name="invocation">The call to the decorated instance.</param>
         public Task<DecoratorInvocationResult<T, R>> InterceptAsync<R>(string methodName, object?[] args, Func<Task<R>> invocation)
         {
-            ArgumentNullException.ThrowIfNull(invocation);
+            Guard.NotNull(invocation, nameof(invocation));
 
             object?[] arguments = args ?? Array.Empty<object?>();
             return RunAsync<R>(methodName, ResolveMethod(methodName, arguments), arguments, invocation);
@@ -260,7 +264,7 @@ namespace Bam.Generators.Decorators
         /// <param name="invocation">The call to the decorated instance.</param>
         public Task<DecoratorInvocationResult<T, object>> InterceptAsync(string methodName, object?[] args, Func<Task> invocation)
         {
-            ArgumentNullException.ThrowIfNull(invocation);
+            Guard.NotNull(invocation, nameof(invocation));
 
             return InterceptAsync<object>(methodName, args, async () =>
             {
@@ -281,7 +285,7 @@ namespace Bam.Generators.Decorators
         /// <param name="invocation">The call to the decorated instance.</param>
         public DecoratorInvocationResult<T, R> Intercept<R>(MethodInfo? method, string methodName, object?[] args, Func<R> invocation)
         {
-            ArgumentNullException.ThrowIfNull(invocation);
+            Guard.NotNull(invocation, nameof(invocation));
 
             object?[] arguments = args ?? Array.Empty<object?>();
             return Run<R>(methodName, ImplementationOf(method) ?? ResolveMethod(methodName, arguments), arguments, invocation);
@@ -297,7 +301,7 @@ namespace Bam.Generators.Decorators
         /// <param name="invocation">The call to the decorated instance.</param>
         public DecoratorInvocationResult<T, object> Intercept(MethodInfo? method, string methodName, object?[] args, Action invocation)
         {
-            ArgumentNullException.ThrowIfNull(invocation);
+            Guard.NotNull(invocation, nameof(invocation));
 
             return Intercept<object>(method, methodName, args, () =>
             {
@@ -317,7 +321,7 @@ namespace Bam.Generators.Decorators
         /// <param name="invocation">The call to the decorated instance.</param>
         public Task<DecoratorInvocationResult<T, R>> InterceptAsync<R>(MethodInfo? method, string methodName, object?[] args, Func<Task<R>> invocation)
         {
-            ArgumentNullException.ThrowIfNull(invocation);
+            Guard.NotNull(invocation, nameof(invocation));
 
             object?[] arguments = args ?? Array.Empty<object?>();
             return RunAsync<R>(methodName, ImplementationOf(method) ?? ResolveMethod(methodName, arguments), arguments, invocation);
@@ -333,7 +337,7 @@ namespace Bam.Generators.Decorators
         /// <param name="invocation">The call to the decorated instance.</param>
         public Task<DecoratorInvocationResult<T, object>> InterceptAsync(MethodInfo? method, string methodName, object?[] args, Func<Task> invocation)
         {
-            ArgumentNullException.ThrowIfNull(invocation);
+            Guard.NotNull(invocation, nameof(invocation));
 
             return InterceptAsync<object>(method, methodName, args, async () =>
             {
@@ -755,7 +759,7 @@ namespace Bam.Generators.Decorators
             }
             catch (Exception ex)
             {
-                this._logger?.Error("Exception invoking {0} handler for method {1} on type of Decorator<{2}>: {3}", ex, context.Phase.ToString().ToUpperInvariant(), context.MethodName, typeof(T).Name, ex.Message);
+                this.CurrentLogger.Error($"Exception invoking {context.Phase.ToString().ToUpperInvariant()} handler for method {context.MethodName} on type of Decorator<{typeof(T).Name}>: {ex.Message}", ex);
             }
 
             // The same thing put on the context by hand, checked after the catch so a handler that set it
@@ -782,7 +786,7 @@ namespace Bam.Generators.Decorators
             context.Reject(context.Exception == null ? new DecoratorException(message) : new DecoratorException(message, context.Exception));
             try
             {
-                this._logger?.Error(message);
+                this.CurrentLogger.Error(message, null);
             }
             catch (Exception)
             {
@@ -805,7 +809,7 @@ namespace Bam.Generators.Decorators
                 return true;
             }
 
-            this._logger?.Error("{0} handler for method {1} on type of Decorator<{2}> supplied a {3} where a {4} is required; the value was ignored", context.Phase.ToString().ToUpperInvariant(), context.MethodName, typeof(T).Name, candidate.GetType().Name, typeof(R).Name);
+            this.CurrentLogger.Error($"{context.Phase.ToString().ToUpperInvariant()} handler for method {context.MethodName} on type of Decorator<{typeof(T).Name}> supplied a {candidate.GetType().Name} where a {typeof(R).Name} is required; the value was ignored", null);
             return false;
         }
 
@@ -828,7 +832,7 @@ namespace Bam.Generators.Decorators
             }
             catch (Exception ex)
             {
-                this._logger?.Error("Exception raising {0} event for method {1} on type of Decorator<{2}>: {3}", ex, context.Phase.ToString().ToUpperInvariant(), context.MethodName, typeof(T).Name, ex.Message);
+                this.CurrentLogger.Error($"Exception raising {context.Phase.ToString().ToUpperInvariant()} event for method {context.MethodName} on type of Decorator<{typeof(T).Name}>: {ex.Message}", ex);
             }
         }
 

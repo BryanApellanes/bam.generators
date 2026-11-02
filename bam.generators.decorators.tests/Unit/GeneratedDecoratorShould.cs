@@ -21,7 +21,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
         private static KitchenSinkServiceDecorator NewSink()
         {
-            return new KitchenSinkServiceDecorator(new KitchenSinkService(), Substitute.For<ILogger>());
+            return new KitchenSinkServiceDecorator(new KitchenSinkService(), Substitute.For<IDecoratorLogger>());
         }
 
         [UnitTest]

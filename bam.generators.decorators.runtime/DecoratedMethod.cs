@@ -24,8 +24,8 @@ namespace Bam.Generators.Decorators
         /// </returns>
         public static MethodInfo? Find(Type declaringType, string name, int genericArity, params string[] parameterTypes)
         {
-            ArgumentNullException.ThrowIfNull(declaringType);
-            ArgumentNullException.ThrowIfNull(name);
+            Guard.NotNull(declaringType, nameof(declaringType));
+            Guard.NotNull(name, nameof(name));
 
             string[] expected = parameterTypes ?? Array.Empty<string>();
             foreach (MethodInfo method in declaringType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly))
@@ -52,7 +52,7 @@ namespace Bam.Generators.Decorators
         /// <param name="parameterType">The parameter's type.</param>
         public static string SignatureOf(Type parameterType)
         {
-            ArgumentNullException.ThrowIfNull(parameterType);
+            Guard.NotNull(parameterType, nameof(parameterType));
 
             return parameterType.ToString();
         }
