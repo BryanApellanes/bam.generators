@@ -1,8 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Compile proof for bam.generators#14: a .NET Framework 4.7.2 class library that references the decorator
-    runtime and nothing else from the Bam framework, and compiles a generated decorator against it.
+    Compile proof for bam.generators#14 and #15: a .NET Framework 4.7.2 class library that references the
+    decorator runtime and nothing else from the Bam framework, and compiles real generator output (the
+    no-registry fixture, decorator and extensions class alike) against it with the oldest C# the output needs.
 
     Built on its own (`dotnet build bam.generators.decorators.runtime.compat472`), never from bamtk.sln: a
     net472 project in the solution's flat per-SHA output directory would drop the netstandard2.0 runtime over
@@ -11,7 +12,8 @@
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
-    <LangVersion>latest</LangVersion>
+    <!-- The language floor of generated output: #nullable enable and unconstrained T? need C# 9. -->
+    <LangVersion>9</LangVersion>
     <Nullable>enable</Nullable>
     <RootNamespace>Bam.Generators.Decorators.Compat</RootNamespace>
     <IsPackable>false</IsPackable>
@@ -30,6 +32,8 @@
     <!-- The service the test suite's generated fixture decorates, shared rather than copied. -->
     <Compile Include="..\bam.generators.decorators.tests\Fixtures\IEchoService.cs" Link="Fixtures\IEchoService.cs" />
     <Compile Include="..\bam.generators.decorators.tests\Fixtures\EchoService.cs" Link="Fixtures\EchoService.cs" />
+    <!-- Generator output with RegistryExtensions off, checked in by the test suite and kept current by it. -->
+    <Compile Include="..\bam.generators.decorators.tests\Fixtures\Generated\NoRegistry\EchoServiceDecorator.cs" Link="Fixtures\Generated\EchoServiceDecorator.cs" />
   </ItemGroup>
 
 </Project>

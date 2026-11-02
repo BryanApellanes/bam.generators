@@ -16,6 +16,10 @@
     <!-- The generated fixtures are compiled into this assembly AND embedded, so a test can compare what is
          checked in against what the generator produces today. -->
     <EmbeddedResource Include="Fixtures\Generated\*.cs" LogicalName="Generated.%(Filename)%(Extension)" />
+    <!-- The no-registry fixture declares the same types as its registry twin, so it is embedded but not compiled
+         here; bam.generators.decorators.runtime.compat472 compiles it against the runtime alone. -->
+    <Compile Remove="Fixtures\Generated\NoRegistry\*.cs" />
+    <EmbeddedResource Include="Fixtures\Generated\NoRegistry\*.cs" LogicalName="Generated.NoRegistry.%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

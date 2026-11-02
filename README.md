@@ -9,7 +9,7 @@ Handlebars-based code generation for the Bam Framework — DAOs, service clients
 Three sibling projects extend the same template-driven approach to other generation targets:
 - **`bam.generators.client`** generates strongly-typed service client code from a `bam.protocol`/`bam.server` service definition (`BamServiceClientGenerator`, `BamServiceClientModel`, `ServiceClientCodeWriter`).
 - **`bam.generators.ux`** generates UX site scaffolding — pages, navigation, themes, and color palettes — from a `UxGenerationConfig` (`UxSiteGenerator`, `HandlebarsUxSiteWriter`, `ColorPaletteGenerator`).
-- **`bam.generators.decorators`** generates strongly-typed decorators for service interfaces: wrap a service registered in a `ServiceRegistry` and run handlers at the start, end and failure of its methods (`DecoratorGenerator`, the `ServiceRegistry` extensions). See its [README](bam.generators.decorators/README.md).
+- **`bam.generators.decorators`** generates strongly-typed decorators for service interfaces: wrap a service registered in a `ServiceRegistry` and run handlers at the start, end and failure of its methods (`DecoratorGenerator`, the `ServiceRegistry` extensions). `WithoutRegistryExtensions()` generates output for hosts on another container. See its [README](bam.generators.decorators/README.md).
 - **`bam.generators.decorators.runtime`** is the runtime those decorators run on (`Decorator<I, T>`, contexts, handler stores, `IDecoratorLogger`). It targets `netstandard2.0` and `net10.0` with no Bam dependency, and ships as the `bam.generators.decorators.runtime` package so .NET Framework applications can link generated decorators. See its [README](bam.generators.decorators.runtime/README.md).
 
 ## Key Classes
@@ -24,6 +24,7 @@ Three sibling projects extend the same template-driven approach to other generat
 | `UxSiteGenerator` (ux) | Generates a UX site's pages/navigation/theme from a `UxGenerationConfig`. |
 | `DecoratorGenerator` (decorators) | Generates a typed decorator and its subscription extension methods for a service interface. |
 | `Decorator<I, T>` (decorators.runtime) | The base a generated decorator extends; runs the subscribed handlers around every call. `netstandard2.0`, no Bam dependency. |
+| `DecoratorFactory` (decorators.runtime) | Creates generated decorators for hosts on another container, sharing handlers per service pair; `GeneratedDecorators` finds them among the loaded assemblies. |
 | `CSharpTypeName` | Renders fully-qualified, nullable-annotated C# type names for reflection-driven generators. |
 
 ## Dependencies

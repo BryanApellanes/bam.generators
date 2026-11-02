@@ -80,49 +80,24 @@ namespace Bam.Generators.Decorators
         }
 
         /// <summary>
-        /// Looks through the loaded assemblies for a decorator of the pair that was generated ahead of time.
-        /// Only assemblies that reference the decorator runtime are searched. When more than one decorator of
-        /// the pair is loaded, the one with the name the generator would give it is preferred.
+        /// Looks through the loaded assemblies for a decorator of the pair that was generated ahead of time,
+        /// through <see cref="GeneratedDecorators.Find"/>: only assemblies that reference the decorator runtime
+        /// are searched, and when more than one decorator of the pair is loaded, the one with the name the
+        /// generator would give it is preferred.
         /// </summary>
         /// <param name="interfaceType">The service interface.</param>
         /// <param name="implementationType">The implementation type being decorated.</param>
         /// <returns>The decorator type, or null when none is loaded.</returns>
         protected virtual Type? FindGenerated(Type interfaceType, Type implementationType)
         {
-            Type baseType;
             try
             {
-                baseType = typeof(Decorator<,>).MakeGenericType(interfaceType, implementationType);
+                return GeneratedDecorators.Find(interfaceType, implementationType);
             }
             catch (ArgumentException ex)
             {
                 throw new DecoratorGenerationException(interfaceType, $"{implementationType.FullName} cannot be decorated as the interface.", ex);
             }
-
-            string? runtimeName = typeof(Decorator<,>).Assembly.GetName().Name;
-            List<Type> candidates = new List<Type>();
-            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                if (assembly.IsDynamic || !assembly.GetReferencedAssemblies().Any(reference => reference.Name == runtimeName))
-                {
-                    continue;
-                }
-
-                candidates.AddRange(TypesOf(assembly).Where(type =>
-                    type.IsClass
-                    && !type.IsAbstract
-                    && baseType.IsAssignableFrom(type)
-                    && interfaceType.IsAssignableFrom(type)
-                    && type.GetConstructor(new Type[] { implementationType, typeof(IDecoratorLogger) }) != null));
-            }
-
-            if (candidates.Count < 2)
-            {
-                return candidates.FirstOrDefault();
-            }
-
-            string conventionalName = new DecoratorModel(interfaceType, implementationType).DecoratorFullName;
-            return candidates.FirstOrDefault(type => type.FullName == conventionalName) ?? candidates[0];
         }
 
         /// <summary>Generates, compiles and loads a decorator for the pair.</summary>
@@ -147,18 +122,6 @@ namespace Bam.Generators.Decorators
 
             return assembly.GetType(model.DecoratorFullName)
                 ?? throw new DecoratorGenerationException(interfaceType, $"The compiled decorator assembly does not contain {model.DecoratorFullName}.");
-        }
-
-        private static IEnumerable<Type> TypesOf(Assembly assembly)
-        {
-            try
-            {
-                return assembly.GetTypes();
-            }
-            catch (ReflectionTypeLoadException ex)
-            {
-                return ex.Types.Where(type => type != null).Select(type => type!);
-            }
         }
 
         private readonly record struct DecoratorKey(Type InterfaceType, Type ImplementationType);
