@@ -84,6 +84,40 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
+        public void ReportToTheDefaultInstalledAfterConstruction()
+        {
+            When.A<EchoService>("is decorated before the host installs its default logger", new EchoService(), service =>
+            {
+                IDecoratorLogger previous = DecoratorLogger.Default;
+                RecordingLogger installedLater = new RecordingLogger();
+                try
+                {
+                    DecoratorLogger.Default = null!;
+                    Decorator<EchoService> decorator = new Decorator<EchoService>(service);
+                    bool traceAtConstruction = DecoratorLogger.Default is TraceDecoratorLogger;
+                    DecoratorLogger.Default = installedLater;
+                    Action<DecoratorInvocationContext<EchoService>> badHandler = context => throw new InvalidOperationException("bad handler");
+                    decorator.Subscribe(DecoratorPhase.Start, nameof(IEchoService.Message), badHandler);
+                    DecoratorInvocationResult<EchoService, string> result = decorator.Invoke<string>(nameof(IEchoService.Message), "hello");
+                    return new LateDefaultOutcome(traceAtConstruction, result.Success, result.Value, installedLater.Messages.ToArray());
+                }
+                finally
+                {
+                    DecoratorLogger.Default = previous;
+                }
+            })
+            .TheTest
+            .ShouldPass<LateDefaultOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the Trace logger was the default when the decorator was built", outcome.TraceAtConstruction);
+                because.ItsTrue("the call still went ahead", outcome.Success && outcome.Value == "hello");
+                because.ItsTrue("the failure reached the default installed after construction", outcome.Messages.Length == 1 && outcome.Messages[0].Contains("bad handler"), string.Join(" | ", outcome.Messages));
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
         public void RestoreTheTraceLoggerWhenTheDefaultIsCleared()
         {
             When.A<IDecoratorLogger>("is the current default", DecoratorLogger.Default, previous =>
@@ -236,6 +270,8 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         private sealed record AssemblyOutcome(string Name, string[] Offending, bool SeparateFromRegistryExtensions, bool HoldsLoggerAndContext);
+
+        private sealed record LateDefaultOutcome(bool TraceAtConstruction, bool Success, string? Value, string[] Messages);
 
         private sealed record FallbackOutcome(bool Success, string? Value, string[] Messages, Exception?[] Exceptions);
 

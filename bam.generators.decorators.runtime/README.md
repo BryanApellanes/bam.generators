@@ -36,7 +36,7 @@ public interface IDecoratorLogger
 }
 ```
 
-Pass an implementation to the decorator's constructor, or set `DecoratorLogger.Default` once at startup for every decorator constructed without one. Until something is set, the default is `TraceDecoratorLogger`, which writes to `System.Diagnostics.Trace`.
+Pass an implementation to the decorator's constructor, or set `DecoratorLogger.Default` for every decorator constructed without one. The default is read when a failure is reported, not when the decorator is built, so it can be set after the container has already created decorators. Until something is set, the default is `TraceDecoratorLogger`, which writes to `System.Diagnostics.Trace`.
 
 ```csharp
 DecoratorLogger.Default = new MyDecoratorLogger(serilog);

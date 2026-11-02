@@ -51,7 +51,7 @@ namespace Bam.Generators.Decorators
         private ImmutableList<DecoratorHandlerRegistry<DecoratorInvocationContext<T>>> _registrationHandlers = ImmutableList<DecoratorHandlerRegistry<DecoratorInvocationContext<T>>>.Empty;
         private ImmutableList<DecoratorSubscriptions> _sharedSubscriptions = ImmutableList<DecoratorSubscriptions>.Empty;
 
-        private readonly IDecoratorLogger _logger;
+        private readonly IDecoratorLogger? _logger;
 
         /// <summary>Initializes a decorator around <paramref name="value"/>.</summary>
         /// <param name="value">The instance to decorate.</param>
@@ -63,11 +63,16 @@ namespace Bam.Generators.Decorators
 
             this.Instance = value;
             this._handlers = new DecoratorHandlerRegistry<DecoratorInvocationContext<T>>();
-            this._logger = logger ?? DecoratorLogger.Default;
+            this._logger = logger;
         }
 
         /// <inheritdoc />
         public T Instance { get; set; }
+
+        // The logger given to the constructor, or else DecoratorLogger.Default as it is at the time of the failure,
+        // so a decorator built before the host installs its default still reports to it. Private, so a service
+        // interface with a member of this name is not hidden in the generated decorator.
+        private IDecoratorLogger CurrentLogger => this._logger ?? DecoratorLogger.Default;
 
         /// <summary>
         /// Gets the store holding the handlers subscribed to this decorator instance. They run for calls made
@@ -754,7 +759,7 @@ namespace Bam.Generators.Decorators
             }
             catch (Exception ex)
             {
-                this._logger.Error($"Exception invoking {context.Phase.ToString().ToUpperInvariant()} handler for method {context.MethodName} on type of Decorator<{typeof(T).Name}>: {ex.Message}", ex);
+                this.CurrentLogger.Error($"Exception invoking {context.Phase.ToString().ToUpperInvariant()} handler for method {context.MethodName} on type of Decorator<{typeof(T).Name}>: {ex.Message}", ex);
             }
 
             // The same thing put on the context by hand, checked after the catch so a handler that set it
@@ -781,7 +786,7 @@ namespace Bam.Generators.Decorators
             context.Reject(context.Exception == null ? new DecoratorException(message) : new DecoratorException(message, context.Exception));
             try
             {
-                this._logger.Error(message, null);
+                this.CurrentLogger.Error(message, null);
             }
             catch (Exception)
             {
@@ -804,7 +809,7 @@ namespace Bam.Generators.Decorators
                 return true;
             }
 
-            this._logger.Error($"{context.Phase.ToString().ToUpperInvariant()} handler for method {context.MethodName} on type of Decorator<{typeof(T).Name}> supplied a {candidate.GetType().Name} where a {typeof(R).Name} is required; the value was ignored", null);
+            this.CurrentLogger.Error($"{context.Phase.ToString().ToUpperInvariant()} handler for method {context.MethodName} on type of Decorator<{typeof(T).Name}> supplied a {candidate.GetType().Name} where a {typeof(R).Name} is required; the value was ignored", null);
             return false;
         }
 
@@ -827,7 +832,7 @@ namespace Bam.Generators.Decorators
             }
             catch (Exception ex)
             {
-                this._logger.Error($"Exception raising {context.Phase.ToString().ToUpperInvariant()} event for method {context.MethodName} on type of Decorator<{typeof(T).Name}>: {ex.Message}", ex);
+                this.CurrentLogger.Error($"Exception raising {context.Phase.ToString().ToUpperInvariant()} event for method {context.MethodName} on type of Decorator<{typeof(T).Name}>: {ex.Message}", ex);
             }
         }
 

@@ -32,7 +32,7 @@ namespace Bam.Generators.Decorators
         /// <param name="previous">Resolves the registration being decorated.</param>
         /// <param name="decoratorType">
         /// The decorator type: a class extending <see cref="Decorator{I, T}"/> that implements
-        /// <typeparamref name="I"/> and has a public <c>(T, ILogger)</c> constructor.
+        /// <typeparamref name="I"/> and has a public <c>(T, IDecoratorLogger)</c> constructor.
         /// </param>
         /// <param name="logger">Handed to every decorator created, to receive handler failures.</param>
         /// <param name="sharedSubscriptions">The registry-wide handlers every decorator created also runs.</param>
