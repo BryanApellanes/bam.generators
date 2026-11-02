@@ -150,6 +150,8 @@ EchoServiceDecorator decorator = DecoratorFactory.Create<IEchoService, EchoServi
 decorator.OnMessageEnd(ctx => { /* this instance only */ });
 
 // When a host is torn down (one process, many hosts: integration tests), empty the pair's store.
+// The store is one per pair per process: two live hosts decorating the same pair share it, and a Reset
+// by one empties it for both.
 DecoratorFactory.Reset<IEchoService, EchoService>();
 ```
 

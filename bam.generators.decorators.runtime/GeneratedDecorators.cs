@@ -92,19 +92,36 @@ namespace Bam.Generators.Decorators
         }
 
         /// <summary>
-        /// Finds the generated decorator for the pair, or null when none is loaded. When several qualify, the
-        /// one at the conventional name (<see cref="FullNameOf"/>) wins; among those, one declared in the
-        /// implementation's own assembly, then one from an assembly loaded from disk (a non-empty
-        /// <see cref="Assembly.Location"/>) rather than from bytes; then the first found. The order does not
-        /// depend on which assembly loaded first.
+        /// Finds the generated decorator for the pair, or null when none is loaded. When several qualify,
+        /// <see cref="Prefer"/> picks one.
         /// </summary>
         /// <exception cref="ArgumentException">The pair cannot close <c>Decorator&lt;I, T&gt;</c>.</exception>
         public static Type? Find(Type interfaceType, Type implementationType)
         {
-            IReadOnlyList<Type> candidates = FindAll(interfaceType, implementationType);
+            return Prefer(FindAll(interfaceType, implementationType), implementationType);
+        }
+
+        /// <summary>
+        /// Picks the decorator to use for <paramref name="implementationType"/> among
+        /// <paramref name="candidates"/>, or null when there are none. In order: a candidate at the
+        /// conventional name (<see cref="FullNameOf"/>) over one at another name; one declared in the
+        /// implementation's own assembly over one from another assembly; one from an assembly loaded from
+        /// disk (a non-empty <see cref="Assembly.Location"/>) over one loaded from bytes; then the first in
+        /// <paramref name="candidates"/>. The pick does not depend on load order except in the last step,
+        /// which also decides under a single-file publish, where every bundled assembly reports an empty
+        /// <see cref="Assembly.Location"/>.
+        /// </summary>
+        /// <param name="candidates">The qualifying decorator types, as <see cref="FindAll"/> returns them.</param>
+        /// <param name="implementationType">The implementation type the decorator wraps.</param>
+        /// <returns>The preferred candidate, or null when <paramref name="candidates"/> is empty.</returns>
+        public static Type? Prefer(IReadOnlyList<Type> candidates, Type implementationType)
+        {
+            Guard.NotNull(candidates, nameof(candidates));
+            Guard.NotNull(implementationType, nameof(implementationType));
+
             if (candidates.Count < 2)
             {
-                return candidates.FirstOrDefault();
+                return candidates.Count == 0 ? null : candidates[0];
             }
 
             string conventionalName = FullNameOf(implementationType);

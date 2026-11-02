@@ -39,7 +39,8 @@ DecoratorFactory.Handlers<IEchoService, EchoService>()
 // Microsoft.Extensions.DependencyInjection + Scrutor's Decorate, or a plain factory lambda):
 IEchoService Decorate(EchoService inner) => DecoratorFactory.Create<IEchoService, EchoService>(inner);
 
-// When a host is torn down (one process, many hosts), empty the pair's store.
+// When a host is torn down (one process, many hosts), empty the pair's store. It is one per pair per
+// process: two live hosts decorating the same pair share it, and a Reset by one empties it for both.
 DecoratorFactory.Reset<IEchoService, EchoService>();
 ```
 

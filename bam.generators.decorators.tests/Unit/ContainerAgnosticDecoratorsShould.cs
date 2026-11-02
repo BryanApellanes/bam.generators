@@ -382,25 +382,46 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
-        public void PreferTheDecoratorFromDiskOverAByteLoadedTwin()
+        public void PreferCandidatesByRule()
         {
-            When.A<DecoratorGenerator>("has a twin of the fixture loaded from bytes", new DecoratorGenerator().WithoutRegistryExtensions(), generator =>
+            When.A<DecoratorGenerator>("has twins of the fixture loaded from bytes and from disk", new DecoratorGenerator().WithoutRegistryExtensions(), generator =>
             {
-                // The same decorator the fixtures assembly holds, compiled again and loaded from bytes: a second
-                // candidate at the conventional name, from another assembly, with no Location.
+                // The decorator the fixtures assembly holds, compiled again: twice from bytes (another assembly,
+                // no Location) and once written to disk and loaded from there (another assembly, a Location).
+                // All three sit at the conventional name. OddEchoDecorator is hand-written in this assembly at
+                // another name. Prefer is pure, so each rule is tested with the loser first in the list.
                 DecoratorModel model = new DecoratorModel(typeof(IEchoService), typeof(EchoService), false);
-                Assembly twin = Assembly.Load(new RoslynCompiler().Compile("EchoTwin.Test", generator.GetSource<IEchoService, EchoService>(), model.ReferencedTypes));
-                Type twinType = twin.GetType(model.DecoratorFullName)!;
-                IReadOnlyList<Type> candidates = GeneratedDecorators.FindAll(typeof(IEchoService), typeof(EchoService));
-                Type? found = GeneratedDecorators.Find(typeof(IEchoService), typeof(EchoService));
-                return new TwinOutcome(candidates.Contains(twinType), candidates.Count, found, twinType.Assembly.Location);
+                string source = generator.GetSource<IEchoService, EchoService>();
+                RoslynCompiler compiler = new RoslynCompiler();
+                Type bytesTwin = Assembly.Load(compiler.Compile("EchoTwin.Bytes.A", source, model.ReferencedTypes)).GetType(model.DecoratorFullName)!;
+                Type bytesTwinB = Assembly.Load(compiler.Compile("EchoTwin.Bytes.B", source, model.ReferencedTypes)).GetType(model.DecoratorFullName)!;
+                string diskDirectory = Path.Combine(Path.GetTempPath(), "bam-decorator-tests", "twins");
+                Directory.CreateDirectory(diskDirectory);
+                string diskPath = Path.Combine(diskDirectory, "EchoTwin.Disk." + Guid.NewGuid().ToString("N") + ".dll");
+                File.WriteAllBytes(diskPath, compiler.Compile(Path.GetFileNameWithoutExtension(diskPath), source, model.ReferencedTypes));
+                Type diskTwin = Assembly.LoadFrom(diskPath).GetType(model.DecoratorFullName)!;
+                Type fixture = typeof(EchoServiceDecorator);
+                Type odd = typeof(OddEchoDecorator);
+
+                return new PreferenceOutcome(
+                    GeneratedDecorators.Prefer(new Type[] { odd, fixture }, typeof(EchoService)) == fixture && GeneratedDecorators.Prefer(new Type[] { odd }, typeof(EchoService)) == odd,
+                    GeneratedDecorators.Prefer(new Type[] { bytesTwin, fixture }, typeof(EchoService)) == fixture,
+                    GeneratedDecorators.Prefer(new Type[] { bytesTwin, diskTwin }, typeof(EchoService)) == diskTwin && !string.IsNullOrEmpty(diskTwin.Assembly.Location) && string.IsNullOrEmpty(bytesTwin.Assembly.Location),
+                    GeneratedDecorators.Prefer(new Type[] { bytesTwinB, bytesTwin }, typeof(EchoService)) == bytesTwinB && GeneratedDecorators.Prefer(new Type[] { bytesTwin, bytesTwinB }, typeof(EchoService)) == bytesTwin,
+                    GeneratedDecorators.Prefer(Array.Empty<Type>(), typeof(EchoService)) == null,
+                    GeneratedDecorators.FindAll(typeof(IEchoService), typeof(EchoService)).Count(candidate => candidate == bytesTwin || candidate == bytesTwinB || candidate == diskTwin || candidate == odd),
+                    GeneratedDecorators.Find(typeof(IEchoService), typeof(EchoService)));
             })
             .TheTest
-            .ShouldPass<TwinOutcome>((because, outcome) =>
+            .ShouldPass<PreferenceOutcome>((because, outcome) =>
             {
-                because.ItsTrue("the twin is a candidate", outcome.TwinIsCandidate && outcome.Candidates >= 2, $"candidates: {outcome.Candidates}");
-                because.ItsTrue("the twin has no location", string.IsNullOrEmpty(outcome.TwinLocation));
-                because.ItsTrue("Find returns the fixture, whichever assembly enumerates first", outcome.Found == typeof(EchoServiceDecorator), outcome.Found?.Assembly.FullName);
+                because.ItsTrue("the conventional name beats another name", outcome.ConventionalName);
+                because.ItsTrue("the implementation's assembly beats another assembly", outcome.OwnAssembly);
+                because.ItsTrue("an assembly loaded from disk beats one loaded from bytes", outcome.FromDisk);
+                because.ItsTrue("when every rule ties, the first in the list wins", outcome.FirstWhenEqual);
+                because.ItsTrue("no candidates gives null", outcome.EmptyIsNull);
+                because.ItsTrue("all four extra candidates are loaded and found", outcome.ExtraCandidates == 4, $"extra candidates found: {outcome.ExtraCandidates}");
+                because.ItsTrue("Find still returns the fixture with every twin loaded", outcome.Found == typeof(EchoServiceDecorator), outcome.Found?.Assembly.FullName);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -530,6 +551,19 @@ namespace Bam.Generators.Decorators.Tests.Unit
             }
         }
 
+        /// <summary>A decorator of the echo pair at a name the generator would not use; the conventional one must beat it.</summary>
+        public class OddEchoDecorator : Decorator<IEchoService, EchoService>, IEchoService
+        {
+            public OddEchoDecorator(EchoService instance, IDecoratorLogger? logger = null) : base(instance, logger)
+            {
+            }
+
+            public string Message(string message)
+            {
+                return Intercept<string>(nameof(Message), new object?[] { message }, () => Instance.Message(message)).Value!;
+            }
+        }
+
         /// <summary>A pair nothing decorates.</summary>
         public interface INobody
         {
@@ -577,6 +611,6 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
         private sealed record WrapOutcome(Exception? Thrown);
 
-        private sealed record TwinOutcome(bool TwinIsCandidate, int Candidates, Type? Found, string TwinLocation);
+        private sealed record PreferenceOutcome(bool ConventionalName, bool OwnAssembly, bool FromDisk, bool FirstWhenEqual, bool EmptyIsNull, int ExtraCandidates, Type? Found);
     }
 }

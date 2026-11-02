@@ -119,7 +119,10 @@ namespace Bam.Generators.Decorators
 
         /// <summary>
         /// Subscribes an observe-only <paramref name="handler"/>: it runs like any other handler but never
-        /// overrides the result unless it sets <see cref="DecoratorInvocationContext.Result"/> itself.
+        /// overrides the result unless it sets <see cref="DecoratorInvocationContext.Result"/> itself. Stored
+        /// once per subscription: the same delegate subscribed twice runs twice, unlike the <c>Func</c>
+        /// overloads, which store a delegate once. A method group subscribed from two places is two
+        /// subscriptions; <see cref="Remove"/> takes one back per call.
         /// </summary>
         /// <param name="phase">The phase the handler runs in.</param>
         /// <param name="methodName">The method to subscribe to, or <see cref="AnyMethod"/> for all of them.</param>
@@ -168,8 +171,9 @@ namespace Bam.Generators.Decorators
 
         /// <summary>
         /// Unsubscribes <paramref name="handler"/> from <paramref name="methodName"/> in <paramref name="phase"/>:
-        /// the delegate handed to any <c>Add</c> overload, found by delegate equality. Decorators already
-        /// holding this registry stop running the handler at their next call.
+        /// the delegate handed to any <c>Add</c> overload, found by delegate equality. Removes one subscription
+        /// per call (an observe-only handler subscribed twice needs two calls; <see cref="Clear()"/> removes
+        /// all). Decorators already holding this registry stop running the handler at their next call.
         /// </summary>
         /// <param name="phase">The phase the handler was subscribed to.</param>
         /// <param name="methodName">The method it was subscribed to, or <see cref="AnyMethod"/>.</param>
