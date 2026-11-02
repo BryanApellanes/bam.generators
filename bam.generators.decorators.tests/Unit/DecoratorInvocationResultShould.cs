@@ -15,7 +15,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
         private static Decorator<EchoService> NewDecorator()
         {
-            return new Decorator<EchoService>(new EchoService(), Substitute.For<ILogger>());
+            return new Decorator<EchoService>(new EchoService(), Substitute.For<IDecoratorLogger>());
         }
 
         [UnitTest]

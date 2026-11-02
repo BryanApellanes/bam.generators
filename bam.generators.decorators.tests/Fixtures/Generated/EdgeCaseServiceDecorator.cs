@@ -22,8 +22,8 @@ namespace Bam.Generators.Decorators.Tests.Fixtures.Decorators
 
         /// <summary>Initializes a decorator around <paramref name="instance"/>.</summary>
         /// <param name="instance">The instance to decorate.</param>
-        /// <param name="logger">Receives handler failures. Defaults to the framework's default logger.</param>
-        public EdgeCaseServiceDecorator(global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService instance, global::Bam.Logging.ILogger? logger = null) : base(instance, logger)
+        /// <param name="logger">Receives handler failures. Defaults to <c>DecoratorLogger.Default</c>.</param>
+        public EdgeCaseServiceDecorator(global::Bam.Generators.Decorators.Tests.Fixtures.EdgeCaseService instance, global::Bam.Generators.Decorators.IDecoratorLogger? logger = null) : base(instance, logger)
         {
         }
 

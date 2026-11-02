@@ -293,7 +293,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         [UnitTest]
         public void AdoptADecoratorRegisteredByHand()
         {
-            EchoServiceDecorator byHand = new EchoServiceDecorator(new EchoService(), Substitute.For<ILogger>());
+            EchoServiceDecorator byHand = new EchoServiceDecorator(new EchoService(), Substitute.For<IDecoratorLogger>());
 
             After.Setup(reg =>
             {

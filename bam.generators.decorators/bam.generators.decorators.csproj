@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\bam.generators.decorators.runtime\bam.generators.decorators.runtime.csproj" />
     <ProjectReference Include="..\bam.generators\bam.generators.csproj" />
     <ProjectReference Include="..\..\bam.base\bam.base\bam.base.csproj" />
   </ItemGroup>

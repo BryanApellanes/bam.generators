@@ -21,7 +21,7 @@ namespace Bam.Generators.Decorators
         /// <exception cref="DecoratorException"><paramref name="service"/> is not a decorator of <typeparamref name="T"/>.</exception>
         public static IDecorator<T> GetDecorator<T>(object service) where T : class
         {
-            ArgumentNullException.ThrowIfNull(service);
+            Guard.NotNull(service, nameof(service));
 
             if (service is IDecorator<T> decorator)
             {
@@ -156,7 +156,7 @@ namespace Bam.Generators.Decorators
 
         private static IDecorator<T> Subscribe<T>(IDecorator<T> decorator, DecoratorPhase phase, string methodName, Action<DecoratorInvocationContext<T>> handler) where T : class
         {
-            ArgumentNullException.ThrowIfNull(decorator);
+            Guard.NotNull(decorator, nameof(decorator));
 
             decorator.Subscribe(phase, methodName, handler);
             return decorator;
@@ -164,7 +164,7 @@ namespace Bam.Generators.Decorators
 
         private static IDecorator<T> Subscribe<T>(IDecorator<T> decorator, DecoratorPhase phase, string methodName, Func<DecoratorInvocationContext<T>, object?> handler) where T : class
         {
-            ArgumentNullException.ThrowIfNull(decorator);
+            Guard.NotNull(decorator, nameof(decorator));
 
             decorator.Subscribe(phase, methodName, handler);
             return decorator;

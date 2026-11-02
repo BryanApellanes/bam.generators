@@ -34,7 +34,7 @@ namespace Bam.Generators.Decorators
                         return true;
                     }
 
-                    return candidate.GetMethod("GetAwaiter", BindingFlags.Public | BindingFlags.Instance, Type.EmptyTypes) != null;
+                    return candidate.GetMethod("GetAwaiter", BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null) != null;
                 });
             }
             catch (Exception)

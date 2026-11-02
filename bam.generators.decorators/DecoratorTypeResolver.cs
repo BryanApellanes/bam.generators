@@ -113,7 +113,7 @@ namespace Bam.Generators.Decorators
                     && !type.IsAbstract
                     && baseType.IsAssignableFrom(type)
                     && interfaceType.IsAssignableFrom(type)
-                    && type.GetConstructor(new Type[] { implementationType, typeof(ILogger) }) != null));
+                    && type.GetConstructor(new Type[] { implementationType, typeof(IDecoratorLogger) }) != null));
             }
 
             if (candidates.Count < 2)

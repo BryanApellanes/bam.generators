@@ -95,7 +95,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<IEchoService>().Use(new EchoServiceDecorator(new EchoService(), Substitute.For<ILogger>()));
+                reg.For<IEchoService>().Use(new EchoServiceDecorator(new EchoService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<IEchoService>("is a decorator and subscribes through the instance", echo =>
             {

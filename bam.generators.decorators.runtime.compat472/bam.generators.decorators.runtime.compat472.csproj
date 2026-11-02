@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Compile proof for bam.generators#14: a .NET Framework 4.7.2 class library that references the decorator
+    runtime and nothing else from the Bam framework, and compiles a generated decorator against it.
+
+    Built on its own (`dotnet build bam.generators.decorators.runtime.compat472`), never from bamtk.sln: a
+    net472 project in the solution's flat per-SHA output directory would drop the netstandard2.0 runtime over
+    the net10.0 one (bamtk#66).
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Bam.Generators.Decorators.Compat</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Reference assemblies for net472, so the project builds on a machine without the targeting pack. -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\bam.generators.decorators.runtime\bam.generators.decorators.runtime.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The service the test suite's generated fixture decorates, shared rather than copied. -->
+    <Compile Include="..\bam.generators.decorators.tests\Fixtures\IEchoService.cs" Link="Fixtures\IEchoService.cs" />
+    <Compile Include="..\bam.generators.decorators.tests\Fixtures\EchoService.cs" Link="Fixtures\EchoService.cs" />
+  </ItemGroup>
+
+</Project>

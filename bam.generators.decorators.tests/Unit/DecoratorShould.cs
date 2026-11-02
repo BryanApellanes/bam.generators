@@ -13,9 +13,9 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
         }
 
-        private static int ErrorsLoggedTo(ILogger logger)
+        private static int ErrorsLoggedTo(IDecoratorLogger logger)
         {
-            return logger.ReceivedCalls().Count(call => call.GetMethodInfo().Name == nameof(ILogger.Error));
+            return logger.ReceivedCalls().Count(call => call.GetMethodInfo().Name == nameof(IDecoratorLogger.Error));
         }
 
         [UnitTest]
@@ -23,7 +23,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<EchoService>>("invokes a method by name", decorator =>
             {
@@ -50,7 +50,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
             After.Setup(reg =>
             {
-                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(service, Substitute.For<ILogger>()));
+                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(service, Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<EchoService>>("runs a start handler", decorator =>
             {
@@ -80,7 +80,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<EchoService>>("has a start handler that returns a value", decorator =>
             {
@@ -106,7 +106,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
             // decorated method ran — but the start handler answers first.
             After.Setup(reg =>
             {
-                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<EchoService>>("is invoked without arguments but a start handler answers", decorator =>
             {
@@ -130,7 +130,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<EchoService>>("has an end handler that returns a value", decorator =>
             {
@@ -159,7 +159,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<KitchenSinkService>>("invokes a method that throws", decorator =>
             {
@@ -193,7 +193,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<KitchenSinkService>>("has an error handler that returns a value", decorator =>
             {
@@ -229,7 +229,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<KitchenSinkService>>("has an observe-only error handler that sets the result to null", decorator =>
             {
@@ -252,7 +252,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<EchoService>>("invokes a method that does not exist", decorator =>
             {
@@ -280,7 +280,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<KitchenSinkService>>("invokes a missing method asynchronously and a generic method by name", decorator =>
             {
@@ -305,7 +305,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<KitchenSinkService>>("has event subscribers", decorator =>
             {
@@ -331,7 +331,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         [UnitTest]
         public void KeepGoingWhenAHandlerThrows()
         {
-            ILogger logger = Substitute.For<ILogger>();
+            IDecoratorLogger logger = Substitute.For<IDecoratorLogger>();
 
             After.Setup(reg =>
             {
@@ -362,7 +362,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         [UnitTest]
         public void IgnoreAnOverrideOfTheWrongType()
         {
-            ILogger logger = Substitute.For<ILogger>();
+            IDecoratorLogger logger = Substitute.For<IDecoratorLogger>();
 
             After.Setup(reg =>
             {
@@ -390,7 +390,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<KitchenSinkService>>("invokes overloads by name", decorator =>
             {
@@ -413,7 +413,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<KitchenSinkService>>().Use(new Decorator<KitchenSinkService>(new KitchenSinkService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<KitchenSinkService>>("invokes asynchronous methods by name", decorator =>
             {
@@ -443,7 +443,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<EchoService>>("has shared, named and any-method handlers", decorator =>
             {
@@ -474,7 +474,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         {
             After.Setup(reg =>
             {
-                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<ILogger>()));
+                reg.For<Decorator<EchoService>>().Use(new Decorator<EchoService>(new EchoService(), Substitute.For<IDecoratorLogger>()));
             })
             .When<Decorator<EchoService>>("intercepts a delegate, as generated code does", decorator =>
             {
@@ -501,7 +501,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
             {
                 try
                 {
-                    Decorator<EchoService> decorator = new Decorator<EchoService>(null!, Substitute.For<ILogger>());
+                    Decorator<EchoService> decorator = new Decorator<EchoService>(null!, Substitute.For<IDecoratorLogger>());
                     return new EventOutcome("constructed");
                 }
                 catch (ArgumentNullException)

@@ -50,7 +50,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
             {
                 Type first = resolver.Resolve(typeof(IGreeterService), typeof(GreeterService));
                 Type second = resolver.Resolve(typeof(IGreeterService), typeof(GreeterService));
-                IGreeterService greeter = (IGreeterService)Activator.CreateInstance(first, new GreeterService(), Substitute.For<ILogger>())!;
+                IGreeterService greeter = (IGreeterService)Activator.CreateInstance(first, new GreeterService(), Substitute.For<IDecoratorLogger>())!;
                 return new ResolutionOutcome(first, second, greeter.Greet("bam"));
             })
             .TheTest
@@ -75,7 +75,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
             .When<DecoratorTypeResolver>("resolves a service whose inherited members clash", resolver =>
             {
                 Type decoratorType = resolver.Resolve(typeof(IClashService), typeof(ClashService));
-                IClashService clash = (IClashService)Activator.CreateInstance(decoratorType, new ClashService(), Substitute.For<ILogger>())!;
+                IClashService clash = (IClashService)Activator.CreateInstance(decoratorType, new ClashService(), Substitute.For<IDecoratorLogger>())!;
                 return new ClashOutcome(((ICounted)clash).Count, ((ICounter)clash).Count(), ((ICounter)clash).Describe(), ((IDescribed)clash).Describe());
             })
             .TheTest
@@ -106,7 +106,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 {
                     DecoratorTypeResolver resolver = new DecoratorTypeResolver();
                     Type decoratorType = resolver.Resolve(typeof(IPingService), typeof(PingService));
-                    IPingService ping = (IPingService)Activator.CreateInstance(decoratorType, new PingService(), Substitute.For<ILogger>())!;
+                    IPingService ping = (IPingService)Activator.CreateInstance(decoratorType, new PingService(), Substitute.For<IDecoratorLogger>())!;
                     string rendered = resolver.Generator.GetSource(typeof(IPingService), typeof(PingService));
                     string planted = new DecoratorGenerator().GetSource(typeof(IPingService), typeof(PingService));
                     return new WorkingDirectoryOutcome(ping.Ping(), rendered.Contains("planted template"), planted.Contains("planted template"), false);
@@ -143,7 +143,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 try
                 {
                     Type decoratorType = new DecoratorTypeResolver().Resolve(typeof(IPongService), typeof(PongService));
-                    IPongService pong = (IPongService)Activator.CreateInstance(decoratorType, new PongService(), Substitute.For<ILogger>())!;
+                    IPongService pong = (IPongService)Activator.CreateInstance(decoratorType, new PongService(), Substitute.For<IDecoratorLogger>())!;
                     return new WorkingDirectoryOutcome(pong.Pong(), false, false, Directory.EnumerateFileSystemEntries(workingDirectory).Any());
                 }
                 finally
