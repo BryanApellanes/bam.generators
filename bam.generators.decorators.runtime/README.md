@@ -41,6 +41,8 @@ IEchoService Decorate(EchoService inner) => DecoratorFactory.Create<IEchoService
 
 `Create<I, T>` finds the generated decorator among the loaded assemblies (`GeneratedDecorators.Find`: a class extending `Decorator<I, T>`, implementing `I`, with a `(T, IDecoratorLogger)` constructor; the conventional name `{T namespace}.Decorators.{T}Decorator` wins a tie) and throws `DecoratorException` when none is loaded. `Create<I, T, TDecorator>` names the type instead. Nothing is compiled.
 
+A decorator generated from an interface alone (`DecoratorGenerator.AddInterface<I>()`, for an implementation generated code cannot name) is a `Decorator<I, I>` named `IEchoServiceDecorator`; `DecoratorFactory.Create<I>(instance)` and `DecoratorFactory.Handlers<I>()` are the `<I, I>` forms for it, and it wraps whatever implements `I`.
+
 ## Logging
 
 The runtime reports handler failures through `IDecoratorLogger`, a one-method interface:

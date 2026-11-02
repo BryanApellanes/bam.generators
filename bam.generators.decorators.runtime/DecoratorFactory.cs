@@ -24,6 +24,16 @@ namespace Bam.Generators.Decorators
         }
 
         /// <summary>
+        /// Gets the handler store shared by every decorator created for <typeparamref name="I"/> alone (a
+        /// decorator generated from the interface without an implementation type). Same as
+        /// <c>Handlers&lt;I, I&gt;()</c>.
+        /// </summary>
+        public static DecoratorHandlerRegistry<DecoratorInvocationContext<I>> Handlers<I>() where I : class
+        {
+            return Store<I, I>.Handlers;
+        }
+
+        /// <summary>
         /// Wraps <paramref name="instance"/> in the decorator generated for the pair, attaching the shared
         /// store. The decorator is found among the loaded assemblies (<see cref="GeneratedDecorators.Find"/>)
         /// and remembered; nothing is compiled.
@@ -39,9 +49,24 @@ namespace Bam.Generators.Decorators
             Type decoratorType = _types.GetOrAdd(new PairKey(typeof(I), typeof(T)), key =>
                 GeneratedDecorators.Find(key.InterfaceType, key.ImplementationType)
                 ?? throw new DecoratorException(
-                    $"No generated decorator for {typeof(I).FullName} as {typeof(T).FullName} is loaded. Generate one with DecoratorGenerator, or name the decorator type with Create<I, T, TDecorator>."));
+                    typeof(I) == typeof(T)
+                        ? $"No decorator generated for {typeof(I).FullName} alone is loaded. Generate one with DecoratorGenerator.AddInterface, or name the decorator type with Create<I, T, TDecorator>."
+                        : $"No generated decorator for {typeof(I).FullName} as {typeof(T).FullName} is loaded. Generate one with DecoratorGenerator, or name the decorator type with Create<I, T, TDecorator>."));
 
             return Attach<I, T>((Decorator<I, T>)Construct(decoratorType, typeof(T), instance, logger));
+        }
+
+        /// <summary>
+        /// Wraps <paramref name="instance"/>, whatever its type, in the decorator generated for
+        /// <typeparamref name="I"/> alone (<c>Decorator&lt;I, I&gt;</c>). Same as <c>Create&lt;I, I&gt;</c>.
+        /// </summary>
+        /// <param name="instance">The instance to decorate.</param>
+        /// <param name="logger">Receives handler failures. Defaults to <see cref="DecoratorLogger.Default"/>.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="instance"/> is null.</exception>
+        /// <exception cref="DecoratorException">No decorator generated for the interface alone is loaded.</exception>
+        public static Decorator<I, I> Create<I>(I instance, IDecoratorLogger? logger = null) where I : class
+        {
+            return Create<I, I>(instance, logger);
         }
 
         /// <summary>

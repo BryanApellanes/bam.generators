@@ -26,7 +26,11 @@ namespace Bam.Generators.Decorators
             return (implementationType.Namespace ?? DefaultNamespace) + NamespaceSuffix;
         }
 
-        /// <summary>Gets the simple type name of the decorator generated for <paramref name="implementationType"/>.</summary>
+        /// <summary>
+        /// Gets the simple type name of the decorator generated for <paramref name="implementationType"/>:
+        /// <c>EchoServiceDecorator</c> for <c>EchoService</c>, and <c>IEchoServiceDecorator</c> for a decorator
+        /// generated from <c>IEchoService</c> alone, so the two never share a name.
+        /// </summary>
         public static string TypeNameOf(Type implementationType)
         {
             Guard.NotNull(implementationType, nameof(implementationType));
