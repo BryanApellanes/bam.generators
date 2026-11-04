@@ -110,7 +110,8 @@ namespace Bam.Generators.Decorators
         /// <paramref name="candidates"/>, or null when there are none. In order: a candidate at the
         /// conventional name (<see cref="FullNameOf"/>) over one at another name; one declared in the
         /// implementation's own assembly over one from another assembly; one from an assembly loaded from
-        /// disk (a non-empty <see cref="Assembly.Location"/>) over one loaded from bytes; then the first in
+        /// disk (a non-empty <see cref="Assembly.Location"/>) over one loaded from bytes, a dynamic assembly
+        /// counting as loaded from bytes; then the first in
         /// <paramref name="candidates"/>. The pick does not depend on load order except in the last step,
         /// which also decides under a single-file publish, where every bundled assembly reports an empty
         /// <see cref="Assembly.Location"/>.
@@ -132,7 +133,7 @@ namespace Bam.Generators.Decorators
             return candidates
                 .OrderBy(type => type.FullName == conventionalName ? 0 : 1)
                 .ThenBy(type => type.Assembly == implementationType.Assembly ? 0 : 1)
-                .ThenBy(type => string.IsNullOrEmpty(type.Assembly.Location) ? 1 : 0)
+                .ThenBy(type => type.Assembly.IsDynamic || string.IsNullOrEmpty(type.Assembly.Location) ? 1 : 0)
                 .First();
         }
 

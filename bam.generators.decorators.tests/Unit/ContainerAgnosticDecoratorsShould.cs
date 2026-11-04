@@ -2,7 +2,10 @@ using Bam.DependencyInjection;
 using Bam.Generators.Decorators.Tests.Fixtures;
 using Bam.Generators.Decorators.Tests.Fixtures.Decorators;
 using Bam.Test;
+using Microsoft.CodeAnalysis;
 using System.Reflection;
+using System.Reflection.Emit;
+using System.Runtime.Loader;
 
 namespace Bam.Generators.Decorators.Tests.Unit
 {
@@ -384,29 +387,42 @@ namespace Bam.Generators.Decorators.Tests.Unit
         [UnitTest]
         public void PreferCandidatesByRule()
         {
+            SweepTwinDirectories();
+            string twinDirectory = Path.Combine(Path.GetTempPath(), TwinDirectoryPrefix + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(twinDirectory);
+
             When.A<DecoratorGenerator>("has twins of the fixture loaded from bytes and from disk", new DecoratorGenerator().WithoutRegistryExtensions(), generator =>
             {
                 // The decorator the fixtures assembly holds, compiled again: twice from bytes (another assembly,
-                // no Location) and once written to disk and loaded from there (another assembly, a Location).
-                // All three sit at the conventional name. OddEchoDecorator is hand-written in this assembly at
-                // another name. Prefer is pure, so each rule is tested with the loser first in the list.
+                // no Location), once written to disk and loaded from there (another assembly, a Location), and
+                // once as an empty type in a dynamic assembly (Location throws). All four sit at the conventional
+                // name. OddEchoDecorator is hand-written in this assembly at another name. Prefer is pure, so each
+                // rule is tested with the loser first in the list and with the other rules tied.
                 DecoratorModel model = new DecoratorModel(typeof(IEchoService), typeof(EchoService), false);
                 string source = generator.GetSource<IEchoService, EchoService>();
                 RoslynCompiler compiler = new RoslynCompiler();
                 Type bytesTwin = Assembly.Load(compiler.Compile("EchoTwin.Bytes.A", source, model.ReferencedTypes)).GetType(model.DecoratorFullName)!;
                 Type bytesTwinB = Assembly.Load(compiler.Compile("EchoTwin.Bytes.B", source, model.ReferencedTypes)).GetType(model.DecoratorFullName)!;
-                string diskDirectory = Path.Combine(Path.GetTempPath(), "bam-decorator-tests", "twins");
-                Directory.CreateDirectory(diskDirectory);
-                string diskPath = Path.Combine(diskDirectory, "EchoTwin.Disk." + Guid.NewGuid().ToString("N") + ".dll");
-                File.WriteAllBytes(diskPath, compiler.Compile(Path.GetFileNameWithoutExtension(diskPath), source, model.ReferencedTypes));
+                string diskPath = Path.Combine(twinDirectory, "EchoTwin.Disk.dll");
+                File.WriteAllBytes(diskPath, compiler.Compile("EchoTwin.Disk", source, model.ReferencedTypes));
                 Type diskTwin = Assembly.LoadFrom(diskPath).GetType(model.DecoratorFullName)!;
+                AssemblyBuilder dynamicAssembly = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("EchoTwin.Dynamic"), AssemblyBuilderAccess.Run);
+                Type dynamicTwin = dynamicAssembly.DefineDynamicModule("EchoTwin.Dynamic").DefineType(model.DecoratorFullName, TypeAttributes.Public | TypeAttributes.Class).CreateType()!;
                 Type fixture = typeof(EchoServiceDecorator);
                 Type odd = typeof(OddEchoDecorator);
+
+                // A pair whose implementation is in an assembly loaded from bytes, with its decorator in that same
+                // assembly, against a decorator for the pair written to disk from another assembly: the name rule
+                // ties, so only the assembly rule standing ahead of the Location rule picks the bytes one.
+                PlugPair plug = CompilePlugPair(generator, compiler, twinDirectory);
 
                 return new PreferenceOutcome(
                     GeneratedDecorators.Prefer(new Type[] { odd, fixture }, typeof(EchoService)) == fixture && GeneratedDecorators.Prefer(new Type[] { odd }, typeof(EchoService)) == odd,
                     GeneratedDecorators.Prefer(new Type[] { bytesTwin, fixture }, typeof(EchoService)) == fixture,
-                    GeneratedDecorators.Prefer(new Type[] { bytesTwin, diskTwin }, typeof(EchoService)) == diskTwin && !string.IsNullOrEmpty(diskTwin.Assembly.Location) && string.IsNullOrEmpty(bytesTwin.Assembly.Location),
+                    GeneratedDecorators.Prefer(new Type[] { diskTwin, fixture }, typeof(EchoService)) == fixture && !string.IsNullOrEmpty(diskTwin.Assembly.Location),
+                    GeneratedDecorators.Prefer(new Type[] { plug.DiskDecorator, plug.BytesDecorator }, plug.Implementation) == plug.BytesDecorator && string.IsNullOrEmpty(plug.Implementation.Assembly.Location) && !string.IsNullOrEmpty(plug.DiskDecorator.Assembly.Location),
+                    GeneratedDecorators.Prefer(new Type[] { bytesTwin, diskTwin }, typeof(EchoService)) == diskTwin && string.IsNullOrEmpty(bytesTwin.Assembly.Location),
+                    GeneratedDecorators.Prefer(new Type[] { dynamicTwin, diskTwin }, typeof(EchoService)) == diskTwin && GeneratedDecorators.Prefer(new Type[] { dynamicTwin, bytesTwin }, typeof(EchoService)) == dynamicTwin && dynamicTwin.Assembly.IsDynamic,
                     GeneratedDecorators.Prefer(new Type[] { bytesTwinB, bytesTwin }, typeof(EchoService)) == bytesTwinB && GeneratedDecorators.Prefer(new Type[] { bytesTwin, bytesTwinB }, typeof(EchoService)) == bytesTwin,
                     GeneratedDecorators.Prefer(Array.Empty<Type>(), typeof(EchoService)) == null,
                     GeneratedDecorators.FindAll(typeof(IEchoService), typeof(EchoService)).Count(candidate => candidate == bytesTwin || candidate == bytesTwinB || candidate == diskTwin || candidate == odd),
@@ -416,8 +432,11 @@ namespace Bam.Generators.Decorators.Tests.Unit
             .ShouldPass<PreferenceOutcome>((because, outcome) =>
             {
                 because.ItsTrue("the conventional name beats another name", outcome.ConventionalName);
-                because.ItsTrue("the implementation's assembly beats another assembly", outcome.OwnAssembly);
+                because.ItsTrue("the implementation's assembly beats another assembly loaded from bytes", outcome.OwnAssemblyOverBytes);
+                because.ItsTrue("the implementation's assembly beats another assembly loaded from disk", outcome.OwnAssemblyOverDisk);
+                because.ItsTrue("the implementation's assembly without a Location beats another assembly with one", outcome.OwnAssemblyOverLocation);
                 because.ItsTrue("an assembly loaded from disk beats one loaded from bytes", outcome.FromDisk);
+                because.ItsTrue("a dynamic assembly counts as loaded from bytes instead of throwing", outcome.DynamicTolerated);
                 because.ItsTrue("when every rule ties, the first in the list wins", outcome.FirstWhenEqual);
                 because.ItsTrue("no candidates gives null", outcome.EmptyIsNull);
                 because.ItsTrue("all four extra candidates are loaded and found", outcome.ExtraCandidates == 4, $"extra candidates found: {outcome.ExtraCandidates}");
@@ -425,6 +444,75 @@ namespace Bam.Generators.Decorators.Tests.Unit
             })
             .SoBeHappy()
             .UnlessItFailed();
+        }
+
+        private const string TwinDirectoryPrefix = "bam-decorator-twins-";
+
+        /// <summary>
+        /// Removes the twin directories earlier runs left behind. A loaded twin is locked for the life of its
+        /// process, so a run cannot delete its own; a directory still locked by another run is skipped, and a
+        /// directory younger than an hour is left alone because a run started alongside this one may still be
+        /// filling it.
+        /// </summary>
+        private static void SweepTwinDirectories()
+        {
+            DateTime threshold = DateTime.UtcNow.AddHours(-1);
+            IEnumerable<string> stale = Directory.EnumerateDirectories(Path.GetTempPath(), TwinDirectoryPrefix + "*")
+                .Where(directory => Directory.GetCreationTimeUtc(directory) < threshold);
+            foreach (string directory in stale)
+            {
+                try
+                {
+                    Directory.Delete(directory, true);
+                }
+                catch (IOException)
+                {
+                }
+                catch (UnauthorizedAccessException)
+                {
+                }
+            }
+        }
+
+        /// <summary>
+        /// Compiles a service pair and its decorator into one assembly loaded from bytes, and the same decorator
+        /// again into a file loaded from disk. The bytes assembly is not resolvable by name, so the disk decorator's
+        /// base type is served through the default load context's Resolving event while that type is resolved.
+        /// </summary>
+        private static PlugPair CompilePlugPair(DecoratorGenerator generator, RoslynCompiler compiler, string twinDirectory)
+        {
+            const string plugNamespace = "Bam.Generators.Decorators.Tests.Plugs";
+            const string plugSource = "namespace " + plugNamespace + " { public interface IPlug { string Name(); } public class Plug : IPlug { public string Name() { return \"plug\"; } } }";
+            Assembly stageOne = Assembly.Load(compiler.Compile("Plug.StageOne", plugSource, typeof(object)));
+            Type stageOneInterface = stageOne.GetType(plugNamespace + ".IPlug")!;
+            Type stageOneImplementation = stageOne.GetType(plugNamespace + ".Plug")!;
+            DecoratorModel model = new DecoratorModel(stageOneInterface, stageOneImplementation, false);
+            string decoratorSource = generator.GetSource(stageOneInterface, stageOneImplementation);
+            MetadataReference[] located = model.ReferencedTypes
+                .Select(type => type.Assembly)
+                .Where(assembly => !string.IsNullOrEmpty(assembly.Location))
+                .Distinct()
+                .Select(assembly => (MetadataReference)MetadataReference.CreateFromFile(assembly.Location))
+                .ToArray();
+
+            byte[] bytesImage = compiler.Compile("Plug.Bytes", plugSource + Environment.NewLine + decoratorSource, () => compiler.MetadataReferenceResolver.GetMetaDataReferences().Concat(located).ToArray());
+            Assembly bytesAssembly = Assembly.Load(bytesImage);
+            Type implementation = bytesAssembly.GetType(plugNamespace + ".Plug")!;
+            Type bytesDecorator = bytesAssembly.GetType(model.DecoratorFullName)!;
+
+            string diskPath = Path.Combine(twinDirectory, "Plug.Disk.dll");
+            File.WriteAllBytes(diskPath, compiler.Compile("Plug.Disk", decoratorSource, () => compiler.MetadataReferenceResolver.GetMetaDataReferences().Concat(located).Append(MetadataReference.CreateFromImage(bytesImage)).ToArray()));
+            Func<AssemblyLoadContext, AssemblyName, Assembly?> serveBytesAssembly = (context, name) => name.Name == "Plug.Bytes" ? bytesAssembly : null;
+            AssemblyLoadContext.Default.Resolving += serveBytesAssembly;
+            try
+            {
+                Type diskDecorator = Assembly.LoadFrom(diskPath).GetType(model.DecoratorFullName)!;
+                return new PlugPair(implementation, bytesDecorator, diskDecorator);
+            }
+            finally
+            {
+                AssemblyLoadContext.Default.Resolving -= serveBytesAssembly;
+            }
         }
 
         [UnitTest]
@@ -611,6 +699,8 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
         private sealed record WrapOutcome(Exception? Thrown);
 
-        private sealed record PreferenceOutcome(bool ConventionalName, bool OwnAssembly, bool FromDisk, bool FirstWhenEqual, bool EmptyIsNull, int ExtraCandidates, Type? Found);
+        private sealed record PreferenceOutcome(bool ConventionalName, bool OwnAssemblyOverBytes, bool OwnAssemblyOverDisk, bool OwnAssemblyOverLocation, bool FromDisk, bool DynamicTolerated, bool FirstWhenEqual, bool EmptyIsNull, int ExtraCandidates, Type? Found);
+
+        private sealed record PlugPair(Type Implementation, Type BytesDecorator, Type DiskDecorator);
     }
 }
