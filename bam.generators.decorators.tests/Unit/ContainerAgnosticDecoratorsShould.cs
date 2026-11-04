@@ -450,20 +450,20 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
         /// <summary>
         /// Removes the twin directories earlier runs left behind. A loaded twin is locked for the life of its
-        /// process, so a run cannot delete its own; a directory still locked by another run is skipped.
+        /// process, so a run cannot delete its own; a directory still locked by another run is skipped, and a
+        /// directory younger than an hour is left alone because a run started alongside this one may still be
+        /// filling it.
         /// </summary>
         private static void SweepTwinDirectories()
         {
+            DateTime threshold = DateTime.UtcNow.AddHours(-1);
             IEnumerable<string> stale = Directory.EnumerateDirectories(Path.GetTempPath(), TwinDirectoryPrefix + "*")
-                .Append(Path.Combine(Path.GetTempPath(), "bam-decorator-tests"));
+                .Where(directory => Directory.GetCreationTimeUtc(directory) < threshold);
             foreach (string directory in stale)
             {
                 try
                 {
-                    if (Directory.Exists(directory))
-                    {
-                        Directory.Delete(directory, true);
-                    }
+                    Directory.Delete(directory, true);
                 }
                 catch (IOException)
                 {
@@ -477,7 +477,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
         /// <summary>
         /// Compiles a service pair and its decorator into one assembly loaded from bytes, and the same decorator
         /// again into a file loaded from disk. The bytes assembly is not resolvable by name, so the disk decorator's
-        /// base type is served through the default load context's Resolving event for the life of the process.
+        /// base type is served through the default load context's Resolving event while that type is resolved.
         /// </summary>
         private static PlugPair CompilePlugPair(DecoratorGenerator generator, RoslynCompiler compiler, string twinDirectory)
         {
@@ -497,14 +497,22 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
             byte[] bytesImage = compiler.Compile("Plug.Bytes", plugSource + Environment.NewLine + decoratorSource, () => compiler.MetadataReferenceResolver.GetMetaDataReferences().Concat(located).ToArray());
             Assembly bytesAssembly = Assembly.Load(bytesImage);
-            AssemblyLoadContext.Default.Resolving += (context, name) => name.Name == "Plug.Bytes" ? bytesAssembly : null;
             Type implementation = bytesAssembly.GetType(plugNamespace + ".Plug")!;
             Type bytesDecorator = bytesAssembly.GetType(model.DecoratorFullName)!;
 
             string diskPath = Path.Combine(twinDirectory, "Plug.Disk.dll");
             File.WriteAllBytes(diskPath, compiler.Compile("Plug.Disk", decoratorSource, () => compiler.MetadataReferenceResolver.GetMetaDataReferences().Concat(located).Append(MetadataReference.CreateFromImage(bytesImage)).ToArray()));
-            Type diskDecorator = Assembly.LoadFrom(diskPath).GetType(model.DecoratorFullName)!;
-            return new PlugPair(implementation, bytesDecorator, diskDecorator);
+            Func<AssemblyLoadContext, AssemblyName, Assembly?> serveBytesAssembly = (context, name) => name.Name == "Plug.Bytes" ? bytesAssembly : null;
+            AssemblyLoadContext.Default.Resolving += serveBytesAssembly;
+            try
+            {
+                Type diskDecorator = Assembly.LoadFrom(diskPath).GetType(model.DecoratorFullName)!;
+                return new PlugPair(implementation, bytesDecorator, diskDecorator);
+            }
+            finally
+            {
+                AssemblyLoadContext.Default.Resolving -= serveBytesAssembly;
+            }
         }
 
         [UnitTest]
