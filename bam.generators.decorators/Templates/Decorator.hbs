@@ -37,11 +37,16 @@ namespace {{{Namespace}}}
     }
 
     /// <summary>
+{{#if RegistryExtensions}}
     /// Generated extension methods for decorating {{{InterfaceType.Name}}} in a service registry and subscribing typed
     /// handlers to its methods.
+{{else}}
+    /// Generated extension methods for subscribing typed handlers to the methods of a decorated {{{InterfaceType.Name}}}.
+{{/if}}
     /// </summary>
     public static partial class {{{ExtensionsTypeName}}}
     {
+{{#if RegistryExtensions}}
         /// <summary>
         /// Decorates the {{{InterfaceType.Name}}} registered in <paramref name="registry"/> so that resolving it yields a
         /// {{{DecoratorTypeName}}} wrapping what the previous registration resolves. The service keeps its lifetime.
@@ -53,7 +58,9 @@ namespace {{{Namespace}}}
         {
             return global::Bam.Generators.Decorators.ServiceRegistryExtensions.Decorate<{{{InterfaceName}}}, {{{ImplementationName}}}, {{{DecoratorTypeName}}}>(registry, logger);
         }
+{{/if}}
 {{#each Hooks}}
+{{#if RegistryExtensions}}
 
         /// <summary>
         /// Subscribes an observe-only <paramref name="handler"/> to run {{{When}}} on the service
@@ -66,6 +73,11 @@ namespace {{{Namespace}}}
             return registry;
         }
 
+{{else}}
+{{#unless @first}}
+
+{{/unless}}
+{{/if}}
         /// <summary>
         /// Subscribes an observe-only <paramref name="handler"/> to run {{{When}}} on the decorated
         /// <paramref name="service"/>.
@@ -77,6 +89,7 @@ namespace {{{Namespace}}}
             return service;
         }
 {{#if HasResult}}
+{{#if RegistryExtensions}}
 
         /// <summary>
         /// Subscribes <paramref name="handler"/> to run {{{When}}} on the service registered in
@@ -89,6 +102,7 @@ namespace {{{Namespace}}}
             {{{ExtensionsTypeName}}}.{{{DecorateMethodName}}}(registry).Subscribe(global::Bam.Generators.Decorators.DecoratorPhase.{{{Phase}}}, "{{{MethodName}}}", handler);
             return registry;
         }
+{{/if}}
 
         /// <summary>
         /// Subscribes <paramref name="handler"/> to run {{{When}}} on the decorated

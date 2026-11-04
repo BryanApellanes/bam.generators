@@ -26,6 +26,7 @@ namespace Bam.Generators.Decorators
             ImplementationName = decorator.ImplementationName;
             DecorateMethodName = decorator.DecorateMethodName;
             ExtensionsTypeName = decorator.ExtensionsTypeName;
+            RegistryExtensions = decorator.RegistryExtensions;
 
             switch (phase)
             {
@@ -77,6 +78,12 @@ namespace Bam.Generators.Decorators
         /// a decorator for the same service.
         /// </summary>
         public string ExtensionsTypeName { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the <c>this ServiceRegistry</c> overloads of the hook are generated.
+        /// Copied from the decorator so the template reads it inside <c>#each Hooks</c>.
+        /// </summary>
+        public bool RegistryExtensions { get; }
 
         /// <summary>Gets the phrase describing when the handler runs, for the generated documentation.</summary>
         public string When { get; }

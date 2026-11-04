@@ -25,6 +25,24 @@ namespace Bam.Generators.Decorators
         /// pointer-typed).
         /// </exception>
         public DecoratorModel(Type interfaceType, Type implementationType)
+            : this(interfaceType, implementationType, true)
+        {
+        }
+
+        /// <summary>
+        /// Builds the model for decorating <paramref name="implementationType"/> as
+        /// <paramref name="interfaceType"/>, choosing whether the <c>ServiceRegistry</c> extension methods are
+        /// generated.
+        /// </summary>
+        /// <param name="interfaceType">The service interface the decorator implements.</param>
+        /// <param name="implementationType">The implementation type the decorator wraps.</param>
+        /// <param name="registryExtensions">
+        /// True to generate the <c>Decorate</c> method and the <c>this ServiceRegistry</c> hook overloads, which
+        /// reference <c>bam.base</c>; false to generate only the decorator and the hook overloads on the service
+        /// instance, so the output compiles against the decorator runtime alone.
+        /// </param>
+        /// <exception cref="DecoratorGenerationException">The pair cannot be decorated; see <see cref="DecoratorModel(Type, Type)"/>.</exception>
+        public DecoratorModel(Type interfaceType, Type implementationType, bool registryExtensions)
         {
             ArgumentNullException.ThrowIfNull(interfaceType);
             ArgumentNullException.ThrowIfNull(implementationType);
@@ -32,6 +50,7 @@ namespace Bam.Generators.Decorators
 
             InterfaceType = interfaceType;
             ImplementationType = implementationType;
+            RegistryExtensions = registryExtensions;
             if (!SyntaxFacts.IsValidIdentifier(DecoratorTypeName))
             {
                 throw new DecoratorGenerationException(interfaceType, $"'{DecoratorTypeName}' is not a valid C# type name; {implementationType.FullName} cannot be decorated.");
@@ -51,6 +70,13 @@ namespace Bam.Generators.Decorators
         /// <summary>Gets the implementation type the decorator wraps.</summary>
         public Type ImplementationType { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether the <c>ServiceRegistry</c> extension methods are generated: the
+        /// <c>Decorate</c> method and the <c>this ServiceRegistry</c> hook overloads. When false, the generated
+        /// source references the decorator runtime alone.
+        /// </summary>
+        public bool RegistryExtensions { get; }
+
         /// <summary>Gets the methods of the interface and the interfaces it inherits.</summary>
         public List<DecoratorMethodModel> Methods { get; }
 
@@ -64,16 +90,16 @@ namespace Bam.Generators.Decorators
         public List<DecoratorHookModel> Hooks { get; }
 
         /// <summary>Gets the namespace of the generated decorator.</summary>
-        public string Namespace => (ImplementationType.Namespace ?? "Bam.Generated") + ".Decorators";
+        public string Namespace => GeneratedDecorators.NamespaceOf(ImplementationType);
 
         /// <summary>Gets the generated decorator's simple type name, e.g. <c>EchoServiceDecorator</c>.</summary>
-        public string DecoratorTypeName => SimpleName(ImplementationType) + "Decorator";
+        public string DecoratorTypeName => GeneratedDecorators.TypeNameOf(ImplementationType);
 
         /// <summary>Gets the simple name of the generated static class holding the extension methods.</summary>
         public string ExtensionsTypeName => DecoratorTypeName + "Extensions";
 
         /// <summary>Gets the name of the generated extension method that decorates the service in a registry, e.g. <c>DecorateEchoService</c>.</summary>
-        public string DecorateMethodName => "Decorate" + SimpleName(ImplementationType);
+        public string DecorateMethodName => "Decorate" + GeneratedDecorators.SimpleName(ImplementationType);
 
         /// <summary>Gets the full name of the generated decorator type, as used to find it in a compiled assembly.</summary>
         public string DecoratorFullName => Namespace + "." + DecoratorTypeName;
@@ -113,10 +139,14 @@ namespace Bam.Generators.Decorators
                     InterfaceType,
                     ImplementationType,
                     typeof(Decorator<>),
-                    typeof(IDecoratorLogger),
-                    typeof(ServiceRegistry),
-                    typeof(ILogger)
+                    typeof(IDecoratorLogger)
                 };
+                if (RegistryExtensions)
+                {
+                    types.Add(typeof(ServiceRegistry));
+                    types.Add(typeof(ILogger));
+                }
+
                 types.AddRange(Members.SelectMany(member => member.ReferencedTypes));
 
                 return types
@@ -387,18 +417,6 @@ namespace Bam.Generators.Decorators
             }
 
             return new Type[] { type };
-        }
-
-        private static string SimpleName(Type type)
-        {
-            string name = type.Name;
-            int tick = name.IndexOf('`');
-            if (tick < 0)
-            {
-                return name;
-            }
-
-            return name.Substring(0, tick) + "Of" + string.Concat(type.GetGenericArguments().Select(SimpleName));
         }
     }
 }

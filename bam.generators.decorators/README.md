@@ -112,13 +112,50 @@ new DecoratorGenerator()
     .WriteSource("./Generated_Decorators");
 ```
 
-This writes `EchoServiceDecorator.cs`, holding `EchoServiceDecorator` and `EchoServiceDecoratorExtensions`, in the namespace `{implementation namespace}.Decorators`. The decorator's constructor takes the instance and an optional `IDecoratorLogger`; the decorator class references the runtime package alone, while the extensions class references `ServiceRegistry` and `ILogger` (bam.generators#15 adds an option to omit it). `GetSource<I, T>()` renders the same source without writing it.
+This writes `EchoServiceDecorator.cs`, holding `EchoServiceDecorator` and `EchoServiceDecoratorExtensions`, in the namespace `{implementation namespace}.Decorators`. The decorator's constructor takes the instance and an optional `IDecoratorLogger`. The decorator class references the runtime package alone. The extensions class holds two kinds of overload for each hook: one on the service instance (`echo.OnMessageStart(...)`), which also references only the runtime, and one on a `ServiceRegistry` (`registry.OnMessageStart(...)`), plus the `DecorateEchoService` method, which reference `bam.base`. `GetSource<I, T>()` renders the same source without writing it.
+
+`WithoutRegistryExtensions()` leaves the `ServiceRegistry` overloads and the `Decorate` method out, so the whole file compiles against the runtime package alone:
+
+```csharp
+new DecoratorGenerator()
+    .WithoutRegistryExtensions()
+    .AddServiceType<IEchoService, EchoService>()
+    .WriteSource("./Generated_Decorators");
+```
+
+That is the output for a host on another container, or on .NET Framework; see [Using another container](#using-another-container). The option changes nothing else about the file, and the default output is unchanged.
 
 The template is embedded (`Templates/Decorator.hbs`). When generating with `DecoratorGenerator`, a `Decorator.hbs` in `./Templates` overrides the embedded one. The template references no partials, since Handlebars partials are registered process-wide.
 
 `registry.Decorate<I, T>()` uses a generated decorator when one is loaded. Otherwise it generates and compiles one on the spot, which costs a compile on first use and needs the service's assembly on disk. Register your own `IDecoratorTypeResolver` in the registry to change that.
 
 The `./Templates` override applies to generation only, not to `Decorate<I, T>()`. What `Decorate` compiles is loaded into the process, so the default resolver renders from the embedded template and nothing else. It reads no template directory and creates none. A resolver you construct with your own `DecoratorGenerator` compiles whatever that generator renders, so give it one that reads templates from disk only when that directory is as trusted as the application's binaries.
+
+## Using another container
+
+A host that does not use `ServiceRegistry` generates with `WithoutRegistryExtensions()`, references the runtime package alone, and creates decorators through `DecoratorFactory` from its own container's decoration hook (SimpleInjector's `ExpressionBuilt` event, `Decorate` in Microsoft.Extensions.DependencyInjection with Scrutor, or a factory lambda). `Create<I, T>` returns the decorator as `I`, the type the hook hands back; the generated `On…` hooks are extension methods on `I`, so they apply to it as returned:
+
+```csharp
+using Bam.Generators.Decorators;
+
+// Once, for every decorator the factory creates for the pair.
+DecoratorFactory.Handlers<IEchoService, EchoService>()
+    .Add(DecoratorPhase.Start, nameof(IEchoService.Message), ctx => { /* ... */ });
+
+// From the container's decoration hook.
+IEchoService Decorate(EchoService inner) => DecoratorFactory.Create<IEchoService, EchoService>(inner);
+
+// Or name the generated type, when it is known at compile time.
+EchoServiceDecorator decorator = DecoratorFactory.Create<IEchoService, EchoService, EchoServiceDecorator>(inner);
+decorator.OnMessageEnd(ctx => { /* this instance only */ });
+
+// When a host is torn down (one process, many hosts: integration tests), empty the pair's store.
+// The store is one per pair per process: two live hosts decorating the same pair share it, and a Reset
+// by one empties it for both.
+DecoratorFactory.Reset<IEchoService, EchoService>();
+```
+
+`Create<I, T>` finds the decorator generated for the pair among the loaded assemblies (`GeneratedDecorators.Find`) and remembers it; it compiles nothing, so a pair with no generated decorator loaded throws `DecoratorException`. Handlers added through `DecoratorFactory.Handlers<I, T>()` run before the ones subscribed on the decorator itself, the same order a registry's handlers take. Compiling a decorator on first use stays a `ServiceRegistry` feature.
 
 ## What gets intercepted
 
@@ -145,16 +182,24 @@ Overloads share their hooks, since handlers are selected by method name. Two gen
 dotnet run --project bam.generators.decorators.tests/bam.generators.decorators.tests.csproj -- --ut
 ```
 
-The runtime's `netstandard2.0` target is proven by `bam.generators.decorators.runtime.compat472`, a .NET Framework 4.7.2 class library that references the runtime project alone and compiles a generated decorator. It is built on its own, not from `bamtk.sln`:
+The runtime's `netstandard2.0` target is proven by `bam.generators.decorators.runtime.compat472`, a .NET Framework 4.7.2 class library that references the runtime project alone and compiles `Fixtures/Generated/NoRegistry/EchoServiceDecorator.cs`, real generator output with `WithoutRegistryExtensions()`, at `LangVersion` 9 (the floor generated output needs). It is built on its own, not from `bamtk.sln`:
 
 ```bash
 dotnet build bam.generators.decorators.runtime.compat472/bam.generators.decorators.runtime.compat472.csproj
 ```
 
-`Fixtures/Generated` in the test project holds real generator output, compiled into the tests. One test compares it to what the generator produces today, so regenerate those files when a template changes:
+`Fixtures/Generated` in the test project holds real generator output, compiled into the tests; `Fixtures/Generated/NoRegistry` holds the same service generated without registry extensions, embedded but not compiled there (it declares the same types), and compiled by `compat472`. Tests compare both to what the generator produces today, so regenerate those files when a template changes:
 
 ```bash
 bam generate Decorator --config /full/path/to/config.yaml
+```
+
+The CLI config gains a `RegistryExtensions: false` switch with bamtk#86; until it lands, regenerate the `NoRegistry` fixture from the generator itself:
+
+```csharp
+new DecoratorGenerator().WithoutRegistryExtensions()
+    .AddServiceType<IEchoService, EchoService>()
+    .WriteSource("bam.generators.decorators.tests/Fixtures/Generated/NoRegistry");
 ```
 
 The fixtures and the types they decorate are in the same assembly. If a change stops the checked-in fixtures from compiling, the assembly can't be built to regenerate them from. Fix the fixtures by hand far enough to compile, then regenerate over them.

@@ -30,6 +30,30 @@ namespace Bam.Generators.Decorators
         /// <summary>Gets or sets the resolver used to locate output streams.</summary>
         public IDecoratorTargetResolver TargetResolver { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether generated decorators include the <c>ServiceRegistry</c>
+        /// extension methods (the <c>Decorate</c> method and the <c>this ServiceRegistry</c> hook overloads).
+        /// Defaults to true. When false, the output references the <c>bam.generators.decorators.runtime</c>
+        /// package alone, for hosts on another container; see <see cref="DecoratorFactory"/>.
+        /// </summary>
+        public bool RegistryExtensions { get; set; } = true;
+
+        /// <summary>Generates decorators without the <c>ServiceRegistry</c> extension methods.</summary>
+        /// <returns>This generator, for chaining.</returns>
+        public DecoratorGenerator WithoutRegistryExtensions()
+        {
+            RegistryExtensions = false;
+            return this;
+        }
+
+        /// <summary>Generates decorators with the <c>ServiceRegistry</c> extension methods (the default).</summary>
+        /// <returns>This generator, for chaining.</returns>
+        public DecoratorGenerator WithRegistryExtensions()
+        {
+            RegistryExtensions = true;
+            return this;
+        }
+
         /// <summary>Queues a service for generation. Queuing the same pair twice has no effect.</summary>
         /// <param name="interfaceType">The service interface the decorator implements.</param>
         /// <param name="implementationType">The implementation type the decorator wraps.</param>
@@ -58,7 +82,7 @@ namespace Bam.Generators.Decorators
         /// <exception cref="DecoratorGenerationException">The pair cannot be decorated.</exception>
         public string GetSource(Type interfaceType, Type implementationType)
         {
-            return CodeWriter.GetSource(new DecoratorModel(interfaceType, implementationType));
+            return CodeWriter.GetSource(new DecoratorModel(interfaceType, implementationType, RegistryExtensions));
         }
 
         /// <summary>Renders the decorator source for a single service without writing it.</summary>
@@ -81,7 +105,7 @@ namespace Bam.Generators.Decorators
             List<string> written = new List<string>();
             foreach (DecoratorRequest request in _services)
             {
-                DecoratorModel model = new DecoratorModel(request.InterfaceType, request.ImplementationType);
+                DecoratorModel model = new DecoratorModel(request.InterfaceType, request.ImplementationType, RegistryExtensions);
                 using Stream stream = TargetResolver.GetTargetDecoratorStream(null, outputDirectory, model);
                 CodeWriter.WriteDecorator(model, stream);
                 written.Add(Path.Combine(outputDirectory, model.FileName));

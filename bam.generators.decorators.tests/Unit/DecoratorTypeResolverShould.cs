@@ -40,6 +40,31 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
+        public void CompileWithoutRegistryExtensionsWhenTheGeneratorSaysSo()
+        {
+            After.Setup(reg =>
+            {
+                reg.For<DecoratorTypeResolver>().Use(new DecoratorTypeResolver(DecoratorGeneratorShould.NewGenerator().WithoutRegistryExtensions()));
+            })
+            .When<DecoratorTypeResolver>("resolves a pair with no generated decorator through a generator with the option off", resolver =>
+            {
+                Type compiled = resolver.Resolve(typeof(IQuiet), typeof(Quiet));
+                string[] referenced = compiled.Assembly.GetReferencedAssemblies().Select(name => name.Name ?? string.Empty).ToArray();
+                IQuiet quiet = (IQuiet)Activator.CreateInstance(compiled, new Quiet(), Substitute.For<IDecoratorLogger>())!;
+                return new NoRegistryCompileOutcome(compiled, referenced, quiet.Hush("bam"));
+            })
+            .TheTest
+            .ShouldPass<NoRegistryCompileOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("a decorator type is compiled", typeof(Decorator<IQuiet, Quiet>).IsAssignableFrom(outcome.Compiled), outcome.Compiled.FullName);
+                because.ItsTrue("the compiled assembly references no Bam framework assembly beyond the runtime and the fixtures", outcome.Referenced.All(name => !name.StartsWith("bam.", StringComparison.OrdinalIgnoreCase) || name == "bam.generators.decorators.runtime" || name == "bam.generators.decorators.tests"), string.Join(", ", outcome.Referenced));
+                because.ItsTrue("it forwards calls", outcome.Hushed == "hush bam");
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
         public void CompileADecoratorThatDoesNotExistYet()
         {
             After.Setup(reg =>
@@ -254,5 +279,21 @@ namespace Bam.Generators.Decorators.Tests.Unit
         private sealed record ClashOutcome(int CountProperty, int CountMethod, string DescribedByCounter, string DescribedByDescribed);
 
         private sealed record ResolutionOutcome(Type? Resolved, Type? ResolvedAgain, string Greeting);
+
+        private sealed record NoRegistryCompileOutcome(Type Compiled, string[] Referenced, string Hushed);
+
+        /// <summary>A pair no test generates a decorator for ahead of time, so the resolver has to compile one.</summary>
+        public interface IQuiet
+        {
+            string Hush(string value);
+        }
+
+        public class Quiet : IQuiet
+        {
+            public string Hush(string value)
+            {
+                return "hush " + value;
+            }
+        }
     }
 }
