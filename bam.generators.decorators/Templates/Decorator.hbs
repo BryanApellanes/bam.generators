@@ -5,8 +5,13 @@
 namespace {{{Namespace}}}
 {
     /// <summary>
+{{#if InterfaceOnly}}
+    /// Generated decorator for any {{{InterfaceType.Name}}}: implements it by forwarding to the instance it wraps, whatever
+    /// that instance's type, running the subscribed start, end and error handlers around every method.
+{{else}}
     /// Generated decorator for {{{ImplementationType.Name}}}: implements {{{InterfaceType.Name}}} by forwarding to the instance it
     /// wraps, running the subscribed start, end and error handlers around every method.
+{{/if}}
     /// </summary>
     public partial class {{{DecoratorTypeName}}} : {{{BaseTypeName}}}, {{{InterfaceName}}}
     {

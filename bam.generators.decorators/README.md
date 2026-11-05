@@ -125,6 +125,20 @@ new DecoratorGenerator()
 
 That is the output for a host on another container, or on .NET Framework; see [Using another container](#using-another-container). The option changes nothing else about the file, and the default output is unchanged.
 
+### Decorating an interface alone
+
+A service whose implementation generated code cannot name (an internal class behind a public interface, or a factory registration whose type is chosen at resolve time) is decorated from the interface alone:
+
+```csharp
+new DecoratorGenerator()
+    .AddInterface<IEchoService>()          // or AddServiceType(typeof(IEchoService), null)
+    .WriteSource("./Generated_Decorators");
+```
+
+This writes `IEchoServiceDecorator.cs`: `IEchoServiceDecorator : Decorator<IEchoService, IEchoService>, IEchoService`, with a constructor taking an `IEchoService`, so it wraps any instance of the interface. Handlers still see `ctx.Method` on the instance's runtime type, mapped through its interface map, as they do for an implementation-typed decorator. In a registry, `registry.Decorate<IEchoService>()` (the same as `Decorate<IEchoService, IEchoService>()`) uses it; `registry.OnMethodStart<IEchoService, IEchoService>(...)` subscribes by name, and the generated `registry.OnMessageStart(...)` hooks work as before. Without a registry, `DecoratorFactory.Create<IEchoService>(instance)` and `DecoratorFactory.Handlers<IEchoService>()` do the same.
+
+The decorator is named after the interface, `I` prefix and all, so it never shares a name with the decorator of an implementation (`EchoServiceDecorator`). Generating both for one interface is allowed. The pair's decorator lives in the implementation's namespace and the interface-only one in the interface's, so wherever both namespaces are in scope the generated `service.OnMessageStart(ctx => ...)` hooks overload each other and an untyped lambda is ambiguous: give the lambda parameter an explicit type, or generate only the one you use. Unwrapping differs too: `(IEchoService)decorator` is a plain reference conversion for a `Decorator<IEchoService, IEchoService>` and returns the decorator, so reach the wrapped instance through `decorator.Instance`. `WriteSource` validates every queued service and checks the decorator names before writing any file, and refuses two queued services whose decorators would be named alike (two types named alike in one namespace), since the files would overwrite each other.
+
 The template is embedded (`Templates/Decorator.hbs`). When generating with `DecoratorGenerator`, a `Decorator.hbs` in `./Templates` overrides the embedded one. The template references no partials, since Handlebars partials are registered process-wide.
 
 `registry.Decorate<I, T>()` uses a generated decorator when one is loaded. Otherwise it generates and compiles one on the spot, which costs a compile on first use and needs the service's assembly on disk. Register your own `IDecoratorTypeResolver` in the registry to change that.
