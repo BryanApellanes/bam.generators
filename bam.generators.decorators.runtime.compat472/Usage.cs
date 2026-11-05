@@ -33,6 +33,28 @@ namespace Bam.Generators.Decorators.Compat
             DecoratorFactory.Handlers<IEchoService, EchoService>().Add(DecoratorPhase.Start, nameof(IEchoService.Message), context => onMessage((string)context.Args![0]!));
         }
 
+        /// <summary>
+        /// The case bam.generators#16 was written for: a service whose implementation generated code cannot name
+        /// (here <see cref="SecretService"/>, internal) is wrapped through a decorator typed on the interface alone.
+        /// </summary>
+        public static ISecretService DecorateTheInterface(ISecretService service, Action<string> onReveal, IDecoratorLogger? logger = null)
+        {
+            ISecretServiceDecorator decorator = new ISecretServiceDecorator(service, logger);
+            return decorator.OnRevealStart(context => onReveal((string)context.Args![0]!));
+        }
+
+        /// <summary>What a container's decoration hook calls for the interface-only shape.</summary>
+        public static ISecretService DecorateTheInterfaceFromContainer(ISecretService service, IDecoratorLogger? logger = null)
+        {
+            return DecoratorFactory.Create<ISecretService, ISecretService, ISecretServiceDecorator>(service, logger);
+        }
+
+        /// <summary>Subscribes <paramref name="onReveal"/> to every interface-only decorator the factory creates.</summary>
+        public static void OnEveryReveal(Action<string> onReveal)
+        {
+            DecoratorFactory.Handlers<ISecretService>().Add(DecoratorPhase.Start, nameof(ISecretService.Reveal), context => onReveal((string)context.Args![0]!));
+        }
+
         /// <summary>Routes decorator failures to the host's own logging.</summary>
         public sealed class DelegateLogger : IDecoratorLogger
         {

@@ -35,7 +35,11 @@ namespace Bam.Generators.Decorators
     /// <typeparam name="T">The implementation type being decorated.</typeparam>
     public class Decorator<T> : IDecorator<T> where T : class
     {
-        /// <summary>Unwraps a decorator to the instance it decorates.</summary>
+        /// <summary>
+        /// Unwraps a decorator to the instance it decorates. For a decorator typed on the interface alone
+        /// (<c>Decorator&lt;I, I&gt;</c>) the cast to the interface is a reference conversion that returns the
+        /// decorator itself, not this operator; unwrap through <see cref="Decorator{T}.Instance"/> instead.
+        /// </summary>
         public static explicit operator T(Decorator<T> decorator)
         {
             return decorator.Instance;

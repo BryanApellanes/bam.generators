@@ -36,7 +36,8 @@ namespace Bam.Generators.Decorators.Tests.Unit
                     source.Contains("public ISecretServiceDecorator(global::Bam.Generators.Decorators.Tests.Fixtures.ISecretService instance, global::Bam.Generators.Decorators.IDecoratorLogger? logger = null)"),
                     source.Contains("Generated decorator for any ISecretService"),
                     source == viaNull,
-                    Normalize(source) == Normalize(CheckedIn("ISecretServiceDecorator.cs")));
+                    Normalize(source) == Normalize(CheckedIn("ISecretServiceDecorator.cs")),
+                    Normalize(new DecoratorGenerator().WithoutRegistryExtensions().GetSource<ISecretService>()) == Normalize(CheckedIn("NoRegistry.ISecretServiceDecorator.cs")));
             })
             .TheTest
             .ShouldPass<SourceOutcome>((because, outcome) =>
@@ -51,6 +52,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 because.ItsTrue("the documentation says any implementation is wrapped", outcome.DocumentsAny);
                 because.ItsTrue("GetSource<I>() and GetSource(I, null) agree", outcome.NullAgrees);
                 because.ItsTrue("Fixtures/Generated/ISecretServiceDecorator.cs is current", outcome.FixtureCurrent, "regenerate the fixture: the generator's interface-only output has changed");
+                because.ItsTrue("Fixtures/Generated/NoRegistry/ISecretServiceDecorator.cs is current", outcome.NoRegistryFixtureCurrent, "regenerate the fixture: the generator's no-registry interface-only output has changed");
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -130,9 +132,19 @@ namespace Bam.Generators.Decorators.Tests.Unit
             {
                 ISecretService decorated = DecoratorFactory.Create<ISecretService>(hidden);
                 Decorator<ISecretService, ISecretService> decorator = (Decorator<ISecretService, ISecretService>)(object)decorated;
+                int shared = 0;
+                DecoratorFactory.Handlers<ISecretService>().Add(DecoratorPhase.Start, nameof(ISecretService.Reveal), context => shared++);
+                decorated.Reveal("shared");
+                int sharedBeforeReset = shared;
+                DecoratorFactory.Reset<ISecretService>();
+                decorated.Reveal("after reset");
                 return new FactoryOutcome(
                     decorator.GetType(),
-                    ((ISecretService)decorator).Reveal("factory"),
+                    decorated.Reveal("factory"),
+                    sharedBeforeReset,
+                    shared,
+                    ReferenceEquals(decorated, (ISecretService)decorator),
+                    ReferenceEquals(decorator.Instance, hidden),
                     ReferenceEquals(DecoratorFactory.Handlers<ISecretService>(), DecoratorFactory.Handlers<ISecretService, ISecretService>()),
                     !ReferenceEquals(DecoratorFactory.Handlers<ISecretService>(), DecoratorFactory.Handlers<IEchoService, EchoService>()),
                     GeneratedDecorators.Find(typeof(ISecretService), typeof(ISecretService)),
@@ -143,6 +155,10 @@ namespace Bam.Generators.Decorators.Tests.Unit
             {
                 because.ItsTrue("the interface-only decorator is created", outcome.DecoratorType == typeof(ISecretServiceDecorator), outcome.DecoratorType.FullName);
                 because.ItsTrue("and forwards", outcome.Result == "secret:factory", outcome.Result);
+                because.ItsTrue("a handler in the interface's shared store runs for it", outcome.SharedBeforeReset == 1, $"runs: {outcome.SharedBeforeReset}");
+                because.ItsTrue("Reset<I>() empties that store for a decorator already created", outcome.SharedAfterReset == 1, $"runs: {outcome.SharedAfterReset}");
+                because.ItsTrue("the cast to the interface returns the decorator, not the instance", outcome.CastIsDecorator);
+                because.ItsTrue("Instance unwraps it", outcome.InstanceUnwraps);
                 because.ItsTrue("Handlers<I>() is Handlers<I, I>()", outcome.SameStore);
                 because.ItsTrue("and not the store of an implementation-typed pair", outcome.DistinctFromPair);
                 because.ItsTrue("the lookup tells interface-only and implementation-typed decorators apart", outcome.FoundForInterface == typeof(ISecretServiceDecorator) && outcome.FoundForPair == typeof(EchoServiceDecorator), $"{outcome.FoundForInterface?.Name} / {outcome.FoundForPair?.Name}");
@@ -200,10 +216,62 @@ namespace Bam.Generators.Decorators.Tests.Unit
             .ShouldPass<ClashOutcome>((because, outcome) =>
             {
                 because.ItsTrue("the clash is refused and names the decorator", outcome.Message.Contains("SameDecorator") && outcome.Message.Contains("overwrite"), outcome.Message);
-                because.ItsTrue("the first file was written before the clash was found", outcome.FilesWritten == 1, $"files: {outcome.FilesWritten}");
+                because.ItsTrue("no file is written when a clash is found", outcome.FilesWritten == 0, $"files: {outcome.FilesWritten}");
             })
             .SoBeHappy()
             .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void CompileAnInterfaceOnlyDecoratorOnTheSpot()
+        {
+            After.Setup(reg =>
+            {
+                reg.For<IWhisper>().Use(new Whisperer());
+                reg.For<IEchoService>().Use(new EchoService());
+                reg.For<ServiceRegistry>().Use(reg);
+            })
+            .When<ServiceRegistry>("decorates an interface for which no generated decorator is loaded", registry =>
+            {
+                // No decorator for IWhisper is checked in or compiled by another test, so Decorate<I>() has to
+                // reach DecoratorTypeResolver.Resolve(I, I) and compile one. The echo pair pins the other
+                // direction: a service decorated as a pair cannot also be decorated as the interface alone.
+                Type? before = GeneratedDecorators.Find(typeof(IWhisper), typeof(IWhisper));
+                MethodInfo? seen = null;
+                registry.Decorate<IWhisper>();
+                registry.OnMethodStart<IWhisper, IWhisper>(nameof(IWhisper.Whisper), context => seen = context.Method);
+                IWhisper whisper = registry.Get<IWhisper>();
+                string result = whisper.Whisper("psst");
+                registry.Decorate<IEchoService, EchoService>();
+                string mixed = DiagnoseAny(() => registry.Decorate<IEchoService>());
+                return new CompileOutcome(before, whisper.GetType(), result, seen?.DeclaringType, mixed);
+            })
+            .TheTest
+            .ShouldPass<CompileOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("no generated decorator for the interface was loaded beforehand", outcome.Before == null, outcome.Before?.FullName);
+                because.ItsTrue("the compiled decorator extends Decorator<I, I>", outcome.DecoratorType.BaseType == typeof(Decorator<IWhisper, IWhisper>), outcome.DecoratorType.BaseType?.FullName);
+                because.ItsTrue("and is named after the interface", outcome.DecoratorType.Name == "IWhisperDecorator", outcome.DecoratorType.Name);
+                because.ItsTrue("and was compiled in memory rather than found in a loaded file", string.IsNullOrEmpty(outcome.DecoratorType.Assembly.Location) && outcome.DecoratorType.Assembly != typeof(InterfaceOnlyDecoratorsShould).Assembly, outcome.DecoratorType.Assembly.FullName);
+                because.ItsTrue("the call is forwarded", outcome.Result == "whisper:psst", outcome.Result);
+                because.ItsTrue("the handler sees the method on the instance's runtime type", outcome.SeenDeclaringType == typeof(Whisperer), outcome.SeenDeclaringType?.FullName);
+                because.ItsTrue("decorating as a pair and then as the interface alone is refused", outcome.Mixed.Contains("already decorated as") && outcome.Mixed.Contains("EchoService"), outcome.Mixed);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        private static string DiagnoseAny(Action action)
+        {
+            try
+            {
+                action();
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
         }
 
         private static string Diagnose(Action action)
@@ -236,6 +304,17 @@ namespace Bam.Generators.Decorators.Tests.Unit
             return source.Replace("\r\n", "\n").Trim();
         }
 
+        /// <summary>A service no checked-in decorator covers, so Decorate&lt;I&gt;() has to compile one.</summary>
+        public interface IWhisper
+        {
+            string Whisper(string words);
+        }
+
+        public class Whisperer : IWhisper
+        {
+            public string Whisper(string words) => "whisper:" + words;
+        }
+
         /// <summary>Two services whose decorators would be named alike in one namespace.</summary>
         public static class First
         {
@@ -263,13 +342,15 @@ namespace Bam.Generators.Decorators.Tests.Unit
             }
         }
 
-        private sealed record SourceOutcome(bool InterfaceOnly, bool PairInterfaceOnly, bool InterfaceStandsIn, string TypeName, string DecorateMethodName, bool ExtendsPair, bool CtorTakesInterface, bool DocumentsAny, bool NullAgrees, bool FixtureCurrent);
+        private sealed record SourceOutcome(bool InterfaceOnly, bool PairInterfaceOnly, bool InterfaceStandsIn, string TypeName, string DecorateMethodName, bool ExtendsPair, bool CtorTakesInterface, bool DocumentsAny, bool NullAgrees, bool FixtureCurrent, bool NoRegistryFixtureCurrent);
 
         private sealed record WrapOutcome(string Result, int Calls, Type? SeenDeclaringType, bool SeesInstance, bool Hidden, Type ImplementationType);
 
         private sealed record RegistryOutcome(string Result, Type ResolvedType, Type ImplementationType, string Seen, bool SameRegistration);
 
-        private sealed record FactoryOutcome(Type DecoratorType, string Result, bool SameStore, bool DistinctFromPair, Type? FoundForInterface, Type? FoundForPair);
+        private sealed record FactoryOutcome(Type DecoratorType, string Result, int SharedBeforeReset, int SharedAfterReset, bool CastIsDecorator, bool InstanceUnwraps, bool SameStore, bool DistinctFromPair, Type? FoundForInterface, Type? FoundForPair);
+
+        private sealed record CompileOutcome(Type? Before, Type DecoratorType, string Result, Type? SeenDeclaringType, string Mixed);
 
         private sealed record ValidateOutcome(string Class, string OpenGeneric, string Hidden, string HiddenImplementation, string OtherInterface);
 

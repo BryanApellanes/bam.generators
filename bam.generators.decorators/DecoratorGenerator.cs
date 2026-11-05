@@ -125,7 +125,9 @@ namespace Bam.Generators.Decorators
 
         /// <summary>
         /// Writes the decorator source for every queued service to <paramref name="outputDirectory"/>, one file
-        /// per service, overwriting files from a previous run.
+        /// per service, overwriting files from a previous run. Every queued service is validated and the
+        /// decorator names are checked for a clash before the first file is written, so a refused run writes
+        /// nothing.
         /// </summary>
         /// <param name="outputDirectory">The directory to write to; created if missing.</param>
         /// <returns>The paths of the files written, in the order the services were queued.</returns>
@@ -135,8 +137,8 @@ namespace Bam.Generators.Decorators
         /// </exception>
         public IReadOnlyList<string> WriteSource(string outputDirectory)
         {
-            List<string> written = new List<string>();
             Dictionary<string, DecoratorModel> byName = new Dictionary<string, DecoratorModel>(StringComparer.Ordinal);
+            List<DecoratorModel> models = new List<DecoratorModel>();
             foreach (DecoratorRequest request in _services)
             {
                 DecoratorModel model = new DecoratorModel(request.InterfaceType, request.ImplementationType, RegistryExtensions);
@@ -148,6 +150,12 @@ namespace Bam.Generators.Decorators
                 }
 
                 byName.Add(model.DecoratorFullName, model);
+                models.Add(model);
+            }
+
+            List<string> written = new List<string>();
+            foreach (DecoratorModel model in models)
+            {
                 using Stream stream = TargetResolver.GetTargetDecoratorStream(null, outputDirectory, model);
                 CodeWriter.WriteDecorator(model, stream);
                 written.Add(Path.Combine(outputDirectory, model.FileName));
