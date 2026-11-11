@@ -1,5 +1,5 @@
         {{PrimaryKeyType.Namespace}}.{{{PrimaryKeyType.Name}}}? _{{{PrimaryKeyTypeCamelCaseName}}};
-		public override {{PrimaryKeyType.Namespace}}.{{{PrimaryKeyType.Name}}} {{ChildParentProperty.Name}}
+		public override {{PrimaryKeyType.Namespace}}.{{{PrimaryKeyType.Name}}}{{#if ChildParentPropertyIsNullable}}?{{/if}} {{ChildParentProperty.Name}}
 		{
 			get
 			{
@@ -7,7 +7,7 @@
 				{
 					_{{{PrimaryKeyTypeCamelCaseName}}} = ({{PrimaryKeyType.Namespace}}.{{{PrimaryKeyType.Name}}}?)DaoRepository.GetParentPropertyOfChild(this, typeof({{{PrimaryKeyType.Namespace}}}.{{{PrimaryKeyType.Name}}}));
 				}
-				return _{{{PrimaryKeyTypeCamelCaseName}}}!; // null when the child has no parent row; the overridden property is declared non-null
+				{{#if ChildParentPropertyIsNullable}}return _{{{PrimaryKeyTypeCamelCaseName}}};{{else}}return _{{{PrimaryKeyTypeCamelCaseName}}}!; // null when the child has no parent row; the overridden property is declared non-null, declare it nullable to have that show here{{/if}}
 			}
 			set
 			{

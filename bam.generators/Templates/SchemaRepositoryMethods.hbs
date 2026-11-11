@@ -27,11 +27,10 @@
 		/// of the specified columns.
 		/// </summary>
 		/// <param name="where"></param>
-		public {{{Type.FullName}}}? GetOne{{Type.Name}}Where(WhereDelegate<{{Type.Name}}Columns> where)
+		public {{{Type.FullName}}} GetOne{{Type.Name}}Where(WhereDelegate<{{Type.Name}}Columns> where)
 		{
 			Type wrapperType = GetWrapperType<{{{Type.FullName}}}>();
-			var data = ({{{Type.FullName}}}){{DaoNamespace}}.{{Type.Name}}.GetOneWhere(where, Database)?.CopyAs(wrapperType, this)!;
-            if (data == null) return null;
+			var data = ({{{Type.FullName}}}){{DaoNamespace}}.{{Type.Name}}.GetOneWhere(where, Database).CopyAs(wrapperType, this)!;
             return new DaoRepoData<{{{Type.FullName}}}>(data, this);
         }
 

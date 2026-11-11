@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Bam.Console;
 using Bam.DependencyInjection;
 using Bam.Services;
@@ -72,14 +73,22 @@ namespace Bam.Generators.Tests.Unit
             {
                 string source = outcome.Source;
                 because.ItsTrue($"source files were generated ({outcome.FileCount})", outcome.FileCount > 0);
-                because.ItsTrue("GetOne...Where returns a nullable type", source.Contains("TestCar? GetOneTestCarWhere("));
+                because.ItsTrue("GetOne...Where creates the entry when none exists, so it returns a non-nullable type", source.Contains("TestCar GetOneTestCarWhere("));
+                because.ItsTrue("no GetOne...Where method returns a nullable type", !Regex.IsMatch(source, @"public [\w\.]+\? GetOne\w+Where\("));
                 because.ItsTrue("One...Where returns a nullable type", source.Contains("TestCar? OneTestCarWhere("));
-                because.ItsTrue("no One...Where method returns a non-nullable type",
-                    !System.Text.RegularExpressions.Regex.IsMatch(source, @"public [\w\.]+ (Get)?One\w+Where\("));
+                because.ItsTrue("no One...Where method returns a non-nullable type", !Regex.IsMatch(source, @"public [\w\.]+ One\w+Where\("));
                 because.ItsTrue("the dao foreign key backing field is nullable", source.Contains("TestPerson? _testPersonOfTestPersonId;"));
                 because.ItsTrue("the wrapper parent backing field is nullable", source.Contains("TestPerson? _testPerson;"));
                 because.ItsTrue("the wrapper parent is read with a nullable cast", source.Contains("TestPerson?)DaoRepository.GetParentPropertyOfChild("));
                 because.ItsTrue("the wrapper child collection backing field is nullable", source.Contains("TestCar>? _testCars;"));
+                because.ItsTrue("the left xref backing field is nullable", source.Contains("TestPerson>? _testPersons;"));
+                because.ItsTrue("the right xref backing field is nullable", source.Contains("TestAnimal>? _testAnimals;"));
+                because.ItsTrue("the left xref passes the property it emitted as non-null", source.Contains("GetProperty(\"Owners\")!"));
+                because.ItsTrue("the right xref passes the property it emitted as non-null", source.Contains("GetProperty(\"Pets\")!"));
+                because.ItsTrue("a parent declared non-nullable is overridden as non-nullable", source.Contains("public override Bam.Generators.Tests.TestClasses.TestPerson TestPerson"));
+                because.ItsTrue("a parent declared nullable is overridden as nullable", source.Contains("public override Bam.Generators.Tests.TestClasses.TestGarage? TestGarage"));
+                because.ItsTrue("a nullable parent is returned without a null-forgiving operator", source.Contains("return _testGarage;"));
+                because.ItsTrue("a non-nullable parent is returned with a null-forgiving operator", source.Contains("return _testPerson!;"));
             })
             .SoBeHappy()
             .UnlessItFailed();
