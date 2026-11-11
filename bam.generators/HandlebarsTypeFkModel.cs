@@ -1,4 +1,5 @@
-﻿using Bam.Data.Repositories;
+﻿using System.Reflection;
+using Bam.Data.Repositories;
 
 namespace Bam.Generators
 {
@@ -14,6 +15,25 @@ namespace Bam.Generators
         public string PrimaryKeyTypeCamelCaseName
         {
             get { return PrimaryKeyType.Name.CamelCase(); }
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether the child's property that references its parent is declared nullable,
+        /// so the generated override can carry the same annotation.
+        /// </summary>
+        public bool ChildParentPropertyIsNullable
+        {
+            get
+            {
+                // SchemaProvider supplies a TypeSchemaPropertyInfo placeholder when the child has no property
+                // that references its parent; it has no property type to read.
+                if (ChildParentProperty == null || ChildParentProperty is TypeSchemaPropertyInfo || ChildParentProperty.PropertyType.IsValueType)
+                {
+                    return false;
+                }
+                NullabilityInfoContext context = new NullabilityInfoContext();
+                return context.Create(ChildParentProperty).ReadState == NullabilityState.Nullable;
+            }
         }
 
         /// <summary>
