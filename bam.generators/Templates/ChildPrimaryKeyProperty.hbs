@@ -1,13 +1,13 @@
-        {{PrimaryKeyType.Namespace}}.{{{PrimaryKeyType.Name}}} _{{{PrimaryKeyTypeCamelCaseName}}};
+        {{PrimaryKeyType.Namespace}}.{{{PrimaryKeyType.Name}}}? _{{{PrimaryKeyTypeCamelCaseName}}};
 		public override {{PrimaryKeyType.Namespace}}.{{{PrimaryKeyType.Name}}} {{ChildParentProperty.Name}}
 		{
 			get
 			{
 				if (_{{{PrimaryKeyTypeCamelCaseName}}} == null)
 				{
-					_{{{PrimaryKeyTypeCamelCaseName}}} = ({{PrimaryKeyType.Namespace}}.{{{PrimaryKeyType.Name}}})DaoRepository.GetParentPropertyOfChild(this, typeof({{{PrimaryKeyType.Namespace}}}.{{{PrimaryKeyType.Name}}}));
+					_{{{PrimaryKeyTypeCamelCaseName}}} = ({{PrimaryKeyType.Namespace}}.{{{PrimaryKeyType.Name}}}?)DaoRepository.GetParentPropertyOfChild(this, typeof({{{PrimaryKeyType.Namespace}}}.{{{PrimaryKeyType.Name}}}));
 				}
-				return _{{{PrimaryKeyTypeCamelCaseName}}};
+				return _{{{PrimaryKeyTypeCamelCaseName}}}!; // null when the child has no parent row; the overridden property is declared non-null
 			}
 			set
 			{

@@ -1,6 +1,6 @@
 
 // Right Xref property: Left -> {{Left.Name}} ; Right -> {{Right.Name}}
-		{{{LeftCollectionTypeName}}} _{{CamelCasedLeftNamePluralized}};
+		{{{LeftCollectionTypeName}}}? _{{CamelCasedLeftNamePluralized}};
 		public override {{{LeftCollectionTypeName}}} {{LeftCollectionProperty.Name}}
 		{
 			get
@@ -10,7 +10,7 @@
 					var xref = new XrefDaoCollection<{{XrefTableName}}, {{DaoNamespace}}.{{Left.Name}}>(DaoRepository.GetDaoInstance(this), false);
 					xref.Load(DaoRepository.Database);
 					_{{CamelCasedLeftNamePluralized}} = ((IEnumerable)xref).CopyAs<{{Left.Namespace}}.{{Left.Name}}>().To{{LeftArrayOrList}}();
-					SetUpdatedXrefCollectionProperty("{{LeftDaoNamePluralized}}", this.GetType().GetProperty("{{LeftCollectionProperty.Name}}"));					
+					SetUpdatedXrefCollectionProperty("{{LeftDaoNamePluralized}}", this.GetType().GetProperty("{{LeftCollectionProperty.Name}}")!);					
 				}
 
 				return _{{CamelCasedLeftNamePluralized}};
@@ -18,6 +18,6 @@
 			set
 			{
 				_{{CamelCasedLeftNamePluralized}} = value;
-				SetUpdatedXrefCollectionProperty("{{LeftDaoNamePluralized}}", this.GetType().GetProperty("{{LeftCollectionProperty.Name}}"));
+				SetUpdatedXrefCollectionProperty("{{LeftDaoNamePluralized}}", this.GetType().GetProperty("{{LeftCollectionProperty.Name}}")!);
 			}
 		}
