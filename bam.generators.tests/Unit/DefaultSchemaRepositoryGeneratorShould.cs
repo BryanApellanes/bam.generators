@@ -89,6 +89,7 @@ namespace Bam.Generators.Tests.Unit
                 because.ItsTrue("a parent declared nullable is overridden as nullable", source.Contains("public override Bam.Generators.Tests.TestClasses.TestGarage? TestGarage"));
                 because.ItsTrue("a nullable parent is returned without a null-forgiving operator", source.Contains("return _testGarage;"));
                 because.ItsTrue("a non-nullable parent is returned with a null-forgiving operator", source.Contains("return _testPerson!;"));
+                because.ItsTrue("generation completes for a child that has the key but no property for its parent", source.Contains("class TestToolWrapper"));
             })
             .SoBeHappy()
             .UnlessItFailed();

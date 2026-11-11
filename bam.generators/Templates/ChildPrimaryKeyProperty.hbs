@@ -7,7 +7,8 @@
 				{
 					_{{{PrimaryKeyTypeCamelCaseName}}} = ({{PrimaryKeyType.Namespace}}.{{{PrimaryKeyType.Name}}}?)DaoRepository.GetParentPropertyOfChild(this, typeof({{{PrimaryKeyType.Namespace}}}.{{{PrimaryKeyType.Name}}}));
 				}
-				{{#if ChildParentPropertyIsNullable}}return _{{{PrimaryKeyTypeCamelCaseName}}};{{else}}return _{{{PrimaryKeyTypeCamelCaseName}}}!; // null when the child has no parent row; the overridden property is declared non-null, declare it nullable to have that show here{{/if}}
+				// null when the child has no parent row{{#unless ChildParentPropertyIsNullable}}; the overridden property is not declared nullable{{/unless}}
+				return _{{{PrimaryKeyTypeCamelCaseName}}}{{#unless ChildParentPropertyIsNullable}}!{{/unless}};
 			}
 			set
 			{

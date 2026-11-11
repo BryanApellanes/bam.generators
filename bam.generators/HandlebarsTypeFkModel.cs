@@ -25,7 +25,9 @@ namespace Bam.Generators
         {
             get
             {
-                if (ChildParentProperty == null || ChildParentProperty.PropertyType.IsValueType)
+                // SchemaProvider supplies a TypeSchemaPropertyInfo placeholder when the child has no property
+                // that references its parent; it has no property type to read.
+                if (ChildParentProperty == null || ChildParentProperty is TypeSchemaPropertyInfo || ChildParentProperty.PropertyType.IsValueType)
                 {
                     return false;
                 }
