@@ -70,6 +70,14 @@ namespace Bam.Generators.Decorators
         /// handlers subscribe with <c>OnMethodStart&lt;I, I&gt;</c> and see the method on the instance's runtime
         /// type.
         /// </summary>
+        /// <remarks>
+        /// <c>Decorate&lt;I, T&gt;()</c> refuses a registration that resolves anything but a <c>T</c>; this
+        /// wraps whatever is resolved. When that is a wrapper or a different implementation, the attributes of
+        /// the real service's methods are not on <c>ctx.Method</c>, so a handler that guards a call must key on
+        /// the method name or on attributes of the interface, never on the implementation's attributes or
+        /// declaring type. A guard keyed that way stops rejecting, without an error, the moment the
+        /// registration resolves a different type.
+        /// </remarks>
         /// <typeparam name="I">The service interface to decorate.</typeparam>
         /// <param name="registry">The registry holding the registration.</param>
         /// <param name="logger">Receives handler failures. Defaults to the registry's <see cref="ILogger"/>, then <see cref="Log.Default"/>.</param>

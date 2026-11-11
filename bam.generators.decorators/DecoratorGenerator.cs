@@ -73,7 +73,9 @@ namespace Bam.Generators.Decorators
         /// Queues an interface for generation without an implementation type. The decorator is typed on the
         /// interface (<c>Decorator&lt;I, I&gt;</c>, constructor taking an <c>I</c>) and wraps any instance of
         /// it, for services whose implementation is internal or chosen at resolve time. It is named after the
-        /// interface: <c>IEchoServiceDecorator</c>.
+        /// interface: <c>IEchoServiceDecorator</c>. Handlers are told the method on whatever instance is
+        /// wrapped, so a guard must not key on one implementation's attributes; see
+        /// <see cref="DecoratorModel.InterfaceOnly"/>.
         /// </summary>
         /// <param name="interfaceType">The service interface the decorator implements.</param>
         /// <returns>This generator, for chaining.</returns>
@@ -126,30 +128,34 @@ namespace Bam.Generators.Decorators
         /// <summary>
         /// Writes the decorator source for every queued service to <paramref name="outputDirectory"/>, one file
         /// per service, overwriting files from a previous run. Every queued service is validated and the
-        /// decorator names are checked for a clash before the first file is written, so a refused run writes
+        /// output file names are checked for a clash before the first file is written, so a refused run writes
         /// nothing.
         /// </summary>
         /// <param name="outputDirectory">The directory to write to; created if missing.</param>
         /// <returns>The paths of the files written, in the order the services were queued.</returns>
         /// <exception cref="DecoratorGenerationException">
-        /// A queued pair cannot be decorated, or two queued services would generate decorators of the same name
-        /// (two types named alike in one namespace), which would overwrite each other.
+        /// A queued pair cannot be decorated, or two queued services would be written to the same file name.
+        /// Files are named after the decorator type alone and land in one directory, so two services named
+        /// alike clash whatever their namespaces (<c>Billing.IClient</c> and <c>Shipping.IClient</c>), and the
+        /// second would overwrite the first. Names are compared without regard to case, as file systems do.
         /// </exception>
         public IReadOnlyList<string> WriteSource(string outputDirectory)
         {
-            Dictionary<string, DecoratorModel> byName = new Dictionary<string, DecoratorModel>(StringComparer.Ordinal);
+            // Keyed on the file name, not the decorator's full name: every file lands in outputDirectory as
+            // DecoratorTypeName + ".cs", so two namespaces holding a type of one name collide on disk.
+            Dictionary<string, DecoratorModel> byFileName = new Dictionary<string, DecoratorModel>(StringComparer.OrdinalIgnoreCase);
             List<DecoratorModel> models = new List<DecoratorModel>();
             foreach (DecoratorRequest request in _services)
             {
                 DecoratorModel model = new DecoratorModel(request.InterfaceType, request.ImplementationType, RegistryExtensions);
-                if (byName.TryGetValue(model.DecoratorFullName, out DecoratorModel? other))
+                if (byFileName.TryGetValue(model.FileName, out DecoratorModel? other))
                 {
                     throw new DecoratorGenerationException(
                         request.InterfaceType,
-                        $"Decorating {request.ImplementationType.FullName} would generate {model.DecoratorFullName}, the same decorator as {other.ImplementationType.FullName}; the two files would overwrite each other.");
+                        $"Decorating {request.ImplementationType.FullName} would write {model.DecoratorFullName} to {model.FileName}, the same file as {other.DecoratorFullName} for {other.ImplementationType.FullName}; the second would overwrite the first. Write them to separate directories.");
                 }
 
-                byName.Add(model.DecoratorFullName, model);
+                byFileName.Add(model.FileName, model);
                 models.Add(model);
             }
 

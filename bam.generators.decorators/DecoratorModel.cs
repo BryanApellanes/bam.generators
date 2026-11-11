@@ -80,8 +80,12 @@ namespace Bam.Generators.Decorators
         /// <summary>
         /// Gets a value indicating whether the decorator is typed on the interface alone
         /// (<c>Decorator&lt;I, I&gt;</c>, constructor taking an <c>I</c>) rather than on an implementation type.
-        /// Such a decorator wraps any instance of the interface; handlers still see the method on the instance's
-        /// runtime type, mapped through its interface map.
+        /// Such a decorator wraps any instance of the interface, and handlers are told the method on that
+        /// instance's runtime type, mapped through its interface map. Unlike an implementation-typed decorator,
+        /// which refuses any instance that is not its <c>T</c>, the instance here can be a wrapper or another
+        /// implementation, and the attributes of the real service's methods are not on its methods. A handler
+        /// that guards a call must therefore key on the method name or on attributes of the interface, never on
+        /// attributes or the declaring type of one implementation.
         /// </summary>
         public bool InterfaceOnly => ImplementationType == InterfaceType;
 

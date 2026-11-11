@@ -223,6 +223,104 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
+        public void RefuseToWriteSameNamedDecoratorsFromDifferentNamespaces()
+        {
+            When.A<DecoratorGenerator>("queues two same-named interfaces from different namespaces", new DecoratorGenerator(), generator =>
+            {
+                string directory = Path.Combine(Path.GetTempPath(), "bam.generators.decorators.tests", Guid.NewGuid().ToString("N"));
+                try
+                {
+                    generator.AddInterface<ClashBilling.IClient>().AddInterface<ClashShipping.IClient>();
+                    string message = Diagnose(() => generator.WriteSource(directory));
+                    string caseMessage = Diagnose(() => new DecoratorGenerator().AddInterface<ClashBilling.IClient>().AddInterface<ClashShipping.Iclient>().WriteSource(directory));
+                    int afterRefusals = Directory.Exists(directory) ? Directory.GetFiles(directory).Length : 0;
+                    IReadOnlyList<string> alone = new DecoratorGenerator().AddInterface<ClashBilling.IClient>().AddInterface<ISecretService>().WriteSource(directory);
+                    return new NamespaceClashOutcome(message, caseMessage, afterRefusals, alone.Count, Directory.GetFiles(directory).Length);
+                }
+                finally
+                {
+                    if (Directory.Exists(directory))
+                    {
+                        Directory.Delete(directory, true);
+                    }
+                }
+            })
+            .TheTest
+            .ShouldPass<NamespaceClashOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the clash is refused and names the file", outcome.Message.Contains("IClientDecorator.cs") && outcome.Message.Contains("overwrite"), outcome.Message);
+                because.ItsTrue("it names both decorators", outcome.Message.Contains(new DecoratorModel(typeof(ClashBilling.IClient), null).DecoratorFullName) && outcome.Message.Contains(new DecoratorModel(typeof(ClashShipping.IClient), null).DecoratorFullName), outcome.Message);
+                because.ItsTrue("names differing only by case are refused too", outcome.CaseMessage.Contains("overwrite"), outcome.CaseMessage);
+                because.ItsTrue("no file is written when a clash is found", outcome.FilesAfterRefusals == 0, $"files: {outcome.FilesAfterRefusals}");
+                because.ItsTrue("distinct names are still written, one file each", outcome.PathsReturned == 2 && outcome.FilesWritten == 2, $"paths: {outcome.PathsReturned}, files: {outcome.FilesWritten}");
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void ReportTheMethodOfWhateverInstanceTheRegistrationResolves()
+        {
+            When.A<DecoratorGenerator>("decorates an interface whose registration resolves the service or a wrapper around it", new DecoratorGenerator(), generator =>
+            {
+                return new WrapperOutcome(RevealThroughRegistry(false), RevealThroughRegistry(true));
+            })
+            .TheTest
+            .ShouldPass<WrapperOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the service itself: ctx.Method is the service's method", outcome.Direct.DeclaringType == typeof(GuardedSecret), outcome.Direct.DeclaringType?.FullName);
+                because.ItsTrue("and its attribute is there to read", outcome.Direct.SeesGuarded);
+                because.ItsTrue("the call reaches the service", outcome.Direct.Result == "guarded:k", outcome.Direct.Result);
+                because.ItsTrue("a wrapper: ctx.Method is the wrapper's method", outcome.Wrapped.DeclaringType == typeof(SecretWrapper), outcome.Wrapped.DeclaringType?.FullName);
+                because.ItsTrue("so the service's attribute is not on it (a guard keyed on it would pass)", !outcome.Wrapped.SeesGuarded);
+                because.ItsTrue("the method name is the same either way", outcome.Direct.MethodName == nameof(ISecretService.Reveal) && outcome.Wrapped.MethodName == nameof(ISecretService.Reveal), outcome.Direct.MethodName + "," + outcome.Wrapped.MethodName);
+                because.ItsTrue("the wrapped call reaches the service through the wrapper", outcome.Wrapped.Result == "wrapped:guarded:k", outcome.Wrapped.Result);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void ReportTheInterfaceMethodWhenTheInstanceHasNoInterfaceMap()
+        {
+            When.A<Decorator<ICollection<int>, ICollection<int>>>("wraps an array through a generic interface", new Decorator<ICollection<int>, ICollection<int>>(new int[] { 1, 2, 3 }), decorator =>
+            {
+                MethodInfo getCount = typeof(ICollection<int>).GetProperty(nameof(ICollection<int>.Count))!.GetGetMethod()!;
+                MethodInfo? seen = null;
+                decorator.Subscribe(DecoratorPhase.Start, getCount.Name, context =>
+                {
+                    seen = context.Method;
+                });
+                int count = decorator.Intercept<int>(getCount, getCount.Name, Array.Empty<object?>(), () => decorator.Instance.Count).Value;
+                int again = decorator.Intercept<int>(getCount, getCount.Name, Array.Empty<object?>(), () => decorator.Instance.Count).Value;
+                return new UnmappedOutcome(count, again, seen, getCount);
+            })
+            .TheTest
+            .ShouldPass<UnmappedOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the call goes through", outcome.Count == 3 && outcome.Again == 3, $"{outcome.Count}, {outcome.Again}");
+                because.ItsTrue("handlers are told the interface method", outcome.Seen == outcome.InterfaceMethod, outcome.Seen?.ToString());
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        private static WrapperCall RevealThroughRegistry(bool wrap)
+        {
+            ServiceRegistry registry = new ServiceRegistry();
+            GuardedSecret service = new GuardedSecret();
+            registry.For<ISecretService>().Use(wrap ? new SecretWrapper(service) : service);
+            MethodInfo? seen = null;
+            registry.Decorate<ISecretService>();
+            registry.OnMethodStart<ISecretService, ISecretService>(nameof(ISecretService.Reveal), context =>
+            {
+                seen = context.Method;
+            });
+            string result = registry.Get<ISecretService>().Reveal("k");
+            return new WrapperCall(result, seen?.DeclaringType, seen?.Name ?? string.Empty, seen?.GetCustomAttribute<GuardedAttribute>() != null);
+        }
+
+        [UnitTest]
         public void CompileAnInterfaceOnlyDecoratorOnTheSpot()
         {
             After.Setup(reg =>
@@ -342,6 +440,45 @@ namespace Bam.Generators.Decorators.Tests.Unit
             }
         }
 
+        [AttributeUsage(AttributeTargets.Method)]
+        private sealed class GuardedAttribute : Attribute
+        {
+        }
+
+        /// <summary>The real service, whose method carries the attribute a guard might look for.</summary>
+        private sealed class GuardedSecret : ISecretService
+        {
+            [Guarded]
+            public string Reveal(string key)
+            {
+                return "guarded:" + key;
+            }
+        }
+
+        /// <summary>What a factory registration might resolve in its place: a wrapper without the attribute.</summary>
+        private sealed class SecretWrapper : ISecretService
+        {
+            private readonly ISecretService _inner;
+
+            public SecretWrapper(ISecretService inner)
+            {
+                _inner = inner;
+            }
+
+            public string Reveal(string key)
+            {
+                return "wrapped:" + _inner.Reveal(key);
+            }
+        }
+
+        private sealed record NamespaceClashOutcome(string Message, string CaseMessage, int FilesAfterRefusals, int PathsReturned, int FilesWritten);
+
+        private sealed record WrapperCall(string Result, Type? DeclaringType, string MethodName, bool SeesGuarded);
+
+        private sealed record WrapperOutcome(WrapperCall Direct, WrapperCall Wrapped);
+
+        private sealed record UnmappedOutcome(int Count, int Again, MethodInfo? Seen, MethodInfo InterfaceMethod);
+
         private sealed record SourceOutcome(bool InterfaceOnly, bool PairInterfaceOnly, bool InterfaceStandsIn, string TypeName, string DecorateMethodName, bool ExtendsPair, bool CtorTakesInterface, bool DocumentsAny, bool NullAgrees, bool FixtureCurrent, bool NoRegistryFixtureCurrent);
 
         private sealed record WrapOutcome(string Result, int Calls, Type? SeenDeclaringType, bool SeesInstance, bool Hidden, Type ImplementationType);
@@ -355,5 +492,29 @@ namespace Bam.Generators.Decorators.Tests.Unit
         private sealed record ValidateOutcome(string Class, string OpenGeneric, string Hidden, string HiddenImplementation, string OtherInterface);
 
         private sealed record ClashOutcome(string Message, int FilesWritten);
+    }
+}
+
+namespace Bam.Generators.Decorators.Tests.Unit.ClashBilling
+{
+    /// <summary>Shares its simple name with <see cref="ClashShipping.IClient"/>: both decorators would be written to IClientDecorator.cs.</summary>
+    public interface IClient
+    {
+        int Bill();
+    }
+}
+
+namespace Bam.Generators.Decorators.Tests.Unit.ClashShipping
+{
+    /// <summary>Shares its simple name with <see cref="ClashBilling.IClient"/>.</summary>
+    public interface IClient
+    {
+        int Ship();
+    }
+
+    /// <summary>Differs from <see cref="ClashBilling.IClient"/> by case alone, which a case-insensitive file system does not tell apart.</summary>
+    public interface Iclient
+    {
+        int Ship();
     }
 }
