@@ -1,5 +1,6 @@
 using Bam.DependencyInjection;
 using Bam.Logging;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Bam.Generators.Decorators
@@ -368,11 +369,11 @@ namespace Bam.Generators.Decorators
 
         // Finds the registration that currently stands in for I, if there is one. Refuses to go on when I is
         // decorated as another implementation or not registered at all. Called under the registry's lock.
-        private static bool TryGetCurrent<I, T>(ServiceRegistry registry, out DecoratorRegistration<I, T>? current) where I : class where T : class, I
+        private static bool TryGetCurrent<I, T>(ServiceRegistry registry, [NotNullWhen(true)] out DecoratorRegistration<I, T>? current) where I : class where T : class, I
         {
             DecoratorRegistrations registrations = registry.GetDecoratorRegistrations();
             bool decoratedBefore = registrations.TryGet(out current);
-            if (decoratedBefore && current!.IsRegisteredIn(registry))
+            if (decoratedBefore && current != null && current.IsRegisteredIn(registry))
             {
                 return true;
             }
