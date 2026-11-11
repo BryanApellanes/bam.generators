@@ -35,7 +35,11 @@ namespace Bam.Generators.Decorators
     /// <typeparam name="T">The implementation type being decorated.</typeparam>
     public class Decorator<T> : IDecorator<T> where T : class
     {
-        /// <summary>Unwraps a decorator to the instance it decorates.</summary>
+        /// <summary>
+        /// Unwraps a decorator to the instance it decorates. For a decorator typed on the interface alone
+        /// (<c>Decorator&lt;I, I&gt;</c>) the cast to the interface is a reference conversion that returns the
+        /// decorator itself, not this operator; unwrap through <see cref="Decorator{T}.Instance"/> instead.
+        /// </summary>
         public static explicit operator T(Decorator<T> decorator)
         {
             return decorator.Instance;
@@ -347,7 +351,8 @@ namespace Bam.Generators.Decorators
         }
 
         // Handlers are told about the method on the decorated instance, where its attributes are, so an
-        // interface method is mapped to the method that implements it.
+        // interface method is mapped to the method that implements it. The cache key holds the instance's
+        // runtime type: a decorator typed on the interface alone serves many implementations.
         private MethodInfo? ImplementationOf(MethodInfo? method)
         {
             if (method == null)
@@ -363,7 +368,18 @@ namespace Bam.Generators.Decorators
                     return key.Method;
                 }
 
-                InterfaceMapping mapping = key.Type.GetInterfaceMap(declaringType);
+                InterfaceMapping mapping;
+                try
+                {
+                    mapping = key.Type.GetInterfaceMap(declaringType);
+                }
+                catch (ArgumentException)
+                {
+                    // The runtime has no map for some types (a generic interface on an array). The call still
+                    // goes through; handlers are told the interface method.
+                    return key.Method;
+                }
+
                 int index = Array.IndexOf(mapping.InterfaceMethods, key.Method);
                 return index >= 0 ? mapping.TargetMethods[index] : key.Method;
             });

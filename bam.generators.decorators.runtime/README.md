@@ -46,6 +46,8 @@ DecoratorFactory.Reset<IEchoService, EchoService>();
 
 `Create<I, T>` returns the decorator as `I`, the type the hook hands back; the generated `On…` hooks are extension methods on `I`, so they apply to the result as returned, and the decorator itself is one cast away. It finds the generated decorator among the loaded assemblies (`GeneratedDecorators.Find`: a class extending `Decorator<I, T>`, implementing `I`, with a `(T, IDecoratorLogger)` constructor; the conventional name `{T namespace}.Decorators.{T}Decorator` wins a tie, then a type from the implementation's own assembly, then one loaded from disk) and throws `DecoratorException` when none is loaded. `Create<I, T, TDecorator>` names the type instead. Nothing is compiled. The shared store belongs to the process, not to any container: `Reset<I, T>()` empties it, and `DecoratorHandlerRegistry` has `Remove` and `Clear` for finer control.
 
+A decorator generated from an interface alone (`DecoratorGenerator.AddInterface<I>()`, for an implementation generated code cannot name) is a `Decorator<I, I>` named `IEchoServiceDecorator`; `DecoratorFactory.Create<I>(instance)`, `DecoratorFactory.Handlers<I>()` and `DecoratorFactory.Reset<I>()` are the `<I, I>` forms for it, and it wraps whatever implements `I`. Its handlers see `ctx.Method` on the wrapped instance's type, so a handler that guards a call must not key on one implementation's attributes: a wrapper or another implementation doesn't carry them.
+
 ## Logging
 
 The runtime reports handler failures through `IDecoratorLogger`, a one-method interface:

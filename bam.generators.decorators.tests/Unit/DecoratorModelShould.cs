@@ -228,7 +228,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
                     Rejects(typeof(IHiddenService), typeof(HiddenService)),
                     Rejects(typeof(IInitOnlyService), typeof(InitOnlyService)),
                     Rejects(typeof(IBoxService<>), typeof(BoxService<>)),
-                    Rejects(typeof(IEchoService), typeof(IEchoService)),
+                    Rejects(typeof(IEchoService), typeof(IShoutService)),
                     Rejects(typeof(IPointerService), typeof(PointerService)),
                     Rejects(typeof(IFunctionPointerService), typeof(FunctionPointerService)),
                     Rejects(typeof(IPointerArgumentService), typeof(PointerArgumentService)));
@@ -241,7 +241,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 because.ItsTrue("non-public types are rejected", outcome.NotPublic != null);
                 because.ItsTrue("an init-only property is rejected", outcome.InitOnly != null && outcome.InitOnly.Contains("init-only"));
                 because.ItsTrue("an open generic is rejected", outcome.OpenGeneric != null);
-                because.ItsTrue("an interface in place of the implementation is rejected", outcome.NotAClass != null);
+                because.ItsTrue("another interface in place of the implementation is rejected (the interface itself is the interface-only mode)", outcome.NotAClass != null);
                 because.ItsTrue("a pointer-typed member is rejected up front rather than by the compiler", outcome.Pointer != null && outcome.Pointer.Contains("pointer"), outcome.Pointer);
                 because.ItsTrue("a function pointer is rejected too", outcome.FunctionPointer != null && outcome.FunctionPointer.Contains("pointer"), outcome.FunctionPointer);
                 because.ItsTrue("so is a pointer inside a generic argument", outcome.PointerArgument != null && outcome.PointerArgument.Contains("pointer"), outcome.PointerArgument);

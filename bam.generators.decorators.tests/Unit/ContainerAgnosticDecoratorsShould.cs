@@ -540,13 +540,36 @@ namespace Bam.Generators.Decorators.Tests.Unit
                     nullRejected = true;
                 }
 
-                return new RefuseOutcome(missing, nullRejected);
+                string classInferred = string.Empty;
+                try
+                {
+                    // No type arguments: I is inferred as the class.
+                    DecoratorFactory.Create(nobody);
+                }
+                catch (DecoratorException ex)
+                {
+                    classInferred = ex.Message;
+                }
+
+                string interfaceAlone = string.Empty;
+                try
+                {
+                    DecoratorFactory.Create<INobody>(nobody);
+                }
+                catch (DecoratorException ex)
+                {
+                    interfaceAlone = ex.Message;
+                }
+
+                return new RefuseOutcome(missing, nullRejected, classInferred, interfaceAlone);
             })
             .TheTest
             .ShouldPass<RefuseOutcome>((because, outcome) =>
             {
                 because.ItsTrue("a DecoratorException names the pair", outcome.Missing.Contains(typeof(INobody).FullName!) && outcome.Missing.Contains(typeof(Nobody).FullName!), outcome.Missing);
                 because.ItsTrue("a null instance is rejected", outcome.NullRejected);
+                because.ItsTrue("a class inferred as the interface is told to name the interface", outcome.ClassInferred.Contains(typeof(Nobody).FullName + " is a class") && outcome.ClassInferred.Contains("Create<I>(instance)"), outcome.ClassInferred);
+                because.ItsTrue("an interface with no decorator of its own points at AddInterface", outcome.InterfaceAlone.Contains(typeof(INobody).FullName + " alone") && outcome.InterfaceAlone.Contains("AddInterface"), outcome.InterfaceAlone);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -691,7 +714,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
         private sealed record ShareOutcome(string Pinged, string[] Order, bool SameStoreForPair, bool SharedAcrossPairs);
 
-        private sealed record RefuseOutcome(string Missing, bool NullRejected);
+        private sealed record RefuseOutcome(string Missing, bool NullRejected, string ClassInferred, string InterfaceAlone);
 
         private sealed record HookOutcome(bool Compiled, Type? DecoratedType, string Answer, int Calls, string Diagnostics);
 

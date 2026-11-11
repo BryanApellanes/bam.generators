@@ -56,15 +56,40 @@ namespace Bam.Generators.Decorators
 
         /// <summary>Queues a service for generation. Queuing the same pair twice has no effect.</summary>
         /// <param name="interfaceType">The service interface the decorator implements.</param>
-        /// <param name="implementationType">The implementation type the decorator wraps.</param>
+        /// <param name="implementationType">
+        /// The implementation type the decorator wraps, or null to decorate the interface alone (see
+        /// <see cref="AddInterface(Type)"/>).
+        /// </param>
         /// <returns>This generator, for chaining.</returns>
-        public DecoratorGenerator AddServiceType(Type interfaceType, Type implementationType)
+        public DecoratorGenerator AddServiceType(Type interfaceType, Type? implementationType)
         {
             ArgumentNullException.ThrowIfNull(interfaceType);
-            ArgumentNullException.ThrowIfNull(implementationType);
 
-            _services.Add(new DecoratorRequest(interfaceType, implementationType));
+            _services.Add(new DecoratorRequest(interfaceType, implementationType ?? interfaceType));
             return this;
+        }
+
+        /// <summary>
+        /// Queues an interface for generation without an implementation type. The decorator is typed on the
+        /// interface (<c>Decorator&lt;I, I&gt;</c>, constructor taking an <c>I</c>) and wraps any instance of
+        /// it, for services whose implementation is internal or chosen at resolve time. It is named after the
+        /// interface: <c>IEchoServiceDecorator</c>. Handlers are told the method on whatever instance is
+        /// wrapped, so a guard must not key on one implementation's attributes; see
+        /// <see cref="DecoratorModel.InterfaceOnly"/>.
+        /// </summary>
+        /// <param name="interfaceType">The service interface the decorator implements.</param>
+        /// <returns>This generator, for chaining.</returns>
+        public DecoratorGenerator AddInterface(Type interfaceType)
+        {
+            return AddServiceType(interfaceType, null);
+        }
+
+        /// <summary>Queues an interface for generation without an implementation type; see <see cref="AddInterface(Type)"/>.</summary>
+        /// <typeparam name="I">The service interface the decorator implements.</typeparam>
+        /// <returns>This generator, for chaining.</returns>
+        public DecoratorGenerator AddInterface<I>() where I : class
+        {
+            return AddServiceType(typeof(I), null);
         }
 
         /// <summary>Queues a service for generation. Queuing the same pair twice has no effect.</summary>
@@ -78,11 +103,18 @@ namespace Bam.Generators.Decorators
 
         /// <summary>Renders the decorator source for a single service without writing it.</summary>
         /// <param name="interfaceType">The service interface the decorator implements.</param>
-        /// <param name="implementationType">The implementation type the decorator wraps.</param>
+        /// <param name="implementationType">The implementation type the decorator wraps, or null to decorate the interface alone.</param>
         /// <exception cref="DecoratorGenerationException">The pair cannot be decorated.</exception>
-        public string GetSource(Type interfaceType, Type implementationType)
+        public string GetSource(Type interfaceType, Type? implementationType)
         {
             return CodeWriter.GetSource(new DecoratorModel(interfaceType, implementationType, RegistryExtensions));
+        }
+
+        /// <summary>Renders the source of a decorator typed on the interface alone, without writing it; see <see cref="AddInterface(Type)"/>.</summary>
+        /// <typeparam name="I">The service interface the decorator implements.</typeparam>
+        public string GetSource<I>() where I : class
+        {
+            return GetSource(typeof(I), null);
         }
 
         /// <summary>Renders the decorator source for a single service without writing it.</summary>
@@ -95,17 +127,41 @@ namespace Bam.Generators.Decorators
 
         /// <summary>
         /// Writes the decorator source for every queued service to <paramref name="outputDirectory"/>, one file
-        /// per service, overwriting files from a previous run.
+        /// per service, overwriting files from a previous run. Every queued service is validated and the
+        /// output file names are checked for a clash before the first file is written, so a refused run writes
+        /// nothing.
         /// </summary>
         /// <param name="outputDirectory">The directory to write to; created if missing.</param>
         /// <returns>The paths of the files written, in the order the services were queued.</returns>
-        /// <exception cref="DecoratorGenerationException">A queued pair cannot be decorated.</exception>
+        /// <exception cref="DecoratorGenerationException">
+        /// A queued pair cannot be decorated, or two queued services would be written to the same file name.
+        /// Files are named after the decorator type alone and land in one directory, so two services named
+        /// alike clash whatever their namespaces (<c>Billing.IClient</c> and <c>Shipping.IClient</c>), and the
+        /// second would overwrite the first. Names are compared without regard to case, as file systems do.
+        /// </exception>
         public IReadOnlyList<string> WriteSource(string outputDirectory)
         {
-            List<string> written = new List<string>();
+            // Keyed on the file name, not the decorator's full name: every file lands in outputDirectory as
+            // DecoratorTypeName + ".cs", so two namespaces holding a type of one name collide on disk.
+            Dictionary<string, DecoratorModel> byFileName = new Dictionary<string, DecoratorModel>(StringComparer.OrdinalIgnoreCase);
+            List<DecoratorModel> models = new List<DecoratorModel>();
             foreach (DecoratorRequest request in _services)
             {
                 DecoratorModel model = new DecoratorModel(request.InterfaceType, request.ImplementationType, RegistryExtensions);
+                if (byFileName.TryGetValue(model.FileName, out DecoratorModel? other))
+                {
+                    throw new DecoratorGenerationException(
+                        request.InterfaceType,
+                        $"Decorating {request.ImplementationType.FullName} would write {model.DecoratorFullName} to {model.FileName}, the same file as {other.DecoratorFullName} for {other.ImplementationType.FullName}; the second would overwrite the first. Write them to separate directories.");
+                }
+
+                byFileName.Add(model.FileName, model);
+                models.Add(model);
+            }
+
+            List<string> written = new List<string>();
+            foreach (DecoratorModel model in models)
+            {
                 using Stream stream = TargetResolver.GetTargetDecoratorStream(null, outputDirectory, model);
                 CodeWriter.WriteDecorator(model, stream);
                 written.Add(Path.Combine(outputDirectory, model.FileName));

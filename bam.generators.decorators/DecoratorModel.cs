@@ -17,14 +17,18 @@ namespace Bam.Generators.Decorators
         /// <paramref name="interfaceType"/>.
         /// </summary>
         /// <param name="interfaceType">The service interface the decorator implements.</param>
-        /// <param name="implementationType">The implementation type the decorator wraps.</param>
+        /// <param name="implementationType">
+        /// The implementation type the decorator wraps, or null to decorate the interface alone: the decorator
+        /// is then typed on the interface (<c>Decorator&lt;I, I&gt;</c>) and wraps any instance of it, for
+        /// services whose implementation is internal or chosen at resolve time.
+        /// </param>
         /// <exception cref="DecoratorGenerationException">
         /// Thrown when <paramref name="interfaceType"/> is not a closed, public interface;
         /// <paramref name="implementationType"/> is not a closed, public class that implements it; or the
         /// interface declares a member generated code cannot implement (static, init-only, ref-returning or
         /// pointer-typed).
         /// </exception>
-        public DecoratorModel(Type interfaceType, Type implementationType)
+        public DecoratorModel(Type interfaceType, Type? implementationType)
             : this(interfaceType, implementationType, true)
         {
         }
@@ -35,17 +39,17 @@ namespace Bam.Generators.Decorators
         /// generated.
         /// </summary>
         /// <param name="interfaceType">The service interface the decorator implements.</param>
-        /// <param name="implementationType">The implementation type the decorator wraps.</param>
+        /// <param name="implementationType">The implementation type the decorator wraps, or null to decorate the interface alone.</param>
         /// <param name="registryExtensions">
         /// True to generate the <c>Decorate</c> method and the <c>this ServiceRegistry</c> hook overloads, which
         /// reference <c>bam.base</c>; false to generate only the decorator and the hook overloads on the service
         /// instance, so the output compiles against the decorator runtime alone.
         /// </param>
         /// <exception cref="DecoratorGenerationException">The pair cannot be decorated; see <see cref="DecoratorModel(Type, Type)"/>.</exception>
-        public DecoratorModel(Type interfaceType, Type implementationType, bool registryExtensions)
+        public DecoratorModel(Type interfaceType, Type? implementationType, bool registryExtensions)
         {
             ArgumentNullException.ThrowIfNull(interfaceType);
-            ArgumentNullException.ThrowIfNull(implementationType);
+            implementationType ??= interfaceType;
             Validate(interfaceType, implementationType);
 
             InterfaceType = interfaceType;
@@ -67,8 +71,23 @@ namespace Bam.Generators.Decorators
         /// <summary>Gets the service interface the decorator implements.</summary>
         public Type InterfaceType { get; }
 
-        /// <summary>Gets the implementation type the decorator wraps.</summary>
+        /// <summary>
+        /// Gets the implementation type the decorator wraps. When the interface alone is decorated this is the
+        /// interface itself; see <see cref="InterfaceOnly"/>.
+        /// </summary>
         public Type ImplementationType { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the decorator is typed on the interface alone
+        /// (<c>Decorator&lt;I, I&gt;</c>, constructor taking an <c>I</c>) rather than on an implementation type.
+        /// Such a decorator wraps any instance of the interface, and handlers are told the method on that
+        /// instance's runtime type, mapped through its interface map. Unlike an implementation-typed decorator,
+        /// which refuses any instance that is not its <c>T</c>, the instance here can be a wrapper or another
+        /// implementation, and the attributes of the real service's methods are not on its methods. A handler
+        /// that guards a call must therefore key on the method name or on attributes of the interface, never on
+        /// attributes or the declaring type of one implementation.
+        /// </summary>
+        public bool InterfaceOnly => ImplementationType == InterfaceType;
 
         /// <summary>
         /// Gets a value indicating whether the <c>ServiceRegistry</c> extension methods are generated: the
@@ -175,14 +194,18 @@ namespace Bam.Generators.Decorators
                 throw new DecoratorGenerationException(interfaceType, "Interface is an open generic type. Decorate a closed type such as IRepository<Person>.");
             }
 
-            if (!implementationType.IsClass || implementationType.ContainsGenericParameters)
+            // The interface itself stands in for the implementation when the interface alone is decorated.
+            if (implementationType != interfaceType)
             {
-                throw new DecoratorGenerationException(interfaceType, $"{implementationType.FullName} is not a closed class type.");
-            }
+                if (!implementationType.IsClass || implementationType.ContainsGenericParameters)
+                {
+                    throw new DecoratorGenerationException(interfaceType, $"{implementationType.FullName} is not a closed class type.");
+                }
 
-            if (!interfaceType.IsAssignableFrom(implementationType))
-            {
-                throw new DecoratorGenerationException(interfaceType, $"{implementationType.FullName} does not implement the interface.");
+                if (!interfaceType.IsAssignableFrom(implementationType))
+                {
+                    throw new DecoratorGenerationException(interfaceType, $"{implementationType.FullName} does not implement the interface.");
+                }
             }
 
             if (!interfaceType.IsVisible || !implementationType.IsVisible)
