@@ -347,7 +347,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
             .ShouldPass<ResetOutcome>((because, outcome) =>
             {
                 because.ItsTrue("a decorator created before Reset stops running the shared handler and keeps its own, and a later subscription runs again", outcome.Seen == "shared:1,own:1,own:2,shared:3,own:3", outcome.Seen);
-                because.ItsTrue("an action subscribed twice is stored twice, as before", outcome.AfterAdds == 4, $"after adds: {outcome.AfterAdds}");
+                because.ItsTrue("an action subscribed twice is stored twice", outcome.AfterAdds == 4, $"after adds: {outcome.AfterAdds}");
                 because.ItsTrue("typed and action handlers are removed by the delegate the subscriber holds, one subscription per call", outcome.Removed);
                 because.ItsTrue("removing a handler that is gone reports false", !outcome.RemovedAgain);
                 because.ItsTrue("the untyped handler remains", outcome.AfterRemoves == 1);
@@ -457,12 +457,17 @@ namespace Bam.Generators.Decorators.Tests.Unit
         private static void SweepTwinDirectories()
         {
             DateTime threshold = DateTime.UtcNow.AddHours(-1);
-            IEnumerable<string> stale = Directory.EnumerateDirectories(Path.GetTempPath(), TwinDirectoryPrefix + "*")
-                .Where(directory => Directory.GetCreationTimeUtc(directory) < threshold);
-            foreach (string directory in stale)
+            foreach (string directory in Directory.EnumerateDirectories(Path.GetTempPath(), TwinDirectoryPrefix + "*"))
             {
+                // The age is read inside the try: another run may delete the directory between the listing and
+                // this look, and that must skip it, not fail the test.
                 try
                 {
+                    if (Directory.GetCreationTimeUtc(directory) >= threshold)
+                    {
+                        continue;
+                    }
+
                     Directory.Delete(directory, true);
                 }
                 catch (IOException)

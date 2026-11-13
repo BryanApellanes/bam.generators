@@ -8,6 +8,13 @@ namespace Bam.Generators.Decorators
     /// A thread-safe store of decorator handlers keyed by <see cref="DecoratorPhase"/> and method name.
     /// Subscribing while an invocation is enumerating handlers is safe: each read sees an immutable snapshot.
     /// </summary>
+    /// <remarks>
+    /// Subscriptions count the way <c>event +=</c> and <c>-=</c> do, for every <c>Add</c> overload: each call
+    /// stores one subscription, the same delegate subscribed twice runs twice, and <see cref="Remove"/> takes
+    /// one subscription back per call. Two callers that subscribe the same delegate (a method group on one
+    /// shared guard, say) each own a subscription, so one of them removing its own never takes the other's
+    /// away.
+    /// </remarks>
     /// <typeparam name="TContext">The context type handed to the handlers.</typeparam>
     public class DecoratorHandlerRegistry<TContext> where TContext : DecoratorInvocationContext
     {
@@ -26,7 +33,8 @@ namespace Bam.Generators.Decorators
 
         /// <summary>
         /// Subscribes <paramref name="handler"/> to <paramref name="methodName"/> for <paramref name="phase"/>.
-        /// Subscribing the same delegate twice has no effect.
+        /// Each call is one subscription: the same delegate subscribed twice runs twice, and
+        /// <see cref="Remove"/> takes one back per call.
         /// </summary>
         /// <param name="phase">The phase the handler runs in.</param>
         /// <param name="methodName">The method to subscribe to, or <see cref="AnyMethod"/> for all of them.</param>
@@ -45,13 +53,13 @@ namespace Bam.Generators.Decorators
             _handlers.AddOrUpdate(
                 new HandlerKey(phase, methodName),
                 _ => ImmutableArray.Create(handler),
-                (_, existing) => existing.Contains(handler) ? existing : existing.Add(handler));
+                (_, existing) => existing.Add(handler));
         }
 
         /// <summary>
         /// Subscribes a <paramref name="handler"/> whose return type is the decorated method's result type, as
-        /// the generated typed hooks do. Checked and stored like any other handler: the same delegate
-        /// subscribed twice is stored once, and a non-null return value overrides the invocation's result.
+        /// the generated typed hooks do. Checked and stored like any other handler: each call is one
+        /// subscription, and a non-null return value overrides the invocation's result.
         /// </summary>
         /// <typeparam name="R">The handler's return type.</typeparam>
         /// <param name="phase">The phase the handler runs in.</param>
@@ -76,17 +84,13 @@ namespace Bam.Generators.Decorators
                     nameof(handler));
             }
 
-            // De-duplicated on the subscriber's delegate by delegate equality, the same rule Add applies to an
-            // untyped handler: an instance method group subscribed twice is stored once either way. The
-            // wrapper carries the delegate so a later subscription can find it. The check and the add are one
-            // compare-and-swap, as in Add, so two threads subscribing the same delegate store it once. A stored
-            // delegate counts only when it is the wrapper's own Invoke: something else bound to a wrapper's
-            // object (an extension method, CreateDelegate) must not pass for it and get a guard skipped.
+            // Wrapped to the stored shape; the wrapper carries the subscriber's delegate so Remove can find the
+            // subscription by the delegate the subscriber holds.
             TypedHandler<R> typedHandler = new TypedHandler<R>(handler);
             _handlers.AddOrUpdate(
                 new HandlerKey(phase, methodName),
                 _ => ImmutableArray.Create(typedHandler.Stored),
-                (_, existing) => existing.Any(stored => stored.Target is ITypedHandler typed && typed.Stored.Equals(stored) && typed.Inner.Equals(handler)) ? existing : existing.Add(typedHandler.Stored));
+                (_, existing) => existing.Add(typedHandler.Stored));
         }
 
         private interface ITypedHandler
@@ -119,10 +123,9 @@ namespace Bam.Generators.Decorators
 
         /// <summary>
         /// Subscribes an observe-only <paramref name="handler"/>: it runs like any other handler but never
-        /// overrides the result unless it sets <see cref="DecoratorInvocationContext.Result"/> itself. Stored
-        /// once per subscription: the same delegate subscribed twice runs twice, unlike the <c>Func</c>
-        /// overloads, which store a delegate once. A method group subscribed from two places is two
-        /// subscriptions; <see cref="Remove"/> takes one back per call.
+        /// overrides the result unless it sets <see cref="DecoratorInvocationContext.Result"/> itself. Each call
+        /// is one subscription, as for the <c>Func</c> overloads: the same delegate subscribed twice runs
+        /// twice, and <see cref="Remove"/> takes one back per call.
         /// </summary>
         /// <param name="phase">The phase the handler runs in.</param>
         /// <param name="methodName">The method to subscribe to, or <see cref="AnyMethod"/> for all of them.</param>
@@ -137,9 +140,7 @@ namespace Bam.Generators.Decorators
             Guard.NotNull(handler, nameof(handler));
             RequireSynchronous(handler);
 
-            // Wrapped so Remove can find the subscription by the delegate the subscriber holds. Stored once per
-            // subscription, as before: observe-only handlers are not de-duplicated, because equal delegates
-            // (one lambda, one closure, subscribed from many places) are each meant to run.
+            // Wrapped so Remove can find the subscription by the delegate the subscriber holds.
             ActionHandler actionHandler = new ActionHandler(handler);
             _handlers.AddOrUpdate(
                 new HandlerKey(phase, methodName),
@@ -172,8 +173,10 @@ namespace Bam.Generators.Decorators
         /// <summary>
         /// Unsubscribes <paramref name="handler"/> from <paramref name="methodName"/> in <paramref name="phase"/>:
         /// the delegate handed to any <c>Add</c> overload, found by delegate equality. Removes one subscription
-        /// per call (an observe-only handler subscribed twice needs two calls; <see cref="Clear()"/> removes
-        /// all). Decorators already holding this registry stop running the handler at their next call.
+        /// per call, the most recent one, as <c>event -=</c> does: a handler subscribed twice needs two calls
+        /// (<see cref="Clear()"/> removes all). Only a subscription of that delegate counts: another method
+        /// bound to the same object does not remove it. Decorators already holding this registry stop running
+        /// the handler at their next call.
         /// </summary>
         /// <param name="phase">The phase the handler was subscribed to.</param>
         /// <param name="methodName">The method it was subscribed to, or <see cref="AnyMethod"/>.</param>
@@ -187,13 +190,13 @@ namespace Bam.Generators.Decorators
             HandlerKey key = new HandlerKey(phase, methodName);
             while (_handlers.TryGetValue(key, out ImmutableArray<Func<TContext, object?>> existing))
             {
-                Func<TContext, object?>? match = existing.FirstOrDefault(stored => Matches(stored, handler));
-                if (match is null)
+                int index = LastIndexOf(existing, handler);
+                if (index < 0)
                 {
                     return false;
                 }
 
-                ImmutableArray<Func<TContext, object?>> updated = existing.Remove(match);
+                ImmutableArray<Func<TContext, object?>> updated = existing.RemoveAt(index);
                 bool replaced = updated.IsEmpty
                     ? ((ICollection<KeyValuePair<HandlerKey, ImmutableArray<Func<TContext, object?>>>>)_handlers).Remove(new KeyValuePair<HandlerKey, ImmutableArray<Func<TContext, object?>>>(key, existing))
                     : _handlers.TryUpdate(key, updated, existing);
@@ -227,6 +230,22 @@ namespace Bam.Generators.Decorators
             _handlers.Clear();
         }
 
+        private static int LastIndexOf(ImmutableArray<Func<TContext, object?>> stored, Delegate handler)
+        {
+            for (int i = stored.Length - 1; i >= 0; i--)
+            {
+                if (Matches(stored[i], handler))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        // A stored delegate is the subscriber's own, or a wrapper's own Invoke carrying it. Something else bound
+        // to a wrapper's object (an extension method, CreateDelegate) shares the Target but is not the
+        // subscription, so it must not pass for one and get a guard removed.
         private static bool Matches(Func<TContext, object?> stored, Delegate handler)
         {
             return stored.Equals(handler)

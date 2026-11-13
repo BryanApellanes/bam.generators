@@ -138,6 +138,9 @@ namespace Bam.Generators.Decorators
         /// Files are named after the decorator type alone and land in one directory, so two services named
         /// alike clash whatever their namespaces (<c>Billing.IClient</c> and <c>Shipping.IClient</c>), and the
         /// second would overwrite the first. Names are compared without regard to case, as file systems do.
+        /// The clash is judged on the file name alone, before the target resolver is asked where a file goes,
+        /// so a resolver that would put two services in different places does not lift it. An implementation
+        /// queued for two interfaces always clashes: its decorator is named after the implementation.
         /// </exception>
         public IReadOnlyList<string> WriteSource(string outputDirectory)
         {
@@ -150,9 +153,7 @@ namespace Bam.Generators.Decorators
                 DecoratorModel model = new DecoratorModel(request.InterfaceType, request.ImplementationType, RegistryExtensions);
                 if (byFileName.TryGetValue(model.FileName, out DecoratorModel? other))
                 {
-                    throw new DecoratorGenerationException(
-                        request.InterfaceType,
-                        $"Decorating {request.ImplementationType.FullName} would write {model.DecoratorFullName} to {model.FileName}, the same file as {other.DecoratorFullName} for {other.ImplementationType.FullName}; the second would overwrite the first. Write them to separate directories.");
+                    throw new DecoratorGenerationException(request.InterfaceType, ClashMessage(model, other));
                 }
 
                 byFileName.Add(model.FileName, model);
@@ -168,6 +169,18 @@ namespace Bam.Generators.Decorators
             }
 
             return written;
+        }
+
+        // One decorator type name means one class, which separate directories cannot split: the second would
+        // not compile beside the first. Only names that differ (by namespace or case) can go to two places.
+        private static string ClashMessage(DecoratorModel model, DecoratorModel other)
+        {
+            if (!string.Equals(model.DecoratorFullName, other.DecoratorFullName, StringComparison.Ordinal))
+            {
+                return $"Decorating {model.ImplementationType.FullName} would write {model.DecoratorFullName} to {model.FileName}, the same file as {other.DecoratorFullName} for {other.ImplementationType.FullName}; the second would overwrite the first. Write them to separate directories.";
+            }
+
+            return $"{model.ImplementationType.FullName} is queued as both {other.InterfaceType.FullName} and {model.InterfaceType.FullName}, and its decorator for each is {model.DecoratorFullName} in {model.FileName}; the second would overwrite the first, and one class cannot be both. Decorate it as one of them.";
         }
 
         private readonly record struct DecoratorRequest(Type InterfaceType, Type ImplementationType);

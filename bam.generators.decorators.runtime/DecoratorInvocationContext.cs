@@ -32,10 +32,21 @@ namespace Bam.Generators.Decorators
         public DecoratorPhase Phase { get; internal set; }
 
         /// <summary>
-        /// Gets or sets the reflected method being invoked. Null when the method could not be resolved by
-        /// reflection; <see cref="MethodName"/> is still set.
+        /// Gets or sets the reflected method being invoked: the method on the decorated instance, where its
+        /// attributes are. Null when the method could not be resolved by reflection; <see cref="MethodName"/>
+        /// is still set.
         /// </summary>
         public MethodInfo? Method { get; set; }
+
+        /// <summary>
+        /// Gets or sets the interface method the call came in through: the member of the decorator's service
+        /// interface that <see cref="Method"/> implements. Read the interface's attributes here and the
+        /// implementation's on <see cref="Method"/>; when the registration resolves a wrapper, this is still
+        /// the service's interface method while <see cref="Method"/> is the wrapper's. The same as
+        /// <see cref="Method"/> when the decorator has no service interface or the method implements none of
+        /// it. Null only when <see cref="Method"/> is.
+        /// </summary>
+        public MethodInfo? InterfaceMethod { get; set; }
 
         /// <summary>Gets or sets the name of the method being invoked. Falls back to <see cref="Method"/>'s name.</summary>
         public string MethodName
