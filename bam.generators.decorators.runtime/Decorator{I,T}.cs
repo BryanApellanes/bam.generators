@@ -33,5 +33,11 @@ namespace Bam.Generators.Decorators
         {
             get => typeof(I);
         }
+
+        /// <inheritdoc />
+        protected override Type? ServiceInterface
+        {
+            get => typeof(I);
+        }
     }
 }

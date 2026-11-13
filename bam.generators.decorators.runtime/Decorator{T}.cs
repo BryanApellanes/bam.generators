@@ -50,6 +50,7 @@ namespace Bam.Generators.Decorators
         // of a transient service rather than starting cold per instance.
         private static readonly ConcurrentDictionary<MethodCacheKey, MethodInfo[]> _methods = new ConcurrentDictionary<MethodCacheKey, MethodInfo[]>();
         private static readonly ConcurrentDictionary<ImplementationKey, MethodInfo> _implementations = new ConcurrentDictionary<ImplementationKey, MethodInfo>();
+        private static readonly ConcurrentDictionary<InterfaceMethodKey, MethodInfo?> _interfaceMethods = new ConcurrentDictionary<InterfaceMethodKey, MethodInfo?>();
 
         private readonly object _attachLock = new object();
         private ImmutableList<DecoratorHandlerRegistry<DecoratorInvocationContext<T>>> _registrationHandlers = ImmutableList<DecoratorHandlerRegistry<DecoratorInvocationContext<T>>>.Empty;
@@ -192,7 +193,7 @@ namespace Bam.Generators.Decorators
                 return NotFound<R>(methodName, arguments);
             }
 
-            return Run<R>(methodName, method, arguments, () => Cast<R>(InvokeReflected(method, arguments)));
+            return Run<R>(methodName, method, null, arguments, () => Cast<R>(InvokeReflected(method, arguments)));
         }
 
         /// <inheritdoc />
@@ -205,7 +206,7 @@ namespace Bam.Generators.Decorators
                 return Task.FromResult(NotFound<R>(methodName, arguments));
             }
 
-            return RunAsync<R>(methodName, method, arguments, () => AwaitReturned<R>(InvokeReflected(method, arguments)));
+            return RunAsync<R>(methodName, method, null, arguments, () => AwaitReturned<R>(InvokeReflected(method, arguments)));
         }
 
         /// <summary>
@@ -223,7 +224,7 @@ namespace Bam.Generators.Decorators
             Guard.NotNull(invocation, nameof(invocation));
 
             object?[] arguments = args ?? Array.Empty<object?>();
-            return Run<R>(methodName, ResolveMethod(methodName, arguments), arguments, invocation);
+            return Run<R>(methodName, ResolveMethod(methodName, arguments), null, arguments, invocation);
         }
 
         /// <summary>
@@ -257,7 +258,7 @@ namespace Bam.Generators.Decorators
             Guard.NotNull(invocation, nameof(invocation));
 
             object?[] arguments = args ?? Array.Empty<object?>();
-            return RunAsync<R>(methodName, ResolveMethod(methodName, arguments), arguments, invocation);
+            return RunAsync<R>(methodName, ResolveMethod(methodName, arguments), null, arguments, invocation);
         }
 
         /// <summary>
@@ -292,7 +293,7 @@ namespace Bam.Generators.Decorators
             Guard.NotNull(invocation, nameof(invocation));
 
             object?[] arguments = args ?? Array.Empty<object?>();
-            return Run<R>(methodName, ImplementationOf(method) ?? ResolveMethod(methodName, arguments), arguments, invocation);
+            return Run<R>(methodName, ImplementationOf(method) ?? ResolveMethod(methodName, arguments), InterfaceHint(method), arguments, invocation);
         }
 
         /// <summary>
@@ -328,7 +329,7 @@ namespace Bam.Generators.Decorators
             Guard.NotNull(invocation, nameof(invocation));
 
             object?[] arguments = args ?? Array.Empty<object?>();
-            return RunAsync<R>(methodName, ImplementationOf(method) ?? ResolveMethod(methodName, arguments), arguments, invocation);
+            return RunAsync<R>(methodName, ImplementationOf(method) ?? ResolveMethod(methodName, arguments), InterfaceHint(method), arguments, invocation);
         }
 
         /// <summary>
@@ -348,6 +349,80 @@ namespace Bam.Generators.Decorators
                 await invocation().ConfigureAwait(false);
                 return null!;
             });
+        }
+
+        /// <summary>
+        /// Gets the service interface calls come in through, used to tell handlers which interface method each
+        /// call is (<see cref="DecoratorInvocationContext.InterfaceMethod"/>). Null for a decorator typed on
+        /// the implementation alone.
+        /// </summary>
+        protected virtual Type? ServiceInterface
+        {
+            get => null;
+        }
+
+        // A generated decorator passes the interface method itself; that is the interface method, whatever the
+        // instance maps it to.
+        private static MethodInfo? InterfaceHint(MethodInfo? method)
+        {
+            return method?.DeclaringType?.IsInterface == true ? method : null;
+        }
+
+        // The member of ServiceInterface (or one of the interfaces it extends) that the instance's method
+        // implements, found through the instance's interface maps. The method itself when there is no service
+        // interface or it implements none of it.
+        private MethodInfo? InterfaceMethodOf(MethodInfo? method)
+        {
+            if (method == null)
+            {
+                return null;
+            }
+
+            Type? service = ServiceInterface;
+            if (service == null || method.DeclaringType?.IsInterface == true)
+            {
+                return method;
+            }
+
+            return _interfaceMethods.GetOrAdd(new InterfaceMethodKey(Instance.GetType(), service, method), FindInterfaceMethod) ?? method;
+        }
+
+        private static MethodInfo? FindInterfaceMethod(InterfaceMethodKey key)
+        {
+            foreach (Type interfaceType in new[] { key.Service }.Concat(key.Service.GetInterfaces()))
+            {
+                if (!interfaceType.IsAssignableFrom(key.Type))
+                {
+                    continue;
+                }
+
+                InterfaceMapping mapping;
+                try
+                {
+                    mapping = key.Type.GetInterfaceMap(interfaceType);
+                }
+                catch (ArgumentException)
+                {
+                    continue;
+                }
+
+                for (int i = 0; i < mapping.TargetMethods.Length; i++)
+                {
+                    if (SameMethod(mapping.TargetMethods[i], key.Method))
+                    {
+                        return mapping.InterfaceMethods[i];
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        // MethodInfo equality includes the type it was reflected from, which differs between an interface map
+        // and GetMethods on a derived type; the method itself is its module, token and declaring type.
+        private static bool SameMethod(MethodInfo left, MethodInfo right)
+        {
+            return left.Module == right.Module && left.MetadataToken == right.MetadataToken && left.DeclaringType == right.DeclaringType;
         }
 
         // Handlers are told about the method on the decorated instance, where its attributes are, so an
@@ -556,9 +631,9 @@ namespace Bam.Generators.Decorators
             return value is R result ? result : default!;
         }
 
-        private DecoratorInvocationResult<T, R> Run<R>(string methodName, MethodInfo? method, object?[] args, Func<R> invocation)
+        private DecoratorInvocationResult<T, R> Run<R>(string methodName, MethodInfo? method, MethodInfo? interfaceMethod, object?[] args, Func<R> invocation)
         {
-            DecoratorInvocationContext<T> context = CreateContext(methodName, method, args);
+            DecoratorInvocationContext<T> context = CreateContext(methodName, method, interfaceMethod, args);
             if (TryStart(context, out R? value))
             {
                 return Complete(context, value, true);
@@ -581,9 +656,9 @@ namespace Bam.Generators.Decorators
             return Complete(context, value, false);
         }
 
-        private async Task<DecoratorInvocationResult<T, R>> RunAsync<R>(string methodName, MethodInfo? method, object?[] args, Func<Task<R>> invocation)
+        private async Task<DecoratorInvocationResult<T, R>> RunAsync<R>(string methodName, MethodInfo? method, MethodInfo? interfaceMethod, object?[] args, Func<Task<R>> invocation)
         {
-            DecoratorInvocationContext<T> context = CreateContext(methodName, method, args);
+            DecoratorInvocationContext<T> context = CreateContext(methodName, method, interfaceMethod, args);
             if (TryStart(context, out R? value))
             {
                 return Complete(context, value, true);
@@ -607,11 +682,12 @@ namespace Bam.Generators.Decorators
         }
 
         // Handlers get their own copy of the arguments, so what they do to it never reaches the decorated method.
-        private DecoratorInvocationContext<T> CreateContext(string methodName, MethodInfo? method, object?[] args)
+        private DecoratorInvocationContext<T> CreateContext(string methodName, MethodInfo? method, MethodInfo? interfaceMethod, object?[] args)
         {
             return new DecoratorInvocationContext<T>(this)
             {
                 Method = method,
+                InterfaceMethod = method == null ? interfaceMethod : interfaceMethod ?? InterfaceMethodOf(method),
                 MethodName = methodName,
                 Args = (object?[])args.Clone()
             };
@@ -700,7 +776,7 @@ namespace Bam.Generators.Decorators
 
         private DecoratorInvocationResult<T, R> NotFound<R>(string methodName, object?[] args)
         {
-            DecoratorInvocationContext<T> context = CreateContext(methodName, null, args);
+            DecoratorInvocationContext<T> context = CreateContext(methodName, null, null, args);
             Raise(MethodNotFound, context, null);
             return new DecoratorInvocationResult<T, R>(this)
             {
@@ -855,5 +931,7 @@ namespace Bam.Generators.Decorators
         private readonly record struct MethodCacheKey(Type Type, string MethodName);
 
         private readonly record struct ImplementationKey(Type Type, MethodInfo Method);
+
+        private readonly record struct InterfaceMethodKey(Type Type, Type Service, MethodInfo Method);
     }
 }

@@ -51,23 +51,73 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
-        public void NotSubscribeTheSameHandlerTwice()
+        public void StoreOneSubscriptionPerAdd()
+        {
+            // bam.generators#22: subscriptions count the way event += and -= do. Two callers subscribing one
+            // shared guard each own a subscription, so one of them unsubscribing leaves the other guarded.
+            After.Setup(reg =>
+            {
+                reg.For<DecoratorSubscriptions>().Use(new DecoratorSubscriptions());
+            })
+            .When<DecoratorSubscriptions>("is given the same delegate by two callers, then one of them removes it", subscriptions =>
+            {
+                int ran = 0;
+                Func<DecoratorInvocationContext, object?> sharedGuard = context => { ran++; return null; };
+                Func<DecoratorInvocationContext, int> sharedTyped = context => { ran++; return 1; };
+                subscriptions.Add(DecoratorPhase.Start, "Message", sharedGuard);
+                subscriptions.Add(DecoratorPhase.Start, "Message", sharedGuard);
+                subscriptions.Add(DecoratorPhase.Start, "Typed", sharedTyped);
+                subscriptions.Add(DecoratorPhase.Start, "Typed", sharedTyped);
+                int afterAdds = subscriptions.Count(DecoratorPhase.Start, "Message") + subscriptions.Count(DecoratorPhase.Start, "Typed");
+                bool removed = subscriptions.Remove(DecoratorPhase.Start, "Message", sharedGuard)
+                    && subscriptions.Remove(DecoratorPhase.Start, "Typed", sharedTyped);
+                int afterOneRemove = subscriptions.Count(DecoratorPhase.Start, "Message") + subscriptions.Count(DecoratorPhase.Start, "Typed");
+                foreach (Func<DecoratorInvocationContext, object?> handler in subscriptions.Get(DecoratorPhase.Start, "Message").Concat(subscriptions.Get(DecoratorPhase.Start, "Typed")))
+                {
+                    handler(NewContext());
+                }
+
+                return new SubscriptionOutcome(afterAdds, removed, afterOneRemove, ran);
+            })
+            .TheTest
+            .ShouldPass<SubscriptionOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("each Add is one subscription, untyped and typed alike", outcome.AfterAdds == 4, $"after adds: {outcome.AfterAdds}");
+                because.ItsTrue("Remove takes one subscription back", outcome.Removed && outcome.AfterOneRemove == 2, $"after one remove each: {outcome.AfterOneRemove}");
+                because.ItsTrue("the other caller's subscriptions still run", outcome.Ran == 2, $"ran: {outcome.Ran}");
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void RemoveTheMostRecentSubscriptionOfADelegate()
         {
             After.Setup(reg =>
             {
                 reg.For<DecoratorSubscriptions>().Use(new DecoratorSubscriptions());
             })
-            .When<DecoratorSubscriptions>("is given the same delegate twice", subscriptions =>
+            .When<DecoratorSubscriptions>("holds first, second, first and removes first once", subscriptions =>
             {
-                Func<DecoratorInvocationContext, object?> handler = context => "value";
-                subscriptions.Add(DecoratorPhase.Start, "Message", handler);
-                subscriptions.Add(DecoratorPhase.Start, "Message", handler);
-                return new RegistryOutcome(string.Empty, subscriptions.Count(DecoratorPhase.Start, "Message"), 0);
+                List<string> ran = new List<string>();
+                Func<DecoratorInvocationContext, object?> first = context => { ran.Add("first"); return null; };
+                Func<DecoratorInvocationContext, object?> second = context => { ran.Add("second"); return null; };
+                subscriptions.Add(DecoratorPhase.Start, "Message", first);
+                subscriptions.Add(DecoratorPhase.Start, "Message", second);
+                subscriptions.Add(DecoratorPhase.Start, "Message", first);
+                subscriptions.Remove(DecoratorPhase.Start, "Message", first);
+                foreach (Func<DecoratorInvocationContext, object?> handler in subscriptions.Get(DecoratorPhase.Start, "Message"))
+                {
+                    handler(NewContext());
+                }
+
+                return new RegistryOutcome(string.Join("|", ran), subscriptions.Count(DecoratorPhase.Start, "Message"), 0);
             })
             .TheTest
             .ShouldPass<RegistryOutcome>((because, outcome) =>
             {
-                because.ItsTrue("the handler is subscribed once", outcome.StartCount == 1);
+                because.ItsTrue("the last subscription of the delegate is the one removed, as event -= does", outcome.Ran == "first|second", $"ran: {outcome.Ran}");
+                because.ItsTrue("two subscriptions remain", outcome.StartCount == 2);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -141,22 +191,23 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 Func<DecoratorInvocationContext, Task<int>> taskTyped = context => Task.FromResult(42);
                 Func<DecoratorInvocationContext, Task> plainTask = context => Task.CompletedTask;
                 subscriptions.Add(DecoratorPhase.Start, "Add", typed);
-                subscriptions.Add(DecoratorPhase.Start, "Add", typed);
                 object? value = subscriptions.Get(DecoratorPhase.Start, "Add").Single()(NewContext());
-                // Two delegate instances over the same instance method are equal delegates, stored once, the
-                // same rule the untyped overload applies.
+                subscriptions.Add(DecoratorPhase.Start, "Add", typed);
+                // Two delegate instances over the same instance method are equal delegates; each is still its
+                // own subscription, the same rule the untyped overload applies.
                 Func<DecoratorInvocationContext, int> firstGroup = Seven;
                 Func<DecoratorInvocationContext, int> secondGroup = Seven;
                 subscriptions.Add(DecoratorPhase.Start, "Reset", firstGroup);
                 subscriptions.Add(DecoratorPhase.Start, "Reset", secondGroup);
-                // Behind another handler under the key: the de-dup must still find it, so the delegate stored
-                // for a typed handler has to be the wrapper's own on every path, not only the first under a key.
+                // Behind other handlers under the key, Remove must still find a typed handler's wrapper, so
+                // the delegate stored for it has to be the wrapper's own on every path.
                 subscriptions.Add(DecoratorPhase.Start, "Reset", typed);
-                subscriptions.Add(DecoratorPhase.Start, "Reset", typed);
+                bool removedBehindOthers = subscriptions.Remove(DecoratorPhase.Start, "Reset", typed)
+                    && subscriptions.Remove(DecoratorPhase.Start, "Reset", secondGroup);
                 return new TypedOutcome(
                     Throws<ArgumentException>(() => subscriptions.Add<object?>(DecoratorPhase.Start, "Add", asyncByCovariance)),
                     value is int boxed && boxed == 42,
-                    subscriptions.Count(DecoratorPhase.Start, "Add") == 1 && subscriptions.Count(DecoratorPhase.Start, "Reset") == 2,
+                    subscriptions.Count(DecoratorPhase.Start, "Add") == 2 && removedBehindOthers && subscriptions.Count(DecoratorPhase.Start, "Reset") == 1,
                     Throws<ArgumentException>(() => subscriptions.Add(DecoratorPhase.Start, "Add", taskTyped)),
                     Message(() => subscriptions.Add(DecoratorPhase.Start, "Add", plainTask)));
             })
@@ -165,7 +216,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
             {
                 because.ItsTrue("an async method group bound through return-type covariance is refused", outcome.AsyncRefused);
                 because.ItsTrue("a typed handler's value comes through the wrapper boxed", outcome.ValueBoxed);
-                because.ItsTrue("the same typed delegate subscribed twice is stored once", outcome.Deduplicated);
+                because.ItsTrue("each typed subscription is stored and found again by the subscriber's delegate", outcome.CountedPerSubscription);
                 because.ItsTrue("a typed handler declared to return a task is refused when subscribed", outcome.TaskTypedRefused);
                 because.ItsTrue("the refusal names a plain Task as Task", outcome.TaskMessage?.StartsWith("A handler returning Task can never") == true, outcome.TaskMessage);
             })
@@ -174,11 +225,10 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
-        public void StoreATypedHandlerOnceWhenSubscribedFromParallelThreads()
+        public void KeepEveryTypedSubscriptionMadeFromParallelThreads()
         {
-            // The typed de-dup has to be one compare-and-swap, like the untyped one: a scan followed by an add
-            // lets two threads both miss and both store. Two threads released together, a fresh store per
-            // round, 200 rounds; a scan-then-add fails about 44% of rounds, so this cannot pass by luck.
+            // Each subscription is one compare-and-swap: a read followed by a separate write lets one thread's
+            // add overwrite the other's. Two threads released together, a fresh store per round, 200 rounds.
             When.A<DecoratorHandlerRegistryShould>("subscribes the same typed delegate from two threads at once, 200 times", this, test =>
             {
                 Func<DecoratorInvocationContext, int> handler = context => 1;
@@ -205,7 +255,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
                     int stored = subscriptions.Count(DecoratorPhase.Start, "Add");
                     worst = Math.Max(worst, stored);
-                    if (stored != 1)
+                    if (stored != 2)
                     {
                         badRounds++;
                     }
@@ -216,7 +266,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
             .TheTest
             .ShouldPass<ConcurrentOutcome>((because, outcome) =>
             {
-                because.ItsTrue("every round stored the handler once", outcome.BadRounds == 0, $"bad rounds: {outcome.BadRounds}, worst: {outcome.Worst}");
+                because.ItsTrue("every round kept both subscriptions", outcome.BadRounds == 0, $"bad rounds: {outcome.BadRounds}, worst: {outcome.Worst}");
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -225,9 +275,9 @@ namespace Bam.Generators.Decorators.Tests.Unit
         [UnitTest]
         public void NotLetADelegateBoundToAWrapperPassForIt()
         {
-            // The de-dup looks for the wrapper's own Invoke. Another method bound to a wrapper's object (an
+            // Remove looks for the wrapper's own Invoke. Another method bound to a wrapper's object (an
             // extension method here; CreateDelegate would do the same) carries the same Target but is not
-            // the typed handler, so a guard subscribed after it must still be stored and still run.
+            // the typed handler, so removing the guard must take the guard and leave the forged delegate.
             After.Setup(reg =>
             {
                 reg.For<DecoratorSubscriptions>().Use(new DecoratorSubscriptions());
@@ -240,27 +290,32 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 other.Add(DecoratorPhase.Start, "Add", guard);
                 object wrapperTarget = other.Get(DecoratorPhase.Start, "Add").Single().Target!;
                 Func<DecoratorInvocationContext, object?> forged = wrapperTarget.Quiet;
-                subscriptions.Add(DecoratorPhase.Start, "Add", forged);
+                // The guard first, so a search from the end meets the forged delegate before it.
                 subscriptions.Add(DecoratorPhase.Start, "Add", guard);
+                subscriptions.Add(DecoratorPhase.Start, "Add", forged);
+                int stored = subscriptions.Count(DecoratorPhase.Start, "Add");
                 foreach (Func<DecoratorInvocationContext, object?> handler in subscriptions.Get(DecoratorPhase.Start, "Add"))
                 {
                     handler(NewContext());
                 }
 
-                // The wrapper's own delegate, cloned, is still the typed handler: stored first under a key and
-                // followed by the same typed handler, it is stored once.
+                bool guardRemoved = subscriptions.Remove(DecoratorPhase.Start, "Add", guard);
+                bool forgedLeft = subscriptions.Get(DecoratorPhase.Start, "Add").SequenceEqual(new[] { forged });
+
+                // The wrapper's own delegate, cloned, is still the typed handler: Remove finds it by the guard.
                 Func<DecoratorInvocationContext, object?> cloned = (Func<DecoratorInvocationContext, object?>)other.Get(DecoratorPhase.Start, "Add").Single().Clone();
                 subscriptions.Add(DecoratorPhase.Start, "Reset", cloned);
-                subscriptions.Add(DecoratorPhase.Start, "Reset", guard);
+                bool clonedRemoved = subscriptions.Remove(DecoratorPhase.Start, "Reset", guard);
 
-                return new ForgedOutcome(subscriptions.Count(DecoratorPhase.Start, "Add"), guardRan, subscriptions.Count(DecoratorPhase.Start, "Reset"));
+                return new ForgedOutcome(stored, guardRan, guardRemoved && forgedLeft, clonedRemoved && subscriptions.Count(DecoratorPhase.Start, "Reset") == 0);
             })
             .TheTest
             .ShouldPass<ForgedOutcome>((because, outcome) =>
             {
-                because.ItsTrue("the forged delegate did not pass for the guard, so both are stored", outcome.Stored == 2, $"stored: {outcome.Stored}");
+                because.ItsTrue("both are stored", outcome.Stored == 2, $"stored: {outcome.Stored}");
                 because.ItsTrue("the guard ran", outcome.GuardRan == 1, $"guard ran: {outcome.GuardRan}");
-                because.ItsTrue("a clone of the wrapper's own delegate counts as the typed handler", outcome.ClonedStored == 1, $"stored: {outcome.ClonedStored}");
+                because.ItsTrue("removing the guard took the guard, not the forged delegate", outcome.GuardRemovedForgedKept);
+                because.ItsTrue("a clone of the wrapper's own delegate counts as the typed handler", outcome.ClonedRemoved);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -328,11 +383,13 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
         private sealed record RejectionOutcome(bool BlankNameRejected, bool NullFuncRejected, bool NullActionRejected, bool TypedBlankNameRejected);
 
-        private sealed record TypedOutcome(bool AsyncRefused, bool ValueBoxed, bool Deduplicated, bool TaskTypedRefused, string? TaskMessage = null);
+        private sealed record TypedOutcome(bool AsyncRefused, bool ValueBoxed, bool CountedPerSubscription, bool TaskTypedRefused, string? TaskMessage = null);
+
+        private sealed record SubscriptionOutcome(int AfterAdds, bool Removed, int AfterOneRemove, int Ran);
 
         private sealed record ConcurrentOutcome(int BadRounds, int Worst);
 
-        private sealed record ForgedOutcome(int Stored, int GuardRan, int ClonedStored);
+        private sealed record ForgedOutcome(int Stored, int GuardRan, bool GuardRemovedForgedKept, bool ClonedRemoved);
 
         private sealed record ContextOutcome(bool OverriddenInitially, object? InitialResult, bool OverriddenAfterSet, object? ResultAfterSet, string MethodName);
     }

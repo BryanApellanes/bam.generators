@@ -275,6 +275,7 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 because.ItsTrue("so the service's attribute is not on it (a guard keyed on it would pass)", !outcome.Wrapped.SeesGuarded);
                 because.ItsTrue("the method name is the same either way", outcome.Direct.MethodName == nameof(ISecretService.Reveal) && outcome.Wrapped.MethodName == nameof(ISecretService.Reveal), outcome.Direct.MethodName + "," + outcome.Wrapped.MethodName);
                 because.ItsTrue("the wrapped call reaches the service through the wrapper", outcome.Wrapped.Result == "wrapped:guarded:k", outcome.Wrapped.Result);
+                because.ItsTrue("ctx.InterfaceMethod is the interface's method either way, so a guard can key on it", outcome.Direct.InterfaceDeclaringType == typeof(ISecretService) && outcome.Wrapped.InterfaceDeclaringType == typeof(ISecretService), outcome.Direct.InterfaceDeclaringType?.Name + "," + outcome.Wrapped.InterfaceDeclaringType?.Name);
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -287,19 +288,126 @@ namespace Bam.Generators.Decorators.Tests.Unit
             {
                 MethodInfo getCount = typeof(ICollection<int>).GetProperty(nameof(ICollection<int>.Count))!.GetGetMethod()!;
                 MethodInfo? seen = null;
+                MethodInfo? seenInterface = null;
                 decorator.Subscribe(DecoratorPhase.Start, getCount.Name, context =>
                 {
                     seen = context.Method;
+                    seenInterface = context.InterfaceMethod;
                 });
                 int count = decorator.Intercept<int>(getCount, getCount.Name, Array.Empty<object?>(), () => decorator.Instance.Count).Value;
                 int again = decorator.Intercept<int>(getCount, getCount.Name, Array.Empty<object?>(), () => decorator.Instance.Count).Value;
-                return new UnmappedOutcome(count, again, seen, getCount);
+                return new UnmappedOutcome(count, again, seen, getCount, seenInterface);
             })
             .TheTest
             .ShouldPass<UnmappedOutcome>((because, outcome) =>
             {
                 because.ItsTrue("the call goes through", outcome.Count == 3 && outcome.Again == 3, $"{outcome.Count}, {outcome.Again}");
                 because.ItsTrue("handlers are told the interface method", outcome.Seen == outcome.InterfaceMethod, outcome.Seen?.ToString());
+                because.ItsTrue("and so is ctx.InterfaceMethod", outcome.SeenInterface == outcome.InterfaceMethod, outcome.SeenInterface?.ToString());
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void ReportTheInterfaceMethodBehindAHidingReimplementation()
+        {
+            // bam.generators#24: a T subclass that re-implements I with a hiding method. The generated pair
+            // decorator passes I's method; ctx.Method is the subclass's, ctx.InterfaceMethod stays I's.
+            When.A<EchoServiceDecorator>("wraps an EchoService subclass that re-implements IEchoService", new EchoServiceDecorator(new ReimplementedEchoService()), decorator =>
+            {
+                MethodInfo? seen = null;
+                MethodInfo? seenInterface = null;
+                decorator.Subscribe(DecoratorPhase.Start, nameof(IEchoService.Message), context =>
+                {
+                    seen = context.Method;
+                    seenInterface = context.InterfaceMethod;
+                });
+                string result = decorator.Message("hi");
+                return new InterfaceMethodOutcome(result, seen, seenInterface);
+            })
+            .TheTest
+            .ShouldPass<InterfaceMethodOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the call reaches the re-implementation", outcome.Result == "HI", outcome.Result);
+                because.ItsTrue("ctx.Method is the method of the T subclass that ran", outcome.Method?.DeclaringType == typeof(ReimplementedEchoService), outcome.Method?.DeclaringType?.FullName);
+                because.ItsTrue("ctx.InterfaceMethod is the interface's method", outcome.InterfaceMethod == typeof(IEchoService).GetMethod(nameof(IEchoService.Message)), outcome.InterfaceMethod?.ToString());
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void FindTheInterfaceMethodWhenCalledByName()
+        {
+            // The name-only paths have no interface method to hand over; it is found through the instance's
+            // interface map. A decorator with no service interface reports the method itself.
+            When.A<Decorator<IEchoService, EchoService>>("is invoked by name", new Decorator<IEchoService, EchoService>(new EchoService()), decorator =>
+            {
+                MethodInfo? pairInterface = null;
+                MethodInfo? pairMethod = null;
+                decorator.Subscribe(DecoratorPhase.Start, nameof(IEchoService.Message), context =>
+                {
+                    pairMethod = context.Method;
+                    pairInterface = context.InterfaceMethod;
+                });
+                decorator.Intercept<string>(nameof(IEchoService.Message), new object?[] { "a" }, () => decorator.Instance.Message("a"));
+                decorator.Invoke<string>(nameof(IEchoService.Message), "b");
+
+                Decorator<EchoService> plain = new Decorator<EchoService>(new EchoService());
+                MethodInfo? plainInterface = null;
+                MethodInfo? plainMethod = null;
+                plain.Subscribe(DecoratorPhase.Start, nameof(IEchoService.Message), context =>
+                {
+                    plainMethod = context.Method;
+                    plainInterface = context.InterfaceMethod;
+                });
+                plain.Invoke<string>(nameof(IEchoService.Message), "c");
+                DecoratorInvocationResult<EchoService, string> notFound = plain.Invoke<string>("Missing", "d");
+                return new ByNameOutcome(pairMethod, pairInterface, plainMethod, plainInterface, notFound.Method == null);
+            })
+            .TheTest
+            .ShouldPass<ByNameOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the pair's ctx.Method is the implementation's", outcome.PairMethod?.DeclaringType == typeof(EchoService), outcome.PairMethod?.DeclaringType?.FullName);
+                because.ItsTrue("the pair's ctx.InterfaceMethod is found through the interface map", outcome.PairInterface == typeof(IEchoService).GetMethod(nameof(IEchoService.Message)), outcome.PairInterface?.ToString());
+                because.ItsTrue("with no service interface, ctx.InterfaceMethod is ctx.Method", outcome.PlainMethod != null && outcome.PlainInterface == outcome.PlainMethod, outcome.PlainInterface?.ToString());
+                because.ItsTrue("a method that is not found has no method", outcome.NotFoundHasNoMethod);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void RefuseToWriteOneImplementationForTwoInterfaces()
+        {
+            When.A<DecoratorGenerator>("queues one implementation for two interfaces, then one pair twice", new DecoratorGenerator(), generator =>
+            {
+                string directory = Path.Combine(Path.GetTempPath(), "bam.generators.decorators.tests", Guid.NewGuid().ToString("N"));
+                try
+                {
+                    string both = Diagnose(() => generator.AddServiceType<IEchoService, EchoShout>().AddServiceType<IShout, EchoShout>().WriteSource(directory));
+                    int afterRefusal = Directory.Exists(directory) ? Directory.GetFiles(directory).Length : 0;
+                    // The same pair queued twice is one request, not a clash.
+                    IReadOnlyList<string> twice = new DecoratorGenerator().AddServiceType<IShout, EchoShout>().AddServiceType<IShout, EchoShout>().WriteSource(directory);
+                    return new TwoInterfacesOutcome(both, afterRefusal, twice.Count);
+                }
+                finally
+                {
+                    if (Directory.Exists(directory))
+                    {
+                        Directory.Delete(directory, true);
+                    }
+                }
+            })
+            .TheTest
+            .ShouldPass<TwoInterfacesOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the clash names both interfaces", outcome.Message.Contains(typeof(IEchoService).FullName!) && outcome.Message.Contains(typeof(IShout).FullName!), outcome.Message);
+                because.ItsTrue("it says to decorate one of them", outcome.Message.Contains("Decorate it as one of them"), outcome.Message);
+                because.ItsTrue("it does not advise separate directories, which cannot help", !outcome.Message.Contains("separate directories"), outcome.Message);
+                because.ItsTrue("no file is written", outcome.FilesWritten == 0, $"files: {outcome.FilesWritten}");
+                because.ItsTrue("the same pair queued twice writes one file", outcome.WrittenForRepeat == 1, $"written: {outcome.WrittenForRepeat}");
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -311,13 +419,15 @@ namespace Bam.Generators.Decorators.Tests.Unit
             GuardedSecret service = new GuardedSecret();
             registry.For<ISecretService>().Use(wrap ? new SecretWrapper(service) : service);
             MethodInfo? seen = null;
+            MethodInfo? seenInterface = null;
             registry.Decorate<ISecretService>();
             registry.OnMethodStart<ISecretService, ISecretService>(nameof(ISecretService.Reveal), context =>
             {
                 seen = context.Method;
+                seenInterface = context.InterfaceMethod;
             });
             string result = registry.Get<ISecretService>().Reveal("k");
-            return new WrapperCall(result, seen?.DeclaringType, seen?.Name ?? string.Empty, seen?.GetCustomAttribute<GuardedAttribute>() != null);
+            return new WrapperCall(result, seen?.DeclaringType, seen?.Name ?? string.Empty, seen?.GetCustomAttribute<GuardedAttribute>() != null, seenInterface?.DeclaringType);
         }
 
         [UnitTest]
@@ -473,11 +583,15 @@ namespace Bam.Generators.Decorators.Tests.Unit
 
         private sealed record NamespaceClashOutcome(string Message, string CaseMessage, int FilesAfterRefusals, int PathsReturned, int FilesWritten);
 
-        private sealed record WrapperCall(string Result, Type? DeclaringType, string MethodName, bool SeesGuarded);
+        private sealed record WrapperCall(string Result, Type? DeclaringType, string MethodName, bool SeesGuarded, Type? InterfaceDeclaringType);
+
+        private sealed record InterfaceMethodOutcome(string Result, MethodInfo? Method, MethodInfo? InterfaceMethod);
+
+        private sealed record ByNameOutcome(MethodInfo? PairMethod, MethodInfo? PairInterface, MethodInfo? PlainMethod, MethodInfo? PlainInterface, bool NotFoundHasNoMethod);
 
         private sealed record WrapperOutcome(WrapperCall Direct, WrapperCall Wrapped);
 
-        private sealed record UnmappedOutcome(int Count, int Again, MethodInfo? Seen, MethodInfo InterfaceMethod);
+        private sealed record UnmappedOutcome(int Count, int Again, MethodInfo? Seen, MethodInfo InterfaceMethod, MethodInfo? SeenInterface);
 
         private sealed record SourceOutcome(bool InterfaceOnly, bool PairInterfaceOnly, bool InterfaceStandsIn, string TypeName, string DecorateMethodName, bool ExtendsPair, bool CtorTakesInterface, bool DocumentsAny, bool NullAgrees, bool FixtureCurrent, bool NoRegistryFixtureCurrent);
 
@@ -492,6 +606,8 @@ namespace Bam.Generators.Decorators.Tests.Unit
         private sealed record ValidateOutcome(string Class, string OpenGeneric, string Hidden, string HiddenImplementation, string OtherInterface);
 
         private sealed record ClashOutcome(string Message, int FilesWritten);
+
+        private sealed record TwoInterfacesOutcome(string Message, int FilesWritten, int WrittenForRepeat);
     }
 }
 

@@ -47,6 +47,9 @@ public static class CSharpTypeName
         ArgumentNullException.ThrowIfNull(parameter);
 
         ParameterInfo declared = DeclarationOf(parameter);
+        // GetCustomAttributesData, never GetCustomAttributes: the compiler's nullable attributes are often
+        // embedded per assembly and internal, and the generator reads types it must not run code from.
+        // Attribute data is read from metadata without constructing the attribute or loading its assembly.
         return Render(parameter.ParameterType, declared.ParameterType, NullableFlags.For(declared.GetCustomAttributesData(), declared.Member));
     }
 
