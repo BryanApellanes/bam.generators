@@ -45,8 +45,11 @@ namespace Bam.Generators.Decorators
         /// interface method while <see cref="Method"/> is the wrapper's. On a decorator with no service
         /// interface it is always <see cref="Method"/>, even when the caller passed an interface method. On a
         /// decorator with one it is null when <see cref="Method"/> implements no member of the service
-        /// interface (a public method called by name that the interface does not declare), so a guard keyed
-        /// on the interface's attributes fails closed rather than reading another method's. Set by the
+        /// interface (a public method called by name that the interface does not declare, or an explicit
+        /// implementation of another interface). It never names a method the interface does not declare, so a
+        /// guard never reads another method's attributes; null means the decorator cannot vouch for the call.
+        /// A guard written <c>InterfaceMethod?.GetCustomAttribute&lt;…&gt;() != null</c> treats null as
+        /// unguarded and lets the call run; a guard that must fail closed rejects when this is null. Set by the
         /// decorator before any handler runs; handlers cannot change it, so a later guard reads what the
         /// decorator found.
         /// </summary>

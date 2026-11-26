@@ -51,6 +51,7 @@ namespace Bam.Generators.Decorators
         private static readonly ConcurrentDictionary<MethodCacheKey, MethodInfo[]> _methods = new ConcurrentDictionary<MethodCacheKey, MethodInfo[]>();
         private static readonly ConcurrentDictionary<ImplementationKey, MethodInfo> _implementations = new ConcurrentDictionary<ImplementationKey, MethodInfo>();
         private static readonly ConcurrentDictionary<InterfaceMethodKey, MethodInfo?> _interfaceMethods = new ConcurrentDictionary<InterfaceMethodKey, MethodInfo?>();
+        private static readonly ConcurrentDictionary<Type, HashSet<Type>> _serviceInterfaces = new ConcurrentDictionary<Type, HashSet<Type>>();
 
         private readonly object _attachLock = new object();
         private ImmutableList<DecoratorHandlerRegistry<DecoratorInvocationContext<T>>> _registrationHandlers = ImmutableList<DecoratorHandlerRegistry<DecoratorInvocationContext<T>>>.Empty;
@@ -374,9 +375,10 @@ namespace Bam.Generators.Decorators
         // The member of ServiceInterface (or one of the interfaces it extends) the call came in through. On a
         // decorator with no service interface that is the method itself. Otherwise it is the caller's hint when
         // the hint is a member of the service interface, else the member the instance's method implements,
-        // found through the instance's interface maps. Fails closed: null when the method implements no member
-        // of the service interface, so a guard keyed on the interface's attributes never reads another
-        // method's (bam.generators#35).
+        // found through the instance's interface maps. Null when the method implements no member of the service
+        // interface: it never names a method the interface does not declare, so a guard never reads another
+        // method's attributes, and null tells "cannot vouch for this call" apart from "unguarded". A `?.` guard
+        // treats null as unguarded; a guard that must fail closed rejects on null (bam.generators#35).
         private MethodInfo? InterfaceMethodOf(MethodInfo? method, MethodInfo? hint)
         {
             Type? service = ServiceInterface;
@@ -392,17 +394,22 @@ namespace Bam.Generators.Decorators
 
             if (method.DeclaringType?.IsInterface == true)
             {
-                // The runtime could not map the interface method to the instance (a generic interface on an array).
+                // An interface method that reached here unmapped: the runtime has no map for the instance (a
+                // generic interface on an array), or a call by name resolved an explicit implementation of an
+                // interface the decorator does not serve. Only a member of the service interface is reported.
                 return IsServiceMember(service, method) ? method : null;
             }
 
             return _interfaceMethods.GetOrAdd(new InterfaceMethodKey(Instance.GetType(), service, method), FindInterfaceMethod);
         }
 
+        // The service interface and every interface it extends, computed once per service type: this runs on
+        // generated calls to members inherited from a base interface, and GetInterfaces allocates a new array.
         private static bool IsServiceMember(Type service, MethodInfo method)
         {
             Type? declaringType = method.DeclaringType;
-            return declaringType != null && (declaringType == service || Array.IndexOf(service.GetInterfaces(), declaringType) >= 0);
+            return declaringType != null
+                && _serviceInterfaces.GetOrAdd(service, type => new HashSet<Type>(new[] { type }.Concat(type.GetInterfaces()))).Contains(declaringType);
         }
 
         private static MethodInfo? FindInterfaceMethod(InterfaceMethodKey key)

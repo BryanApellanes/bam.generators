@@ -379,12 +379,12 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
-        public void FailClosedWhenANameOnlyCallMatchesNoInterfaceMember()
+        public void ReportNoInterfaceMethodWhenANameOnlyCallMatchesNoInterfaceMember()
         {
             // bam.generators#35 item 1: by name, "Delete" resolves to the public method, which implements no
-            // member of IDeleteService. ctx.InterfaceMethod used to fall back to that method, so a guard keyed
-            // on the interface's [AdminOnly] let the interface's own Delete run. It is null now; the generated
-            // path, which passes the interface method, still reports it.
+            // member of IDeleteService. ctx.InterfaceMethod used to fall back to that method, so a guard read the
+            // public method's attributes. It is null now, which a ?. guard treats as unguarded (the calls below
+            // run); the generated path, which passes the interface method, still reports it and is rejected.
             When.A<Decorator<IDeleteService, DualDeleteService>>("is called by name and by interface method", new Decorator<IDeleteService, DualDeleteService>(new DualDeleteService()), decorator =>
             {
                 List<MethodInfo?> seenInterface = new List<MethodInfo?>();
@@ -414,6 +414,36 @@ namespace Bam.Generators.Decorators.Tests.Unit
                 because.ItsTrue("the generated path reports the interface's method", outcome.SeenInterface[2] == outcome.InterfaceDelete, outcome.SeenInterface[2]?.ToString());
                 because.ItsTrue("the guard rejects the generated path", outcome.GeneratedRejected);
                 because.ItsTrue("the name-only calls ran", outcome.Intercepted == "interface:a" && outcome.Invoked == "public:b", outcome.Intercepted + "," + outcome.Invoked);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void ReportNoInterfaceMethodForAnExplicitImplementationOfAnotherInterface()
+        {
+            // bam.generators#36 review, should-fix 1: by name, "Purge" resolves to IPurgeService.Purge, an
+            // explicit implementation of an interface the pair does not serve. ctx.Method is that interface's
+            // method; ctx.InterfaceMethod is null, never IPurgeService.Purge, so a guard keyed on the service
+            // interface's attributes never reads a foreign interface's.
+            When.A<Decorator<IDeleteService, ForeignExplicitService>>("is called by name on an explicit implementation of a foreign interface", new Decorator<IDeleteService, ForeignExplicitService>(new ForeignExplicitService()), decorator =>
+            {
+                MethodInfo? seenMethod = null;
+                MethodInfo? seenInterface = null;
+                decorator.Subscribe(DecoratorPhase.Start, nameof(IPurgeService.Purge), context =>
+                {
+                    seenMethod = context.Method;
+                    seenInterface = context.InterfaceMethod;
+                });
+                DecoratorInvocationResult<ForeignExplicitService, string> invoked = decorator.Invoke<string>(nameof(IPurgeService.Purge), "x");
+                return new InterfaceMethodOutcome(invoked.Value ?? string.Empty, seenMethod, seenInterface);
+            })
+            .TheTest
+            .ShouldPass<InterfaceMethodOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the call runs", outcome.Result == "purge:x", outcome.Result);
+                because.ItsTrue("ctx.Method is the foreign interface's method", outcome.Method == typeof(IPurgeService).GetMethod(nameof(IPurgeService.Purge)), outcome.Method?.ToString());
+                because.ItsTrue("ctx.InterfaceMethod is null", outcome.InterfaceMethod == null, outcome.InterfaceMethod?.ToString());
             })
             .SoBeHappy()
             .UnlessItFailed();

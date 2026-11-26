@@ -30,4 +30,27 @@ namespace Bam.Generators.Decorators.Tests.Fixtures
             return "public:" + key;
         }
     }
+
+    /// <summary>An interface a <c>Decorator&lt;IDeleteService, …&gt;</c> does not serve.</summary>
+    public interface IPurgeService
+    {
+        string Purge(string key);
+    }
+
+    /// <summary>
+    /// Implements <see cref="IDeleteService"/> and, explicitly, <see cref="IPurgeService"/>, so a call by name to
+    /// <c>Purge</c> resolves to a method of an interface the pair does not serve (bam.generators#36 review).
+    /// </summary>
+    public class ForeignExplicitService : IDeleteService, IPurgeService
+    {
+        public string Delete(string key)
+        {
+            return "delete:" + key;
+        }
+
+        string IPurgeService.Purge(string key)
+        {
+            return "purge:" + key;
+        }
+    }
 }
