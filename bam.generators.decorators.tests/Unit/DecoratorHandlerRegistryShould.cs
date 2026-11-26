@@ -273,6 +273,60 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
+        public void RemoveOneSubscriptionPerCallFromParallelThreads()
+        {
+            // bam.generators#35 item 5: Remove is a compare-and-swap retried on contention. Two removers and an
+            // adder released together on a store holding two subscriptions of one delegate: each remover takes
+            // exactly one and the adder's survives, whatever the interleaving (including the store emptying
+            // between the removes and the add). A fresh store per round, 200 rounds.
+            When.A<DecoratorHandlerRegistryShould>("removes and adds the same typed delegate from three threads at once, 200 times", this, test =>
+            {
+                Func<DecoratorInvocationContext, int> handler = context => 1;
+                int badRounds = 0;
+                int failedRemoves = 0;
+                for (int round = 0; round < 200; round++)
+                {
+                    DecoratorSubscriptions subscriptions = new DecoratorSubscriptions();
+                    subscriptions.Add(DecoratorPhase.Start, "Add", handler);
+                    subscriptions.Add(DecoratorPhase.Start, "Add", handler);
+                    bool[] removed = new bool[2];
+                    using Barrier starting = new Barrier(3);
+                    Thread[] threads = new Thread[]
+                    {
+                        new Thread(() => { starting.SignalAndWait(); removed[0] = subscriptions.Remove(DecoratorPhase.Start, "Add", handler); }),
+                        new Thread(() => { starting.SignalAndWait(); removed[1] = subscriptions.Remove(DecoratorPhase.Start, "Add", handler); }),
+                        new Thread(() => { starting.SignalAndWait(); subscriptions.Add(DecoratorPhase.Start, "Add", handler); })
+                    };
+                    foreach (Thread thread in threads)
+                    {
+                        thread.Start();
+                    }
+
+                    foreach (Thread thread in threads)
+                    {
+                        thread.Join();
+                    }
+
+                    failedRemoves += removed.Count(wasRemoved => !wasRemoved);
+                    if (subscriptions.Count(DecoratorPhase.Start, "Add") != 1)
+                    {
+                        badRounds++;
+                    }
+                }
+
+                return new ConcurrentRemoveOutcome(badRounds, failedRemoves);
+            })
+            .TheTest
+            .ShouldPass<ConcurrentRemoveOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("every remove found a subscription to take", outcome.FailedRemoves == 0, $"failed removes: {outcome.FailedRemoves}");
+                because.ItsTrue("every round ended with the adder's subscription alone", outcome.BadRounds == 0, $"bad rounds: {outcome.BadRounds}");
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
         public void NotLetADelegateBoundToAWrapperPassForIt()
         {
             // Remove looks for the wrapper's own Invoke. Another method bound to a wrapper's object (an
@@ -388,6 +442,8 @@ namespace Bam.Generators.Decorators.Tests.Unit
         private sealed record SubscriptionOutcome(int AfterAdds, bool Removed, int AfterOneRemove, int Ran);
 
         private sealed record ConcurrentOutcome(int BadRounds, int Worst);
+
+        private sealed record ConcurrentRemoveOutcome(int BadRounds, int FailedRemoves);
 
         private sealed record ForgedOutcome(int Stored, int GuardRan, bool GuardRemovedForgedKept, bool ClonedRemoved);
 

@@ -51,6 +51,7 @@ namespace Bam.Generators.Decorators
         private static readonly ConcurrentDictionary<MethodCacheKey, MethodInfo[]> _methods = new ConcurrentDictionary<MethodCacheKey, MethodInfo[]>();
         private static readonly ConcurrentDictionary<ImplementationKey, MethodInfo> _implementations = new ConcurrentDictionary<ImplementationKey, MethodInfo>();
         private static readonly ConcurrentDictionary<InterfaceMethodKey, MethodInfo?> _interfaceMethods = new ConcurrentDictionary<InterfaceMethodKey, MethodInfo?>();
+        private static readonly ConcurrentDictionary<Type, HashSet<Type>> _serviceInterfaces = new ConcurrentDictionary<Type, HashSet<Type>>();
 
         private readonly object _attachLock = new object();
         private ImmutableList<DecoratorHandlerRegistry<DecoratorInvocationContext<T>>> _registrationHandlers = ImmutableList<DecoratorHandlerRegistry<DecoratorInvocationContext<T>>>.Empty;
@@ -354,7 +355,9 @@ namespace Bam.Generators.Decorators
         /// <summary>
         /// Gets the service interface calls come in through, used to tell handlers which interface method each
         /// call is (<see cref="DecoratorInvocationContext.InterfaceMethod"/>). Null for a decorator typed on
-        /// the implementation alone.
+        /// the implementation alone, whose handlers are told <see cref="DecoratorInvocationContext.Method"/>
+        /// as the interface method even when the caller passes an interface's method. When set, an interface
+        /// method a caller passes counts only if it is a member of this interface or one it extends.
         /// </summary>
         protected virtual Type? ServiceInterface
         {
@@ -362,29 +365,51 @@ namespace Bam.Generators.Decorators
         }
 
         // A generated decorator passes the interface method itself; that is the interface method, whatever the
-        // instance maps it to.
+        // instance maps it to. Only a method of an interface is a hint; InterfaceMethodOf decides whether it
+        // belongs to the service interface.
         private static MethodInfo? InterfaceHint(MethodInfo? method)
         {
             return method?.DeclaringType?.IsInterface == true ? method : null;
         }
 
-        // The member of ServiceInterface (or one of the interfaces it extends) that the instance's method
-        // implements, found through the instance's interface maps. The method itself when there is no service
-        // interface or it implements none of it.
-        private MethodInfo? InterfaceMethodOf(MethodInfo? method)
+        // The member of ServiceInterface (or one of the interfaces it extends) the call came in through. On a
+        // decorator with no service interface that is the method itself. Otherwise it is the caller's hint when
+        // the hint is a member of the service interface, else the member the instance's method implements,
+        // found through the instance's interface maps. Null when the method implements no member of the service
+        // interface: it never names a method the interface does not declare, so a guard never reads another
+        // method's attributes, and null tells "cannot vouch for this call" apart from "unguarded". A `?.` guard
+        // treats null as unguarded; a guard that must fail closed rejects on null (bam.generators#35).
+        private MethodInfo? InterfaceMethodOf(MethodInfo? method, MethodInfo? hint)
         {
-            if (method == null)
-            {
-                return null;
-            }
-
             Type? service = ServiceInterface;
-            if (service == null || method.DeclaringType?.IsInterface == true)
+            if (service == null || method == null)
             {
                 return method;
             }
 
-            return _interfaceMethods.GetOrAdd(new InterfaceMethodKey(Instance.GetType(), service, method), FindInterfaceMethod) ?? method;
+            if (hint != null && IsServiceMember(service, hint))
+            {
+                return hint;
+            }
+
+            if (method.DeclaringType?.IsInterface == true)
+            {
+                // An interface method that reached here unmapped: the runtime has no map for the instance (a
+                // generic interface on an array), or a call by name resolved an explicit implementation of an
+                // interface the decorator does not serve. Only a member of the service interface is reported.
+                return IsServiceMember(service, method) ? method : null;
+            }
+
+            return _interfaceMethods.GetOrAdd(new InterfaceMethodKey(Instance.GetType(), service, method), FindInterfaceMethod);
+        }
+
+        // The service interface and every interface it extends, computed once per service type: this runs on
+        // generated calls to members inherited from a base interface, and GetInterfaces allocates a new array.
+        private static bool IsServiceMember(Type service, MethodInfo method)
+        {
+            Type? declaringType = method.DeclaringType;
+            return declaringType != null
+                && _serviceInterfaces.GetOrAdd(service, type => new HashSet<Type>(new[] { type }.Concat(type.GetInterfaces()))).Contains(declaringType);
         }
 
         private static MethodInfo? FindInterfaceMethod(InterfaceMethodKey key)
@@ -687,7 +712,7 @@ namespace Bam.Generators.Decorators
             return new DecoratorInvocationContext<T>(this)
             {
                 Method = method,
-                InterfaceMethod = method == null ? interfaceMethod : interfaceMethod ?? InterfaceMethodOf(method),
+                InterfaceMethod = InterfaceMethodOf(method, interfaceMethod),
                 MethodName = methodName,
                 Args = (object?[])args.Clone()
             };
