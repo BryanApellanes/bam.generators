@@ -379,6 +379,107 @@ namespace Bam.Generators.Decorators.Tests.Unit
         }
 
         [UnitTest]
+        public void FailClosedWhenANameOnlyCallMatchesNoInterfaceMember()
+        {
+            // bam.generators#35 item 1: by name, "Delete" resolves to the public method, which implements no
+            // member of IDeleteService. ctx.InterfaceMethod used to fall back to that method, so a guard keyed
+            // on the interface's [AdminOnly] let the interface's own Delete run. It is null now; the generated
+            // path, which passes the interface method, still reports it.
+            When.A<Decorator<IDeleteService, DualDeleteService>>("is called by name and by interface method", new Decorator<IDeleteService, DualDeleteService>(new DualDeleteService()), decorator =>
+            {
+                List<MethodInfo?> seenInterface = new List<MethodInfo?>();
+                List<MethodInfo?> seenMethod = new List<MethodInfo?>();
+                decorator.Subscribe(DecoratorPhase.Start, nameof(IDeleteService.Delete), context =>
+                {
+                    seenMethod.Add(context.Method);
+                    seenInterface.Add(context.InterfaceMethod);
+                    if (context.InterfaceMethod?.GetCustomAttribute<AdminOnlyAttribute>() != null)
+                    {
+                        context.Reject("admin only");
+                    }
+                });
+                MethodInfo interfaceDelete = typeof(IDeleteService).GetMethod(nameof(IDeleteService.Delete))!;
+                DecoratorInvocationResult<DualDeleteService, string> intercepted = decorator.Intercept<string>(nameof(IDeleteService.Delete), new object?[] { "a" }, () => ((IDeleteService)decorator.Instance).Delete("a"));
+                DecoratorInvocationResult<DualDeleteService, string> invoked = decorator.Invoke<string>(nameof(IDeleteService.Delete), "b");
+                DecoratorInvocationResult<DualDeleteService, string> generated = decorator.Intercept<string>(interfaceDelete, nameof(IDeleteService.Delete), new object?[] { "c" }, () => ((IDeleteService)decorator.Instance).Delete("c"));
+                return new FailClosedOutcome(seenMethod, seenInterface, interfaceDelete, intercepted.Value, invoked.Value, generated.Rejected);
+            })
+            .TheTest
+            .ShouldPass<FailClosedOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("three calls were seen", outcome.SeenInterface.Count == 3, $"seen: {outcome.SeenInterface.Count}");
+                because.ItsTrue("by name, ctx.Method is the public Delete", outcome.SeenMethod[0]?.IsPublic == true && outcome.SeenMethod[1]?.IsPublic == true, outcome.SeenMethod[0]?.ToString());
+                because.ItsTrue("Intercept by name reports no interface method", outcome.SeenInterface[0] == null, outcome.SeenInterface[0]?.ToString());
+                because.ItsTrue("Invoke by name reports no interface method", outcome.SeenInterface[1] == null, outcome.SeenInterface[1]?.ToString());
+                because.ItsTrue("the generated path reports the interface's method", outcome.SeenInterface[2] == outcome.InterfaceDelete, outcome.SeenInterface[2]?.ToString());
+                because.ItsTrue("the guard rejects the generated path", outcome.GeneratedRejected);
+                because.ItsTrue("the name-only calls ran", outcome.Intercepted == "interface:a" && outcome.Invoked == "public:b", outcome.Intercepted + "," + outcome.Invoked);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void TakeAnInterfaceHintOnlyFromTheServiceInterface()
+        {
+            // bam.generators#35 item 2: a Decorator<T> has no service interface, so a caller passing
+            // IEchoService.Message does not make ctx.InterfaceMethod differ from ctx.Method. On a pair, a hint
+            // from an interface the pair does not serve is ignored.
+            When.A<Decorator<EchoService>>("is handed an interface method", new Decorator<EchoService>(new EchoService()), plain =>
+            {
+                MethodInfo? plainMethod = null;
+                MethodInfo? plainInterface = null;
+                plain.Subscribe(DecoratorPhase.Start, nameof(IEchoService.Message), context =>
+                {
+                    plainMethod = context.Method;
+                    plainInterface = context.InterfaceMethod;
+                });
+                plain.Intercept<string>(typeof(IEchoService).GetMethod(nameof(IEchoService.Message)), nameof(IEchoService.Message), new object?[] { "a" }, () => plain.Instance.Message("a"));
+
+                Decorator<IEchoService, EchoShout> pair = new Decorator<IEchoService, EchoShout>(new EchoShout());
+                MethodInfo? foreignMethod = null;
+                MethodInfo? foreignInterface = null;
+                pair.Subscribe(DecoratorPhase.Start, nameof(IShout.Shout), context =>
+                {
+                    foreignMethod = context.Method;
+                    foreignInterface = context.InterfaceMethod;
+                });
+                pair.Intercept<string>(typeof(IShout).GetMethod(nameof(IShout.Shout)), nameof(IShout.Shout), new object?[] { "b" }, () => pair.Instance.Shout("b"));
+                return new HintOutcome(plainMethod, plainInterface, foreignMethod, foreignInterface);
+            })
+            .TheTest
+            .ShouldPass<HintOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("with no service interface, ctx.Method is the implementation's", outcome.PlainMethod?.DeclaringType == typeof(EchoService), outcome.PlainMethod?.ToString());
+                because.ItsTrue("and ctx.InterfaceMethod is ctx.Method, not the hint", outcome.PlainInterface == outcome.PlainMethod, outcome.PlainInterface?.ToString());
+                because.ItsTrue("on a pair, a foreign interface's method maps to the implementation", outcome.ForeignMethod?.DeclaringType == typeof(EchoShout), outcome.ForeignMethod?.ToString());
+                because.ItsTrue("and is not reported as the interface method", outcome.ForeignInterface == null, outcome.ForeignInterface?.ToString());
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
+        public void NotLetAHandlerRetargetTheInterfaceMethod()
+        {
+            // bam.generators#35 item 3: an earlier handler could set ctx.InterfaceMethod before a later guard
+            // read it. The setter is internal now, like Phase's.
+            When.A<Type>("is the invocation context", typeof(DecoratorInvocationContext), type =>
+            {
+                MethodInfo? setter = type.GetProperty(nameof(DecoratorInvocationContext.InterfaceMethod))?.SetMethod;
+                return new SetterOutcome(setter != null, setter?.IsPublic == true);
+            })
+            .TheTest
+            .ShouldPass<SetterOutcome>((because, outcome) =>
+            {
+                because.ItsTrue("the runtime still sets it", outcome.HasSetter);
+                because.ItsTrue("handlers cannot", !outcome.SetterIsPublic);
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+        }
+
+        [UnitTest]
         public void RefuseToWriteOneImplementationForTwoInterfaces()
         {
             When.A<DecoratorGenerator>("queues one implementation for two interfaces, then one pair twice", new DecoratorGenerator(), generator =>
@@ -586,6 +687,12 @@ namespace Bam.Generators.Decorators.Tests.Unit
         private sealed record WrapperCall(string Result, Type? DeclaringType, string MethodName, bool SeesGuarded, Type? InterfaceDeclaringType);
 
         private sealed record InterfaceMethodOutcome(string Result, MethodInfo? Method, MethodInfo? InterfaceMethod);
+
+        private sealed record FailClosedOutcome(List<MethodInfo?> SeenMethod, List<MethodInfo?> SeenInterface, MethodInfo InterfaceDelete, string? Intercepted, string? Invoked, bool GeneratedRejected);
+
+        private sealed record HintOutcome(MethodInfo? PlainMethod, MethodInfo? PlainInterface, MethodInfo? ForeignMethod, MethodInfo? ForeignInterface);
+
+        private sealed record SetterOutcome(bool HasSetter, bool SetterIsPublic);
 
         private sealed record ByNameOutcome(MethodInfo? PairMethod, MethodInfo? PairInterface, MethodInfo? PlainMethod, MethodInfo? PlainInterface, bool NotFoundHasNoMethod);
 

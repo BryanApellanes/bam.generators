@@ -39,14 +39,18 @@ namespace Bam.Generators.Decorators
         public MethodInfo? Method { get; set; }
 
         /// <summary>
-        /// Gets or sets the interface method the call came in through: the member of the decorator's service
-        /// interface that <see cref="Method"/> implements. Read the interface's attributes here and the
-        /// implementation's on <see cref="Method"/>; when the registration resolves a wrapper, this is still
-        /// the service's interface method while <see cref="Method"/> is the wrapper's. The same as
-        /// <see cref="Method"/> when the decorator has no service interface or the method implements none of
-        /// it. Null only when <see cref="Method"/> is.
+        /// Gets the interface method the call came in through: the member of the decorator's service interface
+        /// that <see cref="Method"/> implements. Read the interface's attributes here and the implementation's
+        /// on <see cref="Method"/>; when the registration resolves a wrapper, this is still the service's
+        /// interface method while <see cref="Method"/> is the wrapper's. On a decorator with no service
+        /// interface it is always <see cref="Method"/>, even when the caller passed an interface method. On a
+        /// decorator with one it is null when <see cref="Method"/> implements no member of the service
+        /// interface (a public method called by name that the interface does not declare), so a guard keyed
+        /// on the interface's attributes fails closed rather than reading another method's. Set by the
+        /// decorator before any handler runs; handlers cannot change it, so a later guard reads what the
+        /// decorator found.
         /// </summary>
-        public MethodInfo? InterfaceMethod { get; set; }
+        public MethodInfo? InterfaceMethod { get; internal set; }
 
         /// <summary>Gets or sets the name of the method being invoked. Falls back to <see cref="Method"/>'s name.</summary>
         public string MethodName
