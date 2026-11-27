@@ -106,4 +106,11 @@ public sealed class TypeScriptGenerationException : Exception
     public TypeScriptGenerationException(string message) : base(message)
     {
     }
+
+    /// <summary>Initializes the exception with the serializer's own refusal.</summary>
+    /// <param name="message">What can't be generated, and why.</param>
+    /// <param name="innerException">The serializer's exception.</param>
+    public TypeScriptGenerationException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
 }

@@ -25,8 +25,8 @@ public class TypeScriptEdgeCasesShould
                 because.ItsTrue("the most derived declaration wins", outcome.Hidden.Contains("  readonly payload: string;"));
                 because.ItsTrue("the hidden base type is not written", !outcome.Hidden.Contains("  readonly payload: number;"));
                 because.ItsTrue("the hidden property keeps the base position", outcome.Hidden.IndexOf("  readonly payload: string;") < outcome.Hidden.IndexOf("  readonly sequence: number;"));
-                because.ItsTrue($"Id and ID are refused ({outcome.CaseClash})", outcome.CaseClash.Contains("would both be written as \"id\"", StringComparison.Ordinal));
-                because.ItsTrue($"two renames to one name are refused ({outcome.RenameClash})", outcome.RenameClash.Contains("would both be written as \"value\"", StringComparison.Ordinal));
+                because.ItsTrue($"Id and ID are refused ({outcome.CaseClash})", outcome.CaseClash.Contains("collides with another property", StringComparison.Ordinal));
+                because.ItsTrue($"two renames to one name are refused ({outcome.RenameClash})", outcome.RenameClash.Contains("collides with another property", StringComparison.Ordinal));
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -157,6 +157,79 @@ public class TypeScriptEdgeCasesShould
             .UnlessItFailed();
     }
 
+    [UnitTest]
+    public void GenerateTheKeysTheSerializerWrites()
+    {
+        When.A<TypeScriptContractGenerator>("generates each hiding, overriding and sparse fixture and serializes an instance of it",
+            () => new TypeScriptContractGenerator(),
+            generator =>
+            {
+                object[] instances =
+                {
+                    new HidingDerived(), new HideIgnored(), new HideRenamed(), new HideSetterOnly(), new VirtualDerived(),
+                    new Sparse { Description = "d", Count = 1, Name = "n" },
+                };
+                List<KeyComparison> comparisons = new List<KeyComparison>();
+                foreach (object instance in instances)
+                {
+                    Type type = instance.GetType();
+                    comparisons.Add(new KeyComparison(type.Name, GeneratedKeys(generator.GetSource(new[] { type }), type.Name), WrittenKeys(instance)));
+                }
+                return comparisons;
+            })
+            .TheTest
+            .ShouldPass<List<KeyComparison>>((because, comparisons) =>
+            {
+                foreach (KeyComparison comparison in comparisons)
+                {
+                    because.ItsTrue($"{comparison.Type}: generated [{string.Join(", ", comparison.Generated)}], written [{string.Join(", ", comparison.Written)}]", comparison.Generated.SequenceEqual(comparison.Written));
+                }
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void RefuseACollectionClassPassedAsARoot()
+    {
+        When.A<TypeScriptContractGenerator>("generates collection classes as roots, directly and through the assembly form",
+            () => new TypeScriptContractGenerator(),
+            generator => new RootCollectionOutcome(
+                Refusal(() => generator.GetSource(new[] { typeof(TagList) })),
+                Refusal(() => generator.GetSource(new[] { typeof(CountMap) })),
+                Refusal(() => generator.GetSource(typeof(TagList).Assembly, type => type == typeof(TagList) || type == typeof(NodeEdge)))))
+            .TheTest
+            .ShouldPass<RootCollectionOutcome>((because, outcome) =>
+            {
+                because.ItsTrue($"a List<string> subclass root is refused as an array ({outcome.List})", outcome.List.Contains("written by the serializer as an array", StringComparison.Ordinal));
+                because.ItsTrue($"a Dictionary subclass root is refused as a map ({outcome.Map})", outcome.Map.Contains("written by the serializer as a map", StringComparison.Ordinal));
+                because.ItsTrue($"the assembly form refuses it too ({outcome.Assembly})", outcome.Assembly.Contains("TagList", StringComparison.Ordinal) && outcome.Assembly.Contains("as an array", StringComparison.Ordinal));
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    private static List<string> GeneratedKeys(string source, string name)
+    {
+        List<string> lines = Lines(source);
+        int start = lines.IndexOf($"export interface {name} {{");
+        List<string> keys = new List<string>();
+        for (int index = start + 1; start >= 0 && index < lines.Count && lines[index] != "}"; index++)
+        {
+            string member = lines[index].Trim().Substring("readonly ".Length);
+            string key = member.Substring(0, member.IndexOf(':')).TrimEnd('?').Trim('"');
+            keys.Add(key);
+        }
+        return keys.OrderBy(key => key, StringComparer.Ordinal).ToList();
+    }
+
+    private static List<string> WrittenKeys(object instance)
+    {
+        string json = System.Text.Json.JsonSerializer.Serialize(instance, instance.GetType(), new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
+        using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse(json);
+        return document.RootElement.EnumerateObject().Select(property => property.Name).OrderBy(key => key, StringComparer.Ordinal).ToList();
+    }
+
     private static List<string> Lines(string source) => source.Split('\n').ToList();
 
     private static string Refusal(Func<string> generate)
@@ -177,4 +250,8 @@ public class TypeScriptEdgeCasesShould
     private sealed record EdgeRefusalOutcome(string CustomList, string CustomDictionary, string Flags, string Shadowing, string Grid, string Interface, string Abstract, string HashSet);
 
     private sealed record HostileOutcome(string Hostile, string NullRoot);
+
+    private sealed record KeyComparison(string Type, List<string> Generated, List<string> Written);
+
+    private sealed record RootCollectionOutcome(string List, string Map, string Assembly);
 }

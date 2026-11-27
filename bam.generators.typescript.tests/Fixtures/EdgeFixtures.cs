@@ -165,3 +165,62 @@ public readonly record struct TaggedId(string Value)
     [JsonIgnore]
     public bool IsEmpty => string.IsNullOrEmpty(Value);
 }
+
+/// <summary>A base for the hiding cases in the round-2 review.</summary>
+public class HideBase
+{
+    /// <summary>Hidden below.</summary>
+    public int P { get; init; }
+
+    /// <summary>Not hidden.</summary>
+    public long Seq { get; init; }
+}
+
+/// <summary>Hides P with an ignored property: the base P is still written.</summary>
+public sealed class HideIgnored : HideBase
+{
+    /// <summary>Ignored.</summary>
+    [JsonIgnore]
+    public new string P { get; init; } = string.Empty;
+}
+
+/// <summary>Hides P under another JSON name: both are written.</summary>
+public sealed class HideRenamed : HideBase
+{
+    /// <summary>Renamed.</summary>
+    [JsonPropertyName("renamed")]
+    public new string P { get; init; } = string.Empty;
+}
+
+/// <summary>Hides P with a property whose getter isn't public: P isn't written.</summary>
+public sealed class HideSetterOnly : HideBase
+{
+    /// <summary>Not readable.</summary>
+    public new string P { private get; set; } = string.Empty;
+
+    /// <summary>Uses the getter, so it isn't unused.</summary>
+    /// <returns>The value.</returns>
+    public string Peek() => P;
+}
+
+/// <summary>A base with attributed virtual properties.</summary>
+public class VirtualBase
+{
+    /// <summary>Ignored on the base only.</summary>
+    [JsonIgnore]
+    public virtual string A { get; init; } = string.Empty;
+
+    /// <summary>Renamed on the base only.</summary>
+    [JsonPropertyName("x")]
+    public virtual string B { get; init; } = string.Empty;
+}
+
+/// <summary>Overrides without the base's attributes.</summary>
+public sealed class VirtualDerived : VirtualBase
+{
+    /// <summary>Written, since the override isn't ignored.</summary>
+    public override string A { get; init; } = string.Empty;
+
+    /// <summary>Written as "b".</summary>
+    public override string B { get; init; } = string.Empty;
+}

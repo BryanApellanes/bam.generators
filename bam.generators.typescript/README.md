@@ -16,7 +16,9 @@ Generates TypeScript declarations from C# contract types, so REST and SignalR DT
 | integer and floating-point types, `decimal` | `number` |
 | `bool` | `boolean` |
 
-Types a property refers to are generated too, so passing the root messages is enough. Inherited properties are flattened, base class first. A property hidden with `new` is written with the derived declaration's type, as the serializer writes it.
+Types a property refers to are generated too, so passing the root messages is enough. Inherited properties are flattened, base class first.
+
+Which members an interface gets comes from the serializer itself (`JsonSerializerOptions.GetTypeInfo`, with the default resolver), not from a copy of its rules: hidden and overridden properties, renames, `[JsonIgnore]` conditions, `[JsonInclude]` members, unreadable getters and name collisions all come out as `System.Text.Json` writes them. The suite checks the generated keys against a real serialization of each tricky fixture.
 
 ## Naming
 - Property names are camelCase by default (`JsonNamingPolicy.CamelCase`, ASP.NET Core's default), and `[JsonPropertyName]` always wins. A name that isn't an identifier is quoted.
@@ -30,8 +32,9 @@ It throws a `TypeScriptGenerationException` naming the type and the property it 
 - generic contract types (declare a closed record instead);
 - dictionaries keyed by anything other than `string`;
 - multi-dimensional arrays;
-- two types that would get the same TypeScript name, or two properties that would be written under one JSON name;
-- a custom collection class (a `List<T>` or `Dictionary<string, T>` subclass, `HashSet<T>`, and so on), which the serializer writes as an array or a map, not an object: declare the property as a mapped type;
+- two types that would get the same TypeScript name, or two properties the serializer refuses to write under one JSON name;
+- a custom collection class (a `List<T>` or `Dictionary<string, T>` subclass, `HashSet<T>`, and so on), as a property or as a root, which the serializer writes as an array or a map, not an object: declare it as a mapped type;
+- a type with a custom `JsonConverter` that isn't a typed id, since the serializer writes it as a single value the generator can't describe;
 - a `[Flags]` enum, since a combination is written as one comma-separated string that a union of names can't hold;
 - a type name that isn't an ASCII identifier, or one that would shadow a type the module uses (`Record`, `Readonly`, `Array`, `ReadonlyArray`).
 
@@ -41,7 +44,7 @@ It throws a `TypeScriptGenerationException` naming the type and the property it 
 - **`long`, `ulong` and `decimal`** map to `number`, which loses precision beyond 2^53.
 - **Host-wide serializer options** aren't seen: a global `DefaultIgnoreCondition`, a naming policy other than camelCase, or custom converters change the wire without changing the output. Match them through `TypeScriptGenerationOptions`, or per property with attributes.
 - **A type compiled without nullable annotations** generates every reference as non-null.
-- **Public fields and `[JsonInclude]` members** aren't generated, and `[JsonPolymorphic]` discriminators aren't modelled.
+- **Public fields** without `[JsonInclude]` aren't generated, as the serializer doesn't write them by default; `[JsonPolymorphic]` discriminators aren't modelled.
 - **`./Templates`:** constructing the default writer creates a `Templates` directory in the working directory if there isn't one (bam.generators#9), and a `TypeScriptContracts.hbs` there replaces the embedded template.
 
 ## Determinism

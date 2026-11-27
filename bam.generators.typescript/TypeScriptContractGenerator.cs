@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Bam.Generators.TypeScript;
 
@@ -154,8 +155,8 @@ public sealed class TypeScriptContractGenerator
     }
 
     private static string DisplayName(Type type) =>
-        type.IsGenericType
-            ? type.Name.Substring(0, type.Name.IndexOf('`', StringComparison.Ordinal)) + "<" + string.Join(", ", type.GetGenericArguments().Select(DisplayName)) + ">"
+        type.IsGenericType && type.Name.IndexOf('`', StringComparison.Ordinal) is int tick && tick > 0
+            ? type.Name.Substring(0, tick) + "<" + string.Join(", ", type.GetGenericArguments().Select(DisplayName)) + ">"
             : type.FullName ?? type.Name;
 
     private static bool IsSystem(Type type) =>
@@ -188,10 +189,16 @@ public sealed class TypeScriptContractGenerator
         private readonly NullabilityInfoContext _nullability = new NullabilityInfoContext();
         private readonly Dictionary<string, Type> _names = new Dictionary<string, Type>(StringComparer.Ordinal);
         private readonly HashSet<Type> _inProgress = new HashSet<Type>();
+        private readonly JsonSerializerOptions _json;
 
         public Walk(TypeScriptContractGenerator generator)
         {
             _generator = generator;
+            _json = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = generator._options.PropertyNaming == TypeScriptNaming.CamelCase ? JsonNamingPolicy.CamelCase : null,
+                TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
+            };
         }
 
         public Dictionary<Type, TypeScriptDeclarationModel> Declarations { get; } = new Dictionary<Type, TypeScriptDeclarationModel>();
@@ -244,7 +251,15 @@ public sealed class TypeScriptContractGenerator
             }
             else
             {
-                declaration = new TypeScriptDeclarationModel(name, TypeScriptDeclarationKind.Interface, type, Members(type), Array.Empty<string>());
+                JsonTypeInfo info = TypeInfo(type, reachedFrom);
+                if (info.Kind != JsonTypeInfoKind.Object)
+                {
+                    _inProgress.Remove(type);
+                    _names.Remove(name);
+                    string written = info.Kind == JsonTypeInfoKind.None ? "a single value (a custom converter)" : info.Kind == JsonTypeInfoKind.Dictionary ? "a map" : "an array";
+                    throw new TypeScriptGenerationException($"{DisplayName(type)}, reached from {reachedFrom}, is written by the serializer as {written}, not as an object; the TypeScript target maps arrays, the sequence interfaces and string-keyed dictionaries. Declare the property, or the root, as one of the mapped types.");
+                }
+                declaration = new TypeScriptDeclarationModel(name, TypeScriptDeclarationKind.Interface, type, Members(type, info), Array.Empty<string>());
             }
             _inProgress.Remove(type);
             Declarations[type] = declaration;
@@ -263,42 +278,67 @@ public sealed class TypeScriptContractGenerator
             return literals;
         }
 
-        private IReadOnlyList<TypeScriptMemberModel> Members(Type type)
+        private IReadOnlyList<TypeScriptMemberModel> Members(Type type, JsonTypeInfo info)
         {
-            List<TypeScriptMemberModel> members = new List<TypeScriptMemberModel>();
+            // The serializer's own metadata decides which members are written, under which names, and when they can be
+            // left out: hidden and overridden properties, [JsonIgnore] conditions, renames, [JsonInclude] fields and
+            // name collisions all follow System.Text.Json rather than a copy of its rules (bam.generators#41 review).
             List<MemberSlot> slots = new List<MemberSlot>();
-            IEnumerable<IGrouping<string, PropertyInfo>> byName = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Where(property => property.GetIndexParameters().Length == 0 && property.GetMethod is not null && property.GetMethod.IsPublic)
-                .GroupBy(property => property.Name, StringComparer.Ordinal);
-            foreach (IGrouping<string, PropertyInfo> group in byName)
+            foreach (JsonPropertyInfo property in info.Properties)
             {
-                // A property hidden with `new` keeps the base declaration's position, and the most derived
-                // declaration is the one the serializer writes.
-                PropertyInfo first = group.OrderBy(property => Depth(property.DeclaringType!)).ThenBy(property => property.MetadataToken).First();
-                PropertyInfo written = group.OrderByDescending(property => Depth(property.DeclaringType!)).First();
-                slots.Add(new MemberSlot(Depth(first.DeclaringType!), first.MetadataToken, written));
-            }
-            Dictionary<string, string> wireNames = new Dictionary<string, string>(StringComparer.Ordinal);
-            foreach (MemberSlot slot in slots.OrderBy(slot => slot.Depth).ThenBy(slot => slot.Token))
-            {
-                PropertyInfo property = slot.Property;
-                JsonIgnoreAttribute? ignore = property.GetCustomAttribute<JsonIgnoreAttribute>();
-                if (ignore is not null && ignore.Condition == JsonIgnoreCondition.Always)
+                if (property.Get is null)
                 {
+                    // Not written: a setter-only property, or one whose getter isn't public.
                     continue;
                 }
-                JsonPropertyNameAttribute? renamed = property.GetCustomAttribute<JsonPropertyNameAttribute>();
-                string name = renamed?.Name ?? ConvertName(property.Name, _generator._options.PropertyNaming);
-                if (wireNames.TryGetValue(name, out string? clash))
+                MemberInfo? member = property.AttributeProvider as MemberInfo;
+                NullabilityInfo? nullability = member switch
                 {
-                    throw new TypeScriptGenerationException($"{type.FullName}.{clash} and {type.FullName}.{property.Name} would both be written as {Quote(name)}; the serializer refuses that too. Rename one.");
-                }
-                wireNames[name] = property.Name;
-                bool optional = ignore is not null && ignore.Condition is JsonIgnoreCondition.WhenWritingNull or JsonIgnoreCondition.WhenWritingDefault or JsonIgnoreCondition.WhenWriting;
-                string reachedFrom = $"{type.FullName}.{property.Name}";
-                members.Add(new TypeScriptMemberModel(PropertyKey(name), Map(property.PropertyType, _nullability.Create(property), reachedFrom), optional));
+                    PropertyInfo declared => _nullability.Create(declared),
+                    FieldInfo declared => _nullability.Create(declared),
+                    _ => null,
+                };
+                string reachedFrom = $"{type.FullName}.{member?.Name ?? property.Name}";
+                MemberInfo? first = member is null ? null : FirstDeclaration(member);
+                // [JsonIgnore(Condition = Never)] also gets a ShouldSerialize, which always answers yes.
+                bool never = member?.GetCustomAttribute<JsonIgnoreAttribute>(false)?.Condition == JsonIgnoreCondition.Never;
+                bool optional = property.ShouldSerialize is not null && !never;
+                slots.Add(new MemberSlot(first is null ? int.MaxValue : Depth(first.DeclaringType!), first?.MetadataToken ?? int.MaxValue, property, nullability, reachedFrom, optional));
+            }
+            List<TypeScriptMemberModel> members = new List<TypeScriptMemberModel>();
+            foreach (MemberSlot slot in slots.OrderBy(slot => slot.Depth).ThenBy(slot => slot.Token))
+            {
+                members.Add(new TypeScriptMemberModel(PropertyKey(slot.Property.Name), Map(slot.Property.PropertyType, slot.Nullability, slot.ReachedFrom), slot.Optional));
             }
             return members;
+        }
+
+        private JsonTypeInfo TypeInfo(Type type, string reachedFrom)
+        {
+            try
+            {
+                return _json.GetTypeInfo(type);
+            }
+            catch (Exception exception) when (exception is InvalidOperationException or NotSupportedException or ArgumentException)
+            {
+                throw new TypeScriptGenerationException($"{type.FullName}, reached from {reachedFrom}, can't be described the way the serializer writes it: {exception.Message}", exception);
+            }
+        }
+
+        /// <summary>The base-most declaration of a member of this name, so a hidden or overridden member keeps the base position.</summary>
+        private static MemberInfo FirstDeclaration(MemberInfo member)
+        {
+            MemberInfo first = member;
+            for (Type? current = member.DeclaringType!.BaseType; current is not null; current = current.BaseType)
+            {
+                const BindingFlags declaredOnly = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+                MemberInfo[] declared = current.GetMember(member.Name, declaredOnly);
+                if (declared.Length > 0)
+                {
+                    first = declared[0];
+                }
+            }
+            return first;
         }
 
         private static int Depth(Type type)
@@ -374,7 +414,7 @@ public sealed class TypeScriptContractGenerator
             return mapped.Contains(' ', StringComparison.Ordinal) ? $"readonly ({mapped})[]" : $"readonly {mapped}[]";
         }
 
-        private sealed record MemberSlot(int Depth, int Token, PropertyInfo Property);
+        private sealed record MemberSlot(int Depth, int Token, JsonPropertyInfo Property, NullabilityInfo? Nullability, string ReachedFrom, bool Optional);
 
         private static NullabilityInfo? Argument(NullabilityInfo? nullability, int index) =>
             nullability is not null && nullability.GenericTypeArguments.Length > index ? nullability.GenericTypeArguments[index] : null;
