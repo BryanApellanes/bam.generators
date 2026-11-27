@@ -46,6 +46,28 @@ public sealed record WithNumbersAsStrings([property: JsonNumberHandling(JsonNumb
 /// <param name="Health">The health.</param>
 public sealed record WithEnumConverter([property: JsonConverter(typeof(JsonStringEnumConverter<NodeHealth>))] NodeHealth Health);
 
+/// <summary>Writes numbers as strings for every member of the class.</summary>
+[JsonNumberHandling(JsonNumberHandling.WriteAsString)]
+public sealed class ClassNumbersAsStrings
+{
+    /// <summary>Written as a string.</summary>
+    public long Big { get; init; }
+}
+
+/// <summary>Writes a typed id as its plain string value.</summary>
+public sealed class NodeIdConverter : JsonConverter<NodeId>
+{
+    /// <inheritdoc />
+    public override NodeId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => new NodeId(reader.GetString() ?? string.Empty);
+
+    /// <inheritdoc />
+    public override void Write(Utf8JsonWriter writer, NodeId value, JsonSerializerOptions options) => writer.WriteStringValue(value.Value);
+}
+
+/// <summary>A typed-id property with its own string converter, which is still the brand.</summary>
+/// <param name="Id">The id.</param>
+public sealed record WithTypedIdConverter([property: JsonConverter(typeof(NodeIdConverter))] NodeId Id);
+
 /// <summary>Included fields.</summary>
 public sealed class WithFields
 {

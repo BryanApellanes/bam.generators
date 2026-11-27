@@ -42,7 +42,8 @@ It throws a `TypeScriptGenerationException` naming the type and the property it 
 ## Things the generator can't check
 - **Typed ids** are branded strings, so the C# side has to serialise them as plain strings. `System.Text.Json` writes a one-property struct as an object unless a `JsonConverter` writes it as its value.
 - **Enums** are unions of names, so the API must use `JsonStringEnumConverter`, or the wire carries numbers.
-- **`long`, `ulong` and `decimal`** map to `number`, which loses precision beyond 2^53.
+- **`long`, `ulong` and `decimal`** map to `number`, which loses precision beyond 2^53. `JsonNumberHandling.AllowNamedFloatingPointLiterals` writes NaN and the infinities as the strings `"NaN"`, `"Infinity"` and `"-Infinity"`, which `number` doesn't cover.
+- **A converter on an enum or typed-id property** is trusted to write the union of names or the plain string; one that writes something else isn't detected (bam.generators#42).
 - **Host-wide serializer options** aren't seen: a global `DefaultIgnoreCondition`, a naming policy other than camelCase, or custom converters change the wire without changing the output. Match them through `TypeScriptGenerationOptions`, or per property with attributes.
 - **A type compiled without nullable annotations** generates every reference as non-null.
 - **Public fields** without `[JsonInclude]` aren't generated, as the serializer doesn't write them by default; `[JsonPolymorphic]` discriminators aren't modelled.

@@ -311,7 +311,8 @@ public sealed class TypeScriptContractGenerator
                 JsonNumberHandling? numbers = property.NumberHandling ?? info.NumberHandling;
                 if (numbers is JsonNumberHandling handling && handling.HasFlag(JsonNumberHandling.WriteAsString))
                 {
-                    throw new TypeScriptGenerationException($"{reachedFrom} is written with JsonNumberHandling.WriteAsString, so its numbers are strings on the wire; the generator maps numbers to number. Remove the attribute, or declare the property as a string.");
+                    string where = property.NumberHandling is null ? $"{type.FullName} carries JsonNumberHandling.WriteAsString on the class" : $"{reachedFrom} is written with JsonNumberHandling.WriteAsString";
+                    throw new TypeScriptGenerationException($"{where}, so its numbers are strings on the wire; the generator maps numbers to number. Remove the attribute, or declare the members as strings.");
                 }
                 MemberInfo? first = member is null ? null : FirstDeclaration(member);
                 // [JsonIgnore(Condition = Never)] also gets a ShouldSerialize, which always answers yes.

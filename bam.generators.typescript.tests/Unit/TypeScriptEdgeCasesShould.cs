@@ -216,9 +216,10 @@ public class TypeScriptEdgeCasesShould
         When.A<TypeScriptContractGenerator>("generates contracts on a generic base, included fields, and properties with converters",
             () => new TypeScriptContractGenerator(),
             generator => new Round3Outcome(
-                Lines(generator.GetSource(new[] { typeof(StringsOnGeneric), typeof(ListsOnGeneric), typeof(WithFields), typeof(WithEnumConverter) })),
+                Lines(generator.GetSource(new[] { typeof(StringsOnGeneric), typeof(ListsOnGeneric), typeof(WithFields), typeof(WithEnumConverter), typeof(WithTypedIdConverter) })),
                 Refusal(() => generator.GetSource(new[] { typeof(WithConverter) })),
-                Refusal(() => generator.GetSource(new[] { typeof(WithNumbersAsStrings) }))))
+                Refusal(() => generator.GetSource(new[] { typeof(WithNumbersAsStrings) })),
+                Refusal(() => generator.GetSource(new[] { typeof(ClassNumbersAsStrings) }))))
             .TheTest
             .ShouldPass<Round3Outcome>((because, outcome) =>
             {
@@ -233,6 +234,8 @@ public class TypeScriptEdgeCasesShould
                 because.ItsTrue("a string-enum converter on an enum property is still the union", outcome.Lines.Contains("  readonly health: NodeHealth;"));
                 because.ItsTrue($"a property converter is refused ({outcome.Converter})", outcome.Converter.Contains("has a [JsonConverter] (EpochConverter)", StringComparison.Ordinal));
                 because.ItsTrue($"WriteAsString is refused ({outcome.Numbers})", outcome.Numbers.Contains("WriteAsString", StringComparison.Ordinal));
+                because.ItsTrue($"WriteAsString on the class is refused, naming the class ({outcome.ClassNumbers})", outcome.ClassNumbers.Contains("ClassNumbersAsStrings carries JsonNumberHandling.WriteAsString on the class", StringComparison.Ordinal));
+                because.ItsTrue("a string converter on a typed-id property is still the brand", outcome.Lines.Contains("  readonly id: NodeId;") && outcome.Lines.Contains("export type NodeId = string & { readonly __brand: \"NodeId\" };"));
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -284,5 +287,5 @@ public class TypeScriptEdgeCasesShould
 
     private sealed record RootCollectionOutcome(string List, string Map, string Assembly);
 
-    private sealed record Round3Outcome(List<string> Lines, string Converter, string Numbers);
+    private sealed record Round3Outcome(List<string> Lines, string Converter, string Numbers, string ClassNumbers);
 }
