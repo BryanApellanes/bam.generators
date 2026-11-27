@@ -168,6 +168,7 @@ public class TypeScriptEdgeCasesShould
                 {
                     new HidingDerived(), new HideIgnored(), new HideRenamed(), new HideSetterOnly(), new VirtualDerived(),
                     new Sparse { Description = "d", Count = 1, Name = "n" },
+                    new WithFields { MaybeShown = "m" },
                 };
                 List<KeyComparison> comparisons = new List<KeyComparison>();
                 foreach (object instance in instances)
@@ -204,6 +205,34 @@ public class TypeScriptEdgeCasesShould
                 because.ItsTrue($"a List<string> subclass root is refused as an array ({outcome.List})", outcome.List.Contains("written by the serializer as an array", StringComparison.Ordinal));
                 because.ItsTrue($"a Dictionary subclass root is refused as a map ({outcome.Map})", outcome.Map.Contains("written by the serializer as a map", StringComparison.Ordinal));
                 because.ItsTrue($"the assembly form refuses it too ({outcome.Assembly})", outcome.Assembly.Contains("TagList", StringComparison.Ordinal) && outcome.Assembly.Contains("as an array", StringComparison.Ordinal));
+            })
+            .SoBeHappy()
+            .UnlessItFailed();
+    }
+
+    [UnitTest]
+    public void ReadNullabilityThroughAClosedGenericBaseAndRefuseWhatAConverterChanges()
+    {
+        When.A<TypeScriptContractGenerator>("generates contracts on a generic base, included fields, and properties with converters",
+            () => new TypeScriptContractGenerator(),
+            generator => new Round3Outcome(
+                Lines(generator.GetSource(new[] { typeof(StringsOnGeneric), typeof(ListsOnGeneric), typeof(WithFields), typeof(WithEnumConverter) })),
+                Refusal(() => generator.GetSource(new[] { typeof(WithConverter) })),
+                Refusal(() => generator.GetSource(new[] { typeof(WithNumbersAsStrings) }))))
+            .TheTest
+            .ShouldPass<Round3Outcome>((because, outcome) =>
+            {
+                int strings = outcome.Lines.IndexOf("export interface StringsOnGeneric {");
+                int lists = outcome.Lines.IndexOf("export interface ListsOnGeneric {");
+                because.ItsTrue("GenericBase<string> gives a non-null value", strings >= 0 && outcome.Lines[strings + 1] == "  readonly value: string;");
+                because.ItsTrue("and non-null items", strings >= 0 && outcome.Lines[strings + 2] == "  readonly items: readonly string[];");
+                because.ItsTrue($"GenericBase<List<string?>> keeps the argument's nulls ({(lists >= 0 ? outcome.Lines[lists + 1] : "missing")})", lists >= 0 && outcome.Lines[lists + 1] == "  readonly value: readonly (string | null)[];");
+                because.ItsTrue("an included nullable field is nullable", outcome.Lines.Contains("  readonly maybeShown: string | null;"));
+                because.ItsTrue("an included renamed field keeps its name", outcome.Lines.Contains("  readonly \"renamed-field\": string;"));
+                because.ItsTrue("fields come after the class's properties", outcome.Lines.IndexOf("  readonly z: string;") < outcome.Lines.IndexOf("  readonly maybeShown: string | null;"));
+                because.ItsTrue("a string-enum converter on an enum property is still the union", outcome.Lines.Contains("  readonly health: NodeHealth;"));
+                because.ItsTrue($"a property converter is refused ({outcome.Converter})", outcome.Converter.Contains("has a [JsonConverter] (EpochConverter)", StringComparison.Ordinal));
+                because.ItsTrue($"WriteAsString is refused ({outcome.Numbers})", outcome.Numbers.Contains("WriteAsString", StringComparison.Ordinal));
             })
             .SoBeHappy()
             .UnlessItFailed();
@@ -254,4 +283,6 @@ public class TypeScriptEdgeCasesShould
     private sealed record KeyComparison(string Type, List<string> Generated, List<string> Written);
 
     private sealed record RootCollectionOutcome(string List, string Map, string Assembly);
+
+    private sealed record Round3Outcome(List<string> Lines, string Converter, string Numbers);
 }

@@ -157,7 +157,7 @@ public sealed class TypeScriptContractGenerator
     private static string DisplayName(Type type) =>
         type.IsGenericType && type.Name.IndexOf('`', StringComparison.Ordinal) is int tick && tick > 0
             ? type.Name.Substring(0, tick) + "<" + string.Join(", ", type.GetGenericArguments().Select(DisplayName)) + ">"
-            : type.FullName ?? type.Name;
+            : type.FullName is string full && !full.Contains('[', StringComparison.Ordinal) ? full : type.Name;
 
     private static bool IsSystem(Type type) =>
         type.Namespace is string space && (space == "System" || space.StartsWith("System.", StringComparison.Ordinal));
@@ -194,7 +194,8 @@ public sealed class TypeScriptContractGenerator
         public Walk(TypeScriptContractGenerator generator)
         {
             _generator = generator;
-            _json = new JsonSerializerOptions
+            // ASP.NET Core's defaults (camelCase, case-insensitive matching), with the naming the options choose.
+            _json = new JsonSerializerOptions(JsonSerializerDefaults.Web)
             {
                 PropertyNamingPolicy = generator._options.PropertyNaming == TypeScriptNaming.CamelCase ? JsonNamingPolicy.CamelCase : null,
                 TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
@@ -292,21 +293,34 @@ public sealed class TypeScriptContractGenerator
                     continue;
                 }
                 MemberInfo? member = property.AttributeProvider as MemberInfo;
-                NullabilityInfo? nullability = member switch
+                string reachedFrom = $"{type.FullName}.{member?.Name ?? property.Name}";
+                // The serializer reflects an inherited member from its declaring type; NullabilityInfoContext needs it
+                // reflected from the contract type to read a closed generic base's type arguments.
+                MemberInfo? reflected = member is null ? null : ReflectedFrom(type, member);
+                NullabilityInfo? nullability = reflected switch
                 {
                     PropertyInfo declared => _nullability.Create(declared),
                     FieldInfo declared => _nullability.Create(declared),
                     _ => null,
                 };
-                string reachedFrom = $"{type.FullName}.{member?.Name ?? property.Name}";
+                Type valueType = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+                if (property.CustomConverter is not null && !valueType.IsEnum && !IsTypedId(valueType))
+                {
+                    throw new TypeScriptGenerationException($"{reachedFrom} has a [JsonConverter] ({property.CustomConverter.GetType().Name}), so the serializer doesn't write it as its type; the generator can't tell what it writes. Remove the converter, or declare the property as the type it writes.");
+                }
+                JsonNumberHandling? numbers = property.NumberHandling ?? info.NumberHandling;
+                if (numbers is JsonNumberHandling handling && handling.HasFlag(JsonNumberHandling.WriteAsString))
+                {
+                    throw new TypeScriptGenerationException($"{reachedFrom} is written with JsonNumberHandling.WriteAsString, so its numbers are strings on the wire; the generator maps numbers to number. Remove the attribute, or declare the property as a string.");
+                }
                 MemberInfo? first = member is null ? null : FirstDeclaration(member);
                 // [JsonIgnore(Condition = Never)] also gets a ShouldSerialize, which always answers yes.
                 bool never = member?.GetCustomAttribute<JsonIgnoreAttribute>(false)?.Condition == JsonIgnoreCondition.Never;
                 bool optional = property.ShouldSerialize is not null && !never;
-                slots.Add(new MemberSlot(first is null ? int.MaxValue : Depth(first.DeclaringType!), first?.MetadataToken ?? int.MaxValue, property, nullability, reachedFrom, optional));
+                slots.Add(new MemberSlot(first is null ? int.MaxValue : Depth(first.DeclaringType!), member is FieldInfo ? 1 : 0, first?.MetadataToken ?? int.MaxValue, property, nullability, reachedFrom, optional));
             }
             List<TypeScriptMemberModel> members = new List<TypeScriptMemberModel>();
-            foreach (MemberSlot slot in slots.OrderBy(slot => slot.Depth).ThenBy(slot => slot.Token))
+            foreach (MemberSlot slot in slots.OrderBy(slot => slot.Depth).ThenBy(slot => slot.Kind).ThenBy(slot => slot.Token))
             {
                 members.Add(new TypeScriptMemberModel(PropertyKey(slot.Property.Name), Map(slot.Property.PropertyType, slot.Nullability, slot.ReachedFrom), slot.Optional));
             }
@@ -323,6 +337,15 @@ public sealed class TypeScriptContractGenerator
             {
                 throw new TypeScriptGenerationException($"{type.FullName}, reached from {reachedFrom}, can't be described the way the serializer writes it: {exception.Message}", exception);
             }
+        }
+
+        /// <summary>The same member as reflected from <paramref name="type"/>, so its nullability reads the contract's type arguments.</summary>
+        private static MemberInfo ReflectedFrom(Type type, MemberInfo member)
+        {
+            const BindingFlags all = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+            MemberInfo? match = type.GetMember(member.Name, all)
+                .FirstOrDefault(candidate => candidate.MetadataToken == member.MetadataToken && candidate.Module == member.Module);
+            return match ?? member;
         }
 
         /// <summary>The base-most declaration of a member of this name, so a hidden or overridden member keeps the base position.</summary>
@@ -414,7 +437,7 @@ public sealed class TypeScriptContractGenerator
             return mapped.Contains(' ', StringComparison.Ordinal) ? $"readonly ({mapped})[]" : $"readonly {mapped}[]";
         }
 
-        private sealed record MemberSlot(int Depth, int Token, JsonPropertyInfo Property, NullabilityInfo? Nullability, string ReachedFrom, bool Optional);
+        private sealed record MemberSlot(int Depth, int Kind, int Token, JsonPropertyInfo Property, NullabilityInfo? Nullability, string ReachedFrom, bool Optional);
 
         private static NullabilityInfo? Argument(NullabilityInfo? nullability, int index) =>
             nullability is not null && nullability.GenericTypeArguments.Length > index ? nullability.GenericTypeArguments[index] : null;
