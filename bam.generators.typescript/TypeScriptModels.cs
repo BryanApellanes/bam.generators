@@ -39,7 +39,8 @@ public sealed class TypeScriptGenerationOptions
 /// <summary>One property of a generated interface.</summary>
 /// <param name="Name">The property name as written in TypeScript (quoted when it isn't an identifier).</param>
 /// <param name="Type">The TypeScript type.</param>
-public sealed record TypeScriptMemberModel(string Name, string Type);
+/// <param name="Optional">Whether the serializer can leave the key out (a <c>[JsonIgnore]</c> condition other than <c>Always</c>).</param>
+public sealed record TypeScriptMemberModel(string Name, string Type, bool Optional = false);
 
 /// <summary>One generated declaration.</summary>
 public sealed class TypeScriptDeclarationModel
@@ -69,7 +70,7 @@ public sealed class TypeScriptDeclarationModel
     public Type SourceType { get; }
 
     /// <summary>Gets the C# type's full name, for the comment above the declaration.</summary>
-    public string SourceTypeName => SourceType.FullName ?? SourceType.Name;
+    public string SourceTypeName => new string((SourceType.FullName ?? SourceType.Name).Select(character => char.IsControl(character) || character == '\u2028' || character == '\u2029' ? ' ' : character).ToArray());
 
     /// <summary>Gets the interface members, in order.</summary>
     public IReadOnlyList<TypeScriptMemberModel> Members { get; }

@@ -20,7 +20,8 @@ namespace Bam.Generators.TypeScript;
 /// Types a property refers to are generated too, so passing the root messages is enough. Output is deterministic:
 /// declarations are sorted by name (ordinal), members keep declaration order, lines end in <c>\n</c>, and there is no
 /// timestamp. Anything the target can't express (<c>object</c>, an open or generic contract type, a dictionary keyed by
-/// something other than <c>string</c>, two types with one TypeScript name) throws a <see cref="TypeScriptGenerationException"/>
+/// something other than <c>string</c>, a custom collection class, a <c>[Flags]</c> enum, two types with one TypeScript name,
+/// two properties with one JSON name) throws a <see cref="TypeScriptGenerationException"/>
 /// naming it, rather than emitting <c>any</c>.
 /// </summary>
 public sealed class TypeScriptContractGenerator
@@ -48,6 +49,11 @@ public sealed class TypeScriptContractGenerator
         typeof(IReadOnlyDictionary<,>), typeof(IDictionary<,>), typeof(Dictionary<,>),
     };
 
+    private static readonly HashSet<string> ReservedNames = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "Record", "Readonly", "ReadonlyArray", "Array", "string", "number", "boolean", "null", "never",
+    };
+
     private readonly TypeScriptGenerationOptions _options;
     private readonly ITypeScriptCodeWriter _writer;
 
@@ -73,7 +79,12 @@ public sealed class TypeScriptContractGenerator
     {
         ArgumentNullException.ThrowIfNull(roots);
         Walk walk = new Walk(this);
-        foreach (Type root in roots.OrderBy(type => type.FullName, StringComparer.Ordinal))
+        List<Type> ordered = roots.ToList();
+        if (ordered.Any(root => root is null))
+        {
+            throw new ArgumentException("A root type is null.", nameof(roots));
+        }
+        foreach (Type root in ordered.OrderBy(type => type.FullName, StringComparer.Ordinal))
         {
             walk.Declare(root, $"the root {root.FullName}");
         }
@@ -142,13 +153,31 @@ public sealed class TypeScriptContractGenerator
         return type.DeclaringType is null ? name : TypeScriptName(type.DeclaringType) + "_" + name;
     }
 
+    private static string DisplayName(Type type) =>
+        type.IsGenericType
+            ? type.Name.Substring(0, type.Name.IndexOf('`', StringComparison.Ordinal)) + "<" + string.Join(", ", type.GetGenericArguments().Select(DisplayName)) + ">"
+            : type.FullName ?? type.Name;
+
+    private static bool IsSystem(Type type) =>
+        type.Namespace is string space && (space == "System" || space.StartsWith("System.", StringComparison.Ordinal));
+
+    private static bool IsAlwaysIgnored(PropertyInfo property) =>
+        property.GetCustomAttribute<JsonIgnoreAttribute>() is JsonIgnoreAttribute ignore && ignore.Condition == JsonIgnoreCondition.Always;
+
+    private static bool IsIdentifier(string name) =>
+        name.Length > 0
+        && (IsAsciiLetter(name[0]) || name[0] == '_' || name[0] == '$')
+        && name.All(character => IsAsciiLetter(character) || char.IsAsciiDigit(character) || character == '_' || character == '$');
+
+    private static bool IsAsciiLetter(char character) => char.IsAsciiLetter(character);
+
     private static bool IsTypedId(Type type)
     {
-        if (!type.IsValueType || type.IsPrimitive || type.IsEnum || type.IsGenericType || type.Namespace?.StartsWith("System", StringComparison.Ordinal) == true)
+        if (!type.IsValueType || type.IsPrimitive || type.IsEnum || type.IsGenericType || IsSystem(type))
         {
             return false;
         }
-        PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(property => property.GetIndexParameters().Length == 0).ToArray();
+        PropertyInfo[] properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(property => property.GetIndexParameters().Length == 0 && !IsAlwaysIgnored(property)).ToArray();
         return properties.Length == 1 && properties[0].PropertyType == typeof(string);
     }
 
@@ -178,13 +207,25 @@ public sealed class TypeScriptContractGenerator
             {
                 return name;
             }
+            if (type == typeof(object) || type.IsInterface || type.IsAbstract || type.IsPointer || typeof(Delegate).IsAssignableFrom(type) || IsSystem(type))
+            {
+                throw new TypeScriptGenerationException($"{type.FullName ?? type.Name}, reached from {reachedFrom}, has no TypeScript mapping. Use a concrete contract record, or one of the mapped types.");
+            }
             if (type.IsGenericType || type.ContainsGenericParameters)
             {
                 throw new TypeScriptGenerationException($"{type.FullName ?? type.Name}, reached from {reachedFrom}, is generic; the TypeScript target generates only non-generic contract types. Declare a closed record for it.");
             }
-            if (type == typeof(object) || type.IsInterface || type.IsAbstract || type.IsPointer || typeof(Delegate).IsAssignableFrom(type) || type.Namespace?.StartsWith("System", StringComparison.Ordinal) == true)
+            if (type.IsEnum && type.IsDefined(typeof(FlagsAttribute), false))
             {
-                throw new TypeScriptGenerationException($"{type.FullName ?? type.Name}, reached from {reachedFrom}, has no TypeScript mapping. Use a concrete contract record, or one of the mapped types.");
+                throw new TypeScriptGenerationException($"{type.FullName}, reached from {reachedFrom}, is a [Flags] enum; the serializer writes a combination as one comma-separated string, which a union of names can't hold. Use a plain enum, or a collection of one.");
+            }
+            if (!IsIdentifier(name))
+            {
+                throw new TypeScriptGenerationException($"{type.FullName ?? type.Name}, reached from {reachedFrom}, would be generated as a name that isn't an ASCII TypeScript identifier.");
+            }
+            if (ReservedNames.Contains(name))
+            {
+                throw new TypeScriptGenerationException($"{type.FullName}, reached from {reachedFrom}, would be generated as {name}, which shadows the TypeScript type the module uses. Rename it.");
             }
             if (_names.TryGetValue(name, out Type? other) && other != type)
             {
@@ -225,13 +266,22 @@ public sealed class TypeScriptContractGenerator
         private IReadOnlyList<TypeScriptMemberModel> Members(Type type)
         {
             List<TypeScriptMemberModel> members = new List<TypeScriptMemberModel>();
-            HashSet<string> seen = new HashSet<string>(StringComparer.Ordinal);
-            IEnumerable<PropertyInfo> properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            List<MemberSlot> slots = new List<MemberSlot>();
+            IEnumerable<IGrouping<string, PropertyInfo>> byName = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Where(property => property.GetIndexParameters().Length == 0 && property.GetMethod is not null && property.GetMethod.IsPublic)
-                .OrderBy(property => Depth(property.DeclaringType!))
-                .ThenBy(property => property.MetadataToken);
-            foreach (PropertyInfo property in properties)
+                .GroupBy(property => property.Name, StringComparer.Ordinal);
+            foreach (IGrouping<string, PropertyInfo> group in byName)
             {
+                // A property hidden with `new` keeps the base declaration's position, and the most derived
+                // declaration is the one the serializer writes.
+                PropertyInfo first = group.OrderBy(property => Depth(property.DeclaringType!)).ThenBy(property => property.MetadataToken).First();
+                PropertyInfo written = group.OrderByDescending(property => Depth(property.DeclaringType!)).First();
+                slots.Add(new MemberSlot(Depth(first.DeclaringType!), first.MetadataToken, written));
+            }
+            Dictionary<string, string> wireNames = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (MemberSlot slot in slots.OrderBy(slot => slot.Depth).ThenBy(slot => slot.Token))
+            {
+                PropertyInfo property = slot.Property;
                 JsonIgnoreAttribute? ignore = property.GetCustomAttribute<JsonIgnoreAttribute>();
                 if (ignore is not null && ignore.Condition == JsonIgnoreCondition.Always)
                 {
@@ -239,12 +289,14 @@ public sealed class TypeScriptContractGenerator
                 }
                 JsonPropertyNameAttribute? renamed = property.GetCustomAttribute<JsonPropertyNameAttribute>();
                 string name = renamed?.Name ?? ConvertName(property.Name, _generator._options.PropertyNaming);
-                if (!seen.Add(name))
+                if (wireNames.TryGetValue(name, out string? clash))
                 {
-                    continue;
+                    throw new TypeScriptGenerationException($"{type.FullName}.{clash} and {type.FullName}.{property.Name} would both be written as {Quote(name)}; the serializer refuses that too. Rename one.");
                 }
+                wireNames[name] = property.Name;
+                bool optional = ignore is not null && ignore.Condition is JsonIgnoreCondition.WhenWritingNull or JsonIgnoreCondition.WhenWritingDefault or JsonIgnoreCondition.WhenWriting;
                 string reachedFrom = $"{type.FullName}.{property.Name}";
-                members.Add(new TypeScriptMemberModel(PropertyKey(name), Map(property.PropertyType, _nullability.Create(property), reachedFrom)));
+                members.Add(new TypeScriptMemberModel(PropertyKey(name), Map(property.PropertyType, _nullability.Create(property), reachedFrom), optional));
             }
             return members;
         }
@@ -309,6 +361,10 @@ public sealed class TypeScriptContractGenerator
                     return $"Readonly<Record<string, {Map(arguments[1], Argument(nullability, 1), reachedFrom)}>>";
                 }
             }
+            if (typeof(System.Collections.IEnumerable).IsAssignableFrom(type))
+            {
+                throw new TypeScriptGenerationException($"{reachedFrom} is the collection type {DisplayName(type)}; the TypeScript target maps arrays, the sequence interfaces and string-keyed dictionaries, and the serializer writes this as one of those, not as an object. Declare the property as one of the mapped types.");
+            }
             return Declare(type, reachedFrom);
         }
 
@@ -317,6 +373,8 @@ public sealed class TypeScriptContractGenerator
             string mapped = Map(element, nullability, reachedFrom);
             return mapped.Contains(' ', StringComparison.Ordinal) ? $"readonly ({mapped})[]" : $"readonly {mapped}[]";
         }
+
+        private sealed record MemberSlot(int Depth, int Token, PropertyInfo Property);
 
         private static NullabilityInfo? Argument(NullabilityInfo? nullability, int index) =>
             nullability is not null && nullability.GenericTypeArguments.Length > index ? nullability.GenericTypeArguments[index] : null;

@@ -6,7 +6,7 @@
 {{#if IsInterface}}
 export interface {{{Name}}} {
 {{#each Members}}
-  readonly {{{Name}}}: {{{Type}}};
+  readonly {{{Name}}}{{#if Optional}}?{{/if}}: {{{Type}}};
 {{/each}}
 }
 {{/if}}

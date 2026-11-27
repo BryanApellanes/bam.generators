@@ -8,6 +8,7 @@ Handlebars-based code generation for the Bam Framework — DAOs, service clients
 
 Three sibling projects extend the same template-driven approach to other generation targets:
 - **`bam.generators.client`** generates strongly-typed service client code from a `bam.protocol`/`bam.server` service definition (`BamServiceClientGenerator`, `BamServiceClientModel`, `ServiceClientCodeWriter`).
+- **`bam.generators.typescript`** generates TypeScript declarations from C# contract types (records to readonly interfaces, enums to string unions, typed ids to branded strings), deterministically, so a consumer's CI can fail on drift (`TypeScriptContractGenerator`, `HandlebarsTypeScriptCodeWriter`). See its [README](bam.generators.typescript/README.md).
 - **`bam.generators.ux`** generates UX site scaffolding — pages, navigation, themes, and color palettes — from a `UxGenerationConfig` (`UxSiteGenerator`, `HandlebarsUxSiteWriter`, `ColorPaletteGenerator`).
 - **`bam.generators.decorators`** generates strongly-typed decorators for service interfaces: wrap a service registered in a `ServiceRegistry` and run handlers at the start, end and failure of its methods (`DecoratorGenerator`, the `ServiceRegistry` extensions). `WithoutRegistryExtensions()` generates output for hosts on another container. See its [README](bam.generators.decorators/README.md).
 - **`bam.generators.decorators.runtime`** is the runtime those decorators run on (`Decorator<I, T>`, contexts, handler stores, `IDecoratorLogger`). It targets `netstandard2.0` and `net10.0` with no Bam dependency, and ships as the `bam.generators.decorators.runtime` package so .NET Framework applications can link generated decorators. See its [README](bam.generators.decorators.runtime/README.md).
@@ -41,4 +42,5 @@ Three sibling projects extend the same template-driven approach to other generat
 dotnet run --project bam.generators.tests/bam.generators.tests.csproj -- --ut
 dotnet run --project bam.generators.client.tests/bam.generators.client.tests.csproj -- --ut
 dotnet run --project bam.generators.ux.tests/bam.generators.ux.tests.csproj -- --ut
+dotnet run --project bam.generators.typescript.tests/bam.generators.typescript.tests.csproj -- --ut
 ```
